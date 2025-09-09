@@ -62,8 +62,8 @@ function wireForm() {
     try {
       const payloads = collectEntries();
       console.log('Ready to submit', payloads);
-      // TODO: loop Data.submitEntry(payload) once you’re ready to POST
-      alert('Submit will post to API next. For now this confirms wiring.');
+      // TODO: loop Data.submitEntry(payload) when you're ready to POST
+      alert('Submit will post to API next. This confirms wiring.');
     } catch (err) {
       showError(err);
     }
@@ -74,7 +74,7 @@ function wireForm() {
 function fillSelect(selOrArray, items, placeholder) {
   const mk = (sel) => {
     sel.innerHTML = ['<option value="">'+placeholder+'</option>']
-      .concat(items.map(i => `<option value="${escape(i.id)}">${escape(i.name)}</option>`)).join('');
+      .concat(items.map(i => `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}</option>`)).join('');
   };
   Array.isArray(selOrArray) ? selOrArray.forEach(mk) : mk(selOrArray);
 }
@@ -86,9 +86,10 @@ function collectEntries() {
   return rows.map(tr => {
     const date = tr.querySelector('input[type="date"]').value;
     const ticketId = toInt(tr.querySelector('.ticketSelect').value, 'Ticket');
-    const hStd = toNum(tr.querySelectorAll('input[type="number"]')[0].value);
-    const h15  = toNum(tr.querySelectorAll('input[type="number"]')[1].value);
-    const h2   = toNum(tr.querySelectorAll('input[type="number"]')[2].value);
+    const nums = tr.querySelectorAll('input[type="number"]');
+    const hStd = toNum(nums[0].value);
+    const h15  = toNum(nums[1].value);
+    const h2   = toNum(nums[2].value);
     const notes = tr.querySelector('input[type="text"]').value?.trim() || null;
 
     if (!date) throw new Error('Date is required on all rows');
@@ -109,5 +110,5 @@ function $(sel) { return document.querySelector(sel); }
 function disable(nodes, v) { nodes.forEach(n => n.disabled = v); }
 function toInt(v, name) { const n = parseInt(v,10); if (isNaN(n)) throw new Error(`${name} is required`); return n; }
 function toNum(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
-function escape(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function showError(err){ console.error(err); alert(err.message || String(err)); }
