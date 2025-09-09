@@ -2,42 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Insight Timesheet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Timesheet Entry</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="app-header">
-    <div class="logo-placeholder">LOGO HERE</div>
-    <h1>Casual Timesheet Entry</h1>
+    <h1>Insight Timesheet Submission</h1>
   </header>
 
   <main class="container">
-    <p>Hours (<b>Standard</b>) are normal working hours (7.6 hrs/day). OT kicks in after that.</p>
-    <p>Hours (<b>1.5x</b>) = First 2hrs of OT. Hours (<b>2x</b>) = After 2hrs OT or all day Sunday.</p>
+    <section class="selectors">
+      <label>
+        Employee:
+        <select id="employeeSelect" required>
+          <option value="">Select Employee</option>
+        </select>
+      </label>
+      <label>
+        Manager:
+        <select id="managerSelect" required>
+          <option value="">Select Manager</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="instructions">
+      <p><strong>Hours (Standard)</strong> = Normal hours (7.6hrs/day)</p>
+      <p><strong>Hours (1.5x)</strong> = First 2 hours of OT (Mon–Sat)</p>
+      <p><strong>Hours (2x)</strong> = OT after 2 hours (Mon–Sat), or all Sunday</p>
+    </section>
 
     <form id="timesheetForm">
-      <table id="timesheetTable">
+      <table>
         <thead>
           <tr>
             <th>Date</th>
             <th>Ticket</th>
-            <th>Hours (Standard)</th>
-            <th>Hours (1.5x)</th>
-            <th>Hours (2x)</th>
+            <th>Standard</th>
+            <th>1.5x</th>
+            <th>2x</th>
+            <th>Notes</th>
             <th></th>
           </tr>
         </thead>
-        <tbody id="timesheetBody">
-          <!-- Rows will be added here -->
-        </tbody>
+        <tbody id="timesheetBody"></tbody>
       </table>
 
       <button type="button" class="btn" onclick="addRow()">+ Add Row</button>
 
       <div class="form-actions">
         <button type="button" class="btn secondary" onclick="clearForm()">Clear Form</button>
-        <button type="button" class="btn" onclick="printForm()">Print Form</button>
+        <button type="button" class="btn secondary" onclick="printForm()">Print Form</button>
         <button type="submit" class="btn primary">Submit</button>
       </div>
     </form>
