@@ -1,4 +1,3 @@
-// data.js — all API calls live her
 (() => {
   // EXACT Function App URL from Azure Portal → Overview
   const API_BASE = 'https://func-timesheets-api-dev-e5aqerg4d0dadwf7.australiaeast-01.azurewebsites.net/api';
@@ -24,3 +23,22 @@
     },
 
     async tickets(employeeId) {
+      if (!employeeId) throw new Error('employeeId required');
+      return await get(`tickets?employeeId=${encodeURIComponent(employeeId)}`);
+    },
+
+    async submitEntry(payload) {
+      const url = `${API_BASE}/timesheet-entry`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`POST ${url} failed`);
+      return res.json();
+    }
+  };
+})();
