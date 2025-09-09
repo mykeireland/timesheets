@@ -1,0 +1,2 @@
+const EMPLOYEES = ["Adam Dean","Angelina Crutchfield","Blake Weston","Brendan Krotz","Budvin Ekanayake","Christian Binuya","Cohen Hendrikx","Dannielle Clydesdale","Finn Jennings","Jack Swaneveld","Joanne Richardson","Lachlan Perry","Nicholas Robinson","Pendar Shekerian","Piotr Krysztofek","Preet Singh","Riley Neal","Robson Berry","Ryan Zibell","Sam Beros","Tim Cox","Vincent Binns"];
+const MANAGERS = ["Belinda Tomlinson","Craig Steven","Jack Mahoney","Jess Rowland","Mathew Brennan","Nayeema Hanif","Rohan Ananda"];
