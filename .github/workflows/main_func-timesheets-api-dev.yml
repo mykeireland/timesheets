@@ -1,12 +1,13 @@
+
 name: Deploy Azure Function App (.NET Isolated)
 
 on:
   push:
     branches: [ main ]
-    # Only run when Function App code or this workflow changes
     paths:
-      - 'timesheets/Timesheets.FunctionApp/**'
+      - 'Timesheets.FunctionApp/**'
       - '.github/workflows/deploy-functions.yaml'
+
 
 permissions:
   id-token: write
@@ -52,3 +53,4 @@ jobs:
           app-name: func-timesheets-api-dev
           package: ./publish
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
