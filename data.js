@@ -1,6 +1,6 @@
-// data.js
+// data.js - all API calls live here
 (() => {
-  const API_BASE = window.API_BASE_URL; // injected from index.html via {{API_BASE_URL}}
+  const API_BASE = window.API_BASE_URL;
   if (!API_BASE) throw new Error('API_BASE_URL is not set');
 
   async function get(path) {
@@ -16,7 +16,6 @@
   window.Data = {
     async employees() {
       const list = await get('employees');
-      // Normalize to { id: number, name: string }
       return list.map(e => ({
         id: Number(e.id ?? e.employeeId ?? e.employee_id),
         name: e.name ?? `${e.firstName ?? ''} ${e.lastName ?? ''}`.trim()
@@ -26,7 +25,6 @@
     async tickets(employeeId) {
       if (!employeeId) throw new Error('employeeId required');
       const list = await get(`tickets?employeeId=${encodeURIComponent(employeeId)}`);
-      // Normalize to { id, name }
       return list.map(t => ({
         id: t.ticketId ?? t.id ?? t.ticket_id,
         name: t.name ?? t.cwTicketId ?? 'Ticket'
