@@ -15,6 +15,7 @@ env:
 
 jobs:
   build:
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: read #This is required for actions/checkout
@@ -78,4 +79,5 @@ jobs:
           app-name: 'func-timesheets-api-dev'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
           
