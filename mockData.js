@@ -1,2 +1,10 @@
-const EMPLOYEES = ["Adam Dean","Angelina Crutchfield","Blake Weston","Brendan Krotz","Budvin Ekanayake","Christian Binuya","Cohen Hendrikx","Dannielle Clydesdale","Finn Jennings","Jack Swaneveld","Joanne Richardson","Lachlan Perry","Nicholas Robinson","Pendar Shekerian","Piotr Krysztofek","Preet Singh","Riley Neal","Robson Berry","Ryan Zibell","Sam Beros","Tim Cox","Vincent Binns"];
-const MANAGERS = ["Belinda Tomlinson","Craig Steven","Jack Mahoney","Jess Rowland","Mathew Brennan","Nayeema Hanif","Rohan Ananda"];
+// Sample ticket list for dropdown
+const TICKETS = [
+  "CW-2311",
+  "CW-2402",
+  "CW-RMIT-2025",
+  "SITE-SYDNEY-001",
+  "SITE-MELBOURNE-023",
+  "MAINT-REACTIVE",
+  "MAINT-SCHEDULED"
+];
