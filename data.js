@@ -1,7 +1,9 @@
-// data.js — calls your Azure Function API (dev)
+// data.js — talks to your Azure Function API
 (() => {
-  // EXACT domain from your Portal → Function App → Overview
+  // EXACT domain from your Portal (you provided this one)
   const API_BASE = 'https://func-timesheets-api-dev-e5aqerg4d0dadwf7.australiaeast-01.azurewebsites.net/api';
+
+  console.info('API_BASE from data.js =', API_BASE);
 
   async function get(path) {
     const url = `${API_BASE}/${path}`;
@@ -21,6 +23,7 @@
         name: e.name ?? `${e.firstName ?? ''} ${e.lastName ?? ''}`.trim()
       }));
     },
+
     async tickets(employeeId) {
       if (!employeeId) throw new Error('employeeId required');
       const list = await get(`tickets?employeeId=${encodeURIComponent(employeeId)}`);
@@ -29,6 +32,7 @@
         name: t.name ?? t.cwTicketId ?? 'Ticket'
       }));
     },
+
     async submitEntry(payload) {
       const url = `${API_BASE}/timesheet-entry`;
       const res = await fetch(url, {
