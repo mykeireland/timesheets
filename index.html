@@ -1,1 +1,56 @@
-index
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Casual Timesheet</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo-placeholder">YOUR LOGO HERE</div>
+    <h1>Casual Weekly Timesheet</h1>
+  </header>
+
+  <main class="container">
+    <form id="timesheetForm">
+      <div class="field-group">
+        <label for="employeeName">Employee Name</label>
+        <select id="employeeName" name="employeeName" required>
+          <!-- Populated via JS -->
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="email">Email for Confirmation</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required />
+      </div>
+
+      <div class="field-group">
+        <label for="managerName">Your Manager</label>
+        <select id="managerName" name="managerName" required>
+          <!-- Populated via JS -->
+        </select>
+      </div>
+
+      <div class="field-group scrollable">
+        <label>Total Hours Worked Each Day</label>
+        <div class="day-row" data-day="Monday">
+          <span class="day-label">Monday</span>
+          <input type="number" name="hours_Monday" step="0.1" placeholder="0.0" />
+        </div>
+        <!-- Repeat for other days -->
+      </div>
+
+      <div class="buttons">
+        <button type="submit" class="btn">Submit</button>
+        <button type="reset" class="btn secondary">Clear</button>
+      </div>
+    </form>
+  </main>
+
+  <script src="mockData.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
+
