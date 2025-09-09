@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function init() {
   await populatePeople();
-  addRow();         // start with one row
+  addRow();         // start with one ro
   wireForm();
 }
 
