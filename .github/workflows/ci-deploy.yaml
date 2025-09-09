@@ -31,6 +31,8 @@ jobs:
             backend:
               - 'timesheets/Timesheets.FunctionApp/**'
 
+
+
   deploy-swa:
     name: Deploy Static Web App
     needs: changes
@@ -74,15 +76,15 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        working-directory: timesheets/Timesheets.FunctionApp
+        working-directory: timesheets/src/Timesheets.FunctionApp
         run: dotnet restore
 
       - name: Build
-        working-directory: timesheets/Timesheets.FunctionApp
+        working-directory: timesheets/src/Timesheets.FunctionApp
         run: dotnet build --configuration Release --no-restore
 
       - name: Publish
-        working-directory: timesheets/Timesheets.FunctionApp
+        working-directory: timesheets/src/Timesheets.FunctionApp
         run: dotnet publish --configuration Release --no-build --output ../../publish
 
       - name: Deploy to Azure Functions
