@@ -15,7 +15,7 @@ env:
 
 jobs:
   build:
-    if: false
+    if: true
     runs-on: ubuntu-latest
     permissions:
       contents: read #This is required for actions/checkout
@@ -81,3 +81,4 @@ jobs:
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
           
+
