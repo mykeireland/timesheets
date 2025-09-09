@@ -15,7 +15,7 @@ public class GetEmployees
 
     [Function("GetEmployees")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "employees")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "employees")] HttpRequestData req)
     {
         var response = req.CreateResponse();
         response.Headers.Add("Content-Type", "application/json");
