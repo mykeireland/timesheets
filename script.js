@@ -1,4 +1,4 @@
-// script.js - UI logic using Data.js
+// script.js - UI logic using Data.j
 
 document.addEventListener('DOMContentLoaded', () => {
   init().catch(showError);
