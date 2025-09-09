@@ -1,7 +1,11 @@
-// data.js - all API calls live here
+// data.js - all API calls live here (dev: hardcoded base URL)
 (() => {
-  const API_BASE = window.API_BASE_URL;
-  if (!API_BASE) throw new Error('API_BASE_URL is not set');
+  // DEV: use your Function App URL
+  const API_BASE = 'https://func-timesheets-api-dev.azurewebsites.net/api';
+
+  if (!/^https?:\/\//i.test(API_BASE)) {
+    throw new Error('API_BASE is not a valid URL');
+  }
 
   async function get(path) {
     const url = `${API_BASE}/${path}`;
