@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <script>
+    // This gets replaced at runtime by the value you set in SWA app settings
     window.API_BASE_URL = '{{API_BASE_URL}}';
   </script>
   <meta charset="UTF-8" />
@@ -62,7 +63,10 @@
     </form>
   </main>
 
-  <script src="mockData.js"></script>
+  <!-- Data layer: talks to your Function API -->
+  <script src="data.js"></script>
+
+  <!-- UI logic: uses Data.* -->
   <script src="script.js"></script>
 </body>
 </html>
