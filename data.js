@@ -1,5 +1,5 @@
 (() => {
-  // EXACT Function App URL from Azure Portal → Overview
+  // EXACT Function Ap URL from Azure Portal → Overview
   const API_BASE = '/api';   // use SWA proxy;
   console.info('API_BASE (data.js) =', API_BASE);
 
