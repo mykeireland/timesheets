@@ -1,8 +1,15 @@
+using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Net;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Azure.Core;
+using Azure.Identity;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 
 public class GetEmployees
 {
@@ -17,43 +24,62 @@ public class GetEmployees
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "employees")] HttpRequestData req)
     {
-        var response = req.CreateResponse();
+        var ct = req.FunctionContext.CancellationToken;
+        var response = req.CreateResponse(HttpStatusCode.OK);
         response.Headers.Add("Content-Type", "application/json");
 
         var employees = new List<object>();
 
         try
         {
-            var connection = new SqlConnection
+            // Acquire AAD token for Azure SQL using Managed Identity (or chained Default creds).
+            var credential = new DefaultAzureCredential();
+            var accessToken = await credential.GetTokenAsync(
+                new TokenRequestContext(new[] { "https://database.windows.net/.default" }),
+                ct);
+
+            var connectionString = Environment.GetEnvironmentVariable("SqlConnectionString");
+            if (string.IsNullOrWhiteSpace(connectionString))
             {
-                // Use AAD auth with managed identity
-                ConnectionString = Environment.GetEnvironmentVariable("SqlConnectionString"),
-                AccessToken = await new Azure.Identity.DefaultAzureCredential()
-                    .GetTokenAsync(new Azure.Core.TokenRequestContext(
-                        new[] { "https://database.windows.net/.default" }))
-                    .ContinueWith(t => t.Result.Token)
-            };
-
-            await connection.OpenAsync();
-
-            var command = new SqlCommand("SELECT employee_id, first_name, last_name FROM Employee WHERE active = 1", connection);
-            var reader = await command.ExecuteReaderAsync();
-
-            while (await reader.ReadAsync())
-            {
-                employees.Add(new
-                {
-                    id = reader["employee_id"].ToString(),
-                    name = $"{reader["first_name"]} {reader["last_name"]}"
-                });
+                _logger.LogError("SqlConnectionString is not set.");
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                await response.WriteStringAsync("{\"error\":\"Server not configured\"}");
+                return response;
             }
 
-            await connection.CloseAsync();
+            await using var connection = new SqlConnection
+            {
+                ConnectionString = connectionString,
+                AccessToken = accessToken.Token
+            };
+
+            await connection.OpenAsync(ct);
+
+            const string sql = @"
+                SELECT employee_id, first_name, last_name
+                FROM Employee
+                WHERE active = 1";
+
+            await using var command = new SqlCommand(sql, connection);
+            await using var reader = await command.ExecuteReaderAsync(ct);
+
+            while (await reader.ReadAsync(ct))
+            {
+                var id = reader["employee_id"]?.ToString() ?? "";
+                var first = reader["first_name"]?.ToString() ?? "";
+                var last = reader["last_name"]?.ToString() ?? "";
+
+                employees.Add(new
+                {
+                    id,
+                    name = $"{first} {last}".Trim()
+                });
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Failed to fetch employees: {ex.Message}");
-            response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+            _logger.LogError(ex, "Failed to fetch employees.");
+            response.StatusCode = HttpStatusCode.InternalServerError;
             await response.WriteStringAsync("{\"error\":\"Could not load employees\"}");
             return response;
         }
