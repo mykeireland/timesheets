@@ -2,34 +2,49 @@ name: Deploy Azure Function App (.NET Isolated)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+    # Only run when Function App code or this workflow changes
+    paths:
+      - 'timesheets/Timesheets.FunctionApp/**'
+      - '.github/workflows/deploy-functions.yaml'
 
 permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: func-timesheets-api-dev
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Show repo layout (debug)
+        run: |
+          pwd
+          ls -la
+          ls -la timesheets/Timesheets.FunctionApp
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'  # Match your project's .NET version
+          dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore timesheets/Timesheets.FunctionApp/FunctionApp.csproj
-        
+      - name: Restore
+        working-directory: timesheets/Timesheets.FunctionApp
+        run: dotnet restore
+
       - name: Build
-        run: dotnet build timesheets/Timesheets.FunctionApp/FunctionApp.csproj --configuration Release --no-restore
+        working-directory: timesheets/Timesheets.FunctionApp
+        run: dotnet build --configuration Release --no-restore
 
       - name: Publish
-        run: dotnet publish timesheets/Timesheets.FunctionApp/FunctionApp.csproj --configuration Release --output ./publish --no-build
+        working-directory: timesheets/Timesheets.FunctionApp
+        run: dotnet publish --configuration Release --no-build --output ../../publish
 
       - name: Deploy to Azure Functions
         uses: azure/functions-action@v1
@@ -37,4 +52,3 @@ jobs:
           app-name: func-timesheets-api-dev
           package: ./publish
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-
