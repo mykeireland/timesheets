@@ -1,0 +1,112 @@
+:root {
+  --primary: #1f7adb;
+  --secondary: #e0e0e0;
+  --bg: #fafbfc;
+  --radius: 6px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: #333;
+}
+
+.app-header {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: var(--primary);
+  color: #fff;
+}
+.logo-placeholder {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.field-group {
+  margin-bottom: 1.5rem;
+}
+.field-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+.field-group input,
+.field-group select {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+.field-group input:focus,
+.field-group select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.scrollable {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--secondary);
+  border-radius: var(--radius);
+  padding: 0.8rem;
+}
+.scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollable::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 3px;
+}
+
+.day-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+.day-label {
+  width: 80px;
+  font-weight: 500;
+}
+.day-row input {
+  flex: 1;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.btn {
+  flex: 1;
+  padding: 0.75rem;
+  background: var(--primary);
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+.btn.secondary {
+  background: #888;
+}
