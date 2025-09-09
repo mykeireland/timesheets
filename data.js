@@ -1,6 +1,6 @@
 (() => {
   // EXACT Function App URL from Azure Portal → Overview
-  const API_BASE = 'https://func-timesheets-api-dev-e5aqerg4d0dadwf7.australiaeast-01.azurewebsites.net/api';
+  const API_BASE = '/api';   // use SWA proxy;
   console.info('API_BASE (data.js) =', API_BASE);
 
   async function get(path) {
