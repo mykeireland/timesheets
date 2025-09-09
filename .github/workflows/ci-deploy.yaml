@@ -29,14 +29,13 @@ jobs:
               - 'data.js'
               - 'assets/**'
             backend:
-              - 'timesheets/Timesheets.FunctionApp/**'
-
-
+              - 'src/Timesheets.Functions/**'
 
   deploy-swa:
-    name: Deploy Static Web App
+    name: Deploy Static Web App (frontend + functions)
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    # deploy if either frontend OR backend changed
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     concurrency:
       group: swa-timesheets-dev
@@ -47,49 +46,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: upload
-          app_location: '/'
-          api_location: ''
-          output_location: ''     # no build folder
-          skip_app_build: true    # NO npm
-          skip_api_build: true
+          app_location: '/'                      # static files live here
+          api_location: 'src/Timesheets.Functions' # your Functions project folder
+          output_location: ''                    # no separate build folder
           production_branch: 'main'
-
-  deploy-functions:
-    name: Deploy Function App
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
-    concurrency:
-      group: func-timesheets-api-dev
-      cancel-in-progress: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Show layout (debug)
-        run: |
-          pwd
-          ls -la
-          ls -la timesheets/Timesheets.FunctionApp
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Restore
-        working-directory: timesheets/src/Timesheets.FunctionApp
-        run: dotnet restore
-
-      - name: Build
-        working-directory: timesheets/src/Timesheets.FunctionApp
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Publish
-        working-directory: timesheets/src/Timesheets.FunctionApp
-        run: dotnet publish --configuration Release --no-build --output ../../publish
-
-      - name: Deploy to Azure Functions
-        uses: azure/functions-action@v1
-        with:
-          app-name: func-timesheets-api-dev
-          package: ./publish
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
