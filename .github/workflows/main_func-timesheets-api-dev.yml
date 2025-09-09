@@ -23,13 +23,13 @@ jobs:
           dotnet-version: '8.0.x'  # Match your project's .NET version
 
       - name: Restore dependencies
-        run: dotnet restore Timesheets.FunctionApp/FunctionApp.csproj
-
+        run: dotnet restore timesheets/Timesheets.FunctionApp/FunctionApp.csproj
+        
       - name: Build
-        run: dotnet build Timesheets.FunctionApp/FunctionApp.csproj --configuration Release --no-restore
+        run: dotnet build timesheets/Timesheets.FunctionApp/FunctionApp.csproj --configuration Release --no-restore
 
       - name: Publish
-        run: dotnet publish Timesheets.FunctionApp/FunctionApp.csproj --configuration Release --output ./publish --no-build
+        run: dotnet publish timesheets/Timesheets.FunctionApp/FunctionApp.csproj --configuration Release --output ./publish --no-build
 
       - name: Deploy to Azure Functions
         uses: azure/functions-action@v1
@@ -37,3 +37,4 @@ jobs:
           app-name: func-timesheets-api-dev
           package: ./publish
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
