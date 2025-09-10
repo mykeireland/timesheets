@@ -1,53 +1,86 @@
-name: Deploy (SWA + Functions, filtered)
+name: Web + Functions (single workflow, conditional deploy)
 
 on:
   push:
     branches: [ main ]
-
-permissions:
-  id-token: write
-  contents: read
+  workflow_dispatch:
 
 jobs:
-  changes:
-    name: Detect changed areas
+  plan:
     runs-on: ubuntu-latest
     outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-      backend:  ${{ steps.filter.outputs.backend }}
+      web_changed: ${{ steps.filter.outputs.web }}
+      api_changed: ${{ steps.filter.outputs.api }}
     steps:
       - uses: actions/checkout@v4
-      - name: What changed?
-        id: filter
+
+      # Detect which side changed in this commit/push
+      - id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
-            frontend:
+            web:
               - 'index.html'
-              - 'style.css'
               - 'script.js'
               - 'data.js'
+              - 'staticwebapp.config.json'
+              - 'routes.json'
               - 'assets/**'
-            backend:
+            api:
               - 'src/Timesheets.Functions/**'
+              - '!src/Timesheets.Functions/**/*.md'
 
-  deploy-swa:
-    name: Deploy Static Web App (frontend + functions)
-    needs: changes
-    # deploy if either frontend OR backend changed
-    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true'
+  deploy_web:
+    needs: plan
+    if: needs.plan.outputs.web_changed == 'true'
     runs-on: ubuntu-latest
-    concurrency:
-      group: swa-timesheets-dev
-      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+
+      # SWA deploy — static only; never build API here
       - uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: upload
-          app_location: '/'                      # static files live here
-          #api_location: 'src/Timesheets.Functions' # your Functions project folder
+          app_location: /
           skip_api_build: true
-          output_location: ''                    # no separate build folder
-          production_branch: 'main'
+          production_branch: main
+
+  deploy_api:
+    needs: plan
+    if: needs.plan.outputs.api_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore & Publish Functions
+        working-directory: src/Timesheets.Functions
+        run: |
+          dotnet restore Timesheets.Functions.csproj
+          dotnet publish Timesheets.Functions.csproj -c Release -o ../../publish
+
+      # Choose ONE auth method below. Publish profile is quickest for dev.
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: func-timesheets-api-dev
+          package: publish
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+      # OIDC variant (disable the block above if you use this)
+      # - name: Azure Login (OIDC)
+      #   uses: azure/login@v2
+      #   with:
+      #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
+      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      # - name: Deploy (OIDC)
+      #   uses: Azure/functions-action@v1
+      #   with:
+      #     app-name: func-timesheets-api-dev
+      #     package: publish
