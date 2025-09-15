@@ -1,4 +1,4 @@
-name: SWA Deploy (token)
+name: SWA Deploy (OIDC)
 on:
   push: { branches: [main] }
   workflow_dispatch: {}
@@ -6,24 +6,34 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions: { contents: read }
+    permissions:
+      contents: read
+      id-token: write    # REQUIRED
+
     steps:
       - uses: actions/checkout@v4
 
-      # Prove the secret is present (no value leaked)
-      - name: ✅ Check token secret exists
-        run: |
-          if [ -z "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" ]; then
-            echo "❌ AZURE_STATIC_WEB_APPS_API_TOKEN missing/empty"; exit 1; fi
-          echo "✅ Token secret present (len: $(echo -n "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" | wc -c))"
+      - name: Get OIDC token for SWA
+        id: oidc
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const core = require('@actions/core');
+            const t = await core.getIDToken('api://AzureStaticWebApps');
+            core.setOutput('id_token', t);
 
-      # Deploy static files from repo root; no build; no API bundled
-      - name: 🚀 Deploy to Azure Static Web Apps
+      - name: Verify OIDC token present
+        run: |
+          if [ -z "${{ steps.oidc.outputs.id_token }}" ]; then
+            echo "❌ OIDC token missing (check permissions.id-token: write)"; exit 1; fi
+          echo "✅ OIDC token acquired"
+
+      - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          github_id_token: ${{ steps.oidc.outputs.id_token }}  # OIDC auth
           action: upload
-          app_location: "/"
-          output_location: ""      # upload exactly what's in app_location
-          skip_app_build: true     # don't run Oryx
-          api_location: ""         # you will link the Function App in the portal
+          app_location: "/"      # index.html is at repo root
+          output_location: ""    # no build output folder
+          skip_app_build: true
+          api_location: ""       # you'll link the Function App in the portal
