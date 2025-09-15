@@ -1,4 +1,4 @@
-name: Deploy SWA (static root)
+name: Deploy SWA (OIDC)
 on:
   push: { branches: [main] }
   workflow_dispatch: {}
@@ -6,14 +6,25 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions: { contents: read }
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: Azure/static-web-apps-deploy@v1
+
+      - name: Get OIDC token
+        id: oidc
+        uses: actions/github-script@v7
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          script: core.getIDToken()
+          result-encoding: string
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          github_id_token: ${{ steps.oidc.outputs.result }}
           action: upload
-          app_location: "/"      # index.html is at repo root
-          output_location: ""    # no build output folder
-          skip_app_build: true   # do NOT run Oryx
-          api_location: ""       # we will link the Function App separately
+          app_location: "/"
+          output_location: ""     # no build output folder
+          skip_app_build: true    # don’t run Oryx
+          api_location: ""        # using linked Function App, not managed API
