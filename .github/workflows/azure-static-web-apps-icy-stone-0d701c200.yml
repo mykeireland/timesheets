@@ -1,23 +1,38 @@
-name: Deploy SWA (token)
+name: SWA Diag + Deploy (token)
 on:
-  push: { branches: [main] }
-  workflow_dispatch: {}
+  workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
-  deploy:
+  diag_and_deploy:
     runs-on: ubuntu-latest
     permissions: { contents: read }
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Azure Static Web Apps
+      # 1) Verify the secret is actually available to the job
+      - name: ✅ Check that AZURE_STATIC_WEB_APPS_API_TOKEN secret exists
+        run: |
+          if [ -z "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" ]; then
+            echo "❌ AZURE_STATIC_WEB_APPS_API_TOKEN is MISSING or EMPTY"; exit 1; fi
+          echo "✅ Token secret is present (length: $(echo -n "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" | wc -c) chars)"
+
+      # 2) PROVE we are NOT mixing OIDC (which would be ignored when token is set)
+      - name: ✅ Confirm we are NOT passing OIDC
+        run: |
+          if [ -n "${{ steps.oidc.outputs.id_token }}" ]; then
+            echo "❌ github_id_token is set; remove OIDC for token run"; exit 1; fi
+          echo "✅ No github_id_token will be sent"
+
+      # 3) Deploy (no build; static files at repo root)
+      - name: 🚀 Deploy to Azure Static Web Apps (token)
         uses: Azure/static-web-apps-deploy@v1
         with:
-          # ← This reads your token from the GitHub Secret you created
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-
           action: upload
-          app_location: "/"      # your index.html is at repo root
-          output_location: ""    # no build folder; deploy exactly what's in app_location
-          skip_app_build: true   # don't run Oryx
-          api_location: ""       # using a separately linked Function App
+          app_location: "/"
+          output_location: ""      # upload exactly what's in app_location
+          skip_app_build: true     # don't run Oryx
+          api_location: ""         # using a separately linked Function App
