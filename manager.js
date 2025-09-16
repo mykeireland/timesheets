@@ -1,16 +1,10 @@
 async function loadPendingTimesheets() {
-  const container = document.getElementById("pending-timesheets");
-  container.innerHTML = "<p>Loading...</p>";
+  const tableBody = document.querySelector("#pendingTable tbody");
+  tableBody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
 
   try {
     const res = await fetch(
-      "https://func-timesheetsNET-api-dev.azurewebsites.net/api/timesheets/pending",
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
+      "https://func-timesheetsNET-api-dev.azurewebsites.net/api/timesheets/pending"
     );
 
     if (!res.ok) throw new Error("Failed to fetch pending timesheets");
@@ -18,56 +12,34 @@ async function loadPendingTimesheets() {
     const data = await res.json();
 
     if (!Array.isArray(data) || data.length === 0) {
-      container.innerHTML = "<p>No pending timesheets found.</p>";
+      tableBody.innerHTML = "<tr><td colspan='7'>No pending timesheets</td></tr>";
       return;
     }
 
-    // Build table
-    let html = `
-      <table border="1" cellpadding="6">
-        <thead>
-          <tr>
-            <th>First</th>
-            <th>Last</th>
-            <th>Site</th>
-            <th>Ticket</th>
-            <th>Date</th>
-            <th>Hours</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
+    tableBody.innerHTML = ""; // clear loader
     data.forEach(row => {
-      html += `
-        <tr>
-          <td>${row.firstName}</td>
-          <td>${row.lastName}</td>
-          <td>${row.siteName}</td>
-          <td>${row.ticketId}</td>
-          <td>${row.date}</td>
-          <td>${row.hours}</td>
-          <td>${row.status}</td>
-          <td>
-            <button onclick="approveTimesheet('${row.ticketId}', '${row.firstName}')">Approve</button>
-            <button onclick="rejectTimesheet('${row.ticketId}', '${row.firstName}')">Reject</button>
-          </td>
-        </tr>
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.FirstName} ${row.LastName}</td>
+        <td>${row.SiteName}</td>
+        <td>${row.TicketId}</td>
+        <td>${row.Date}</td>
+        <td>${row.Hours}</td>
+        <td>${row.Status}</td>
+        <td>
+          <button onclick="approveTimesheet(${row.TicketId}, '${row.FirstName}')">Approve</button>
+          <button onclick="rejectTimesheet(${row.TicketId}, '${row.FirstName}')">Reject</button>
+        </td>
       `;
+      tableBody.appendChild(tr);
     });
 
-    html += "</tbody></table>";
-    container.innerHTML = html;
-
   } catch (err) {
-    console.error("Error loading timesheets:", err);
-    container.innerHTML = `<p style="color:red;">${err.message}</p>`;
+    console.error(err);
+    tableBody.innerHTML = `<tr><td colspan='7' style="color:red;">${err.message}</td></tr>`;
   }
 }
 
-// Dummy handlers (you’ll hook to API later)
 function approveTimesheet(ticketId, user) {
   alert(`Approve clicked for ${user} (ticket ${ticketId})`);
 }
@@ -75,4 +47,3 @@ function approveTimesheet(ticketId, user) {
 function rejectTimesheet(ticketId, user) {
   alert(`Reject clicked for ${user} (ticket ${ticketId})`);
 }
-
