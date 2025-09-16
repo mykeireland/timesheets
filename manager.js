@@ -1,70 +1,58 @@
-document.addEventListener("DOMContentLoaded", () => {
-  loadPendingTimesheets().catch(showError);
-});
-
 async function loadPendingTimesheets() {
-  const tbody = document.querySelector("#pendingTable tbody");
-  tbody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+  const table = document.querySelector('#pendingTable tbody');
+  table.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
 
   try {
-    const res = await fetch(
-      "https://func-timesheetsnet-api-dev-ghdtdedagnf8a0a7.australiasoutheast-01.azurewebsites.net/api/timesheets/pending"
-    );
-
+    const res = await fetch("/api/timesheets/pending"); // SWA proxies this
     if (!res.ok) throw new Error("Failed to fetch pending timesheets");
     const data = await res.json();
-    console.log("Fetched data:", data);
 
-    tbody.innerHTML = "";
     if (!data.length) {
-      tbody.innerHTML = "<tr><td colspan='7'>No pending timesheets found</td></tr>";
+      table.innerHTML = "<tr><td colspan='7'>No pending entries</td></tr>";
       return;
     }
 
-    for (const row of data) {
+    table.innerHTML = "";
+    data.forEach(entry => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${escapeHtml(row.firstName)} ${escapeHtml(row.lastName)}</td>
-        <td>${escapeHtml(row.siteName)}</td>
-        <td>${escapeHtml(row.ticketId)}</td>
-        <td>${escapeHtml(row.date)}</td>
-        <td>${escapeHtml(row.hours)}</td>
-        <td>${escapeHtml(row.status)}</td>
+        <td>${entry.firstName} ${entry.lastName}</td>
+        <td>${entry.siteName}</td>
+        <td>${entry.ticketId}</td>
+        <td>${entry.date}</td>
+        <td>${entry.hours}</td>
+        <td>${entry.status}</td>
         <td>
-          <button onclick="approveTimesheet('${row.ticketId}','${row.date}','${row.firstName}','${row.lastName}')">Approve</button>
-          <button onclick="rejectTimesheet('${row.ticketId}','${row.date}','${row.firstName}','${row.lastName}')">Reject</button>
+          <button onclick="approve(${entry.entryId})">Approve</button>
+          <button onclick="reject(${entry.entryId})">Reject</button>
         </td>
       `;
-      tbody.appendChild(tr);
-    }
+      table.appendChild(tr);
+    });
   } catch (err) {
-    showError(err);
-    tbody.innerHTML = "<tr><td colspan='7'>Error loading timesheets</td></tr>";
+    console.error(err);
+    table.innerHTML = "<tr><td colspan='7'>Error loading timesheets</td></tr>";
   }
 }
 
-async function approveTimesheet(ticketId, date, firstName, lastName) {
-  alert(`Would approve ${ticketId} for ${firstName} ${lastName} (${date})`);
-  // TODO: replace with fetch PUT/PATCH to /api/timesheets/approve
+async function approve(id) {
+  const res = await fetch(`/api/timesheets/approve/${id}`, { method: "POST" });
+  if (res.ok) {
+    alert("Approved!");
+    loadPendingTimesheets();
+  } else {
+    alert("Approval failed");
+  }
 }
 
-async function rejectTimesheet(ticketId, date, firstName, lastName) {
-  alert(`Would reject ${ticketId} for ${firstName} ${lastName} (${date})`);
-  // TODO: replace with fetch PUT/PATCH to /api/timesheets/reject
+async function reject(id) {
+  const res = await fetch(`/api/timesheets/reject/${id}`, { method: "POST" });
+  if (res.ok) {
+    alert("Rejected!");
+    loadPendingTimesheets();
+  } else {
+    alert("Rejection failed");
+  }
 }
 
-/* helpers */
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  }[m]));
-}
-
-function showError(err) {
-  console.error(err);
-  alert(err.message || String(err));
-}
+document.addEventListener("DOMContentLoaded", loadPendingTimesheets);
