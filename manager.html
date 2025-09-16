@@ -1,32 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Manager Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Manager Timesheet Approvals</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <nav>
-    <button onclick="window.location.href='index.html'">Casual Entry</button>
-    <button onclick="window.location.href='manager.html'">Manager View</button>
-  </nav>
-
-  <h2>Pending Timesheets</h2>
-  <table id="pendingTable" border="1">
+  <h1>Pending Timesheets for Approval</h1>
+  <table id="pendingTable">
     <thead>
       <tr>
-        <th>First Name</th>
-        <th>Last Name</th>
+        <th>Employee</th>
         <th>Site</th>
         <th>Ticket</th>
         <th>Date</th>
         <th>Hours</th>
         <th>Status</th>
-        <th>Actions</th>
+        <th>Action</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
-
-  <script src="script.js"></script>
+  <script src="manager.js"></script>
 </body>
 </html>
