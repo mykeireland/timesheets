@@ -1,62 +1,78 @@
-// manager.js
+async function loadPendingTimesheets() {
+  const container = document.getElementById("pending-timesheets");
+  container.innerHTML = "<p>Loading...</p>";
 
-// Show errors nicely
-function showError(err) {
-  console.error(err);
-  alert(err.message || String(err));
-}
+  try {
+    const res = await fetch(
+      "https://func-timesheetsNET-api-dev.azurewebsites.net/api/timesheets/pending",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
-// Load pending timesheets for manager approval
-function loadPendingTimesheets() {
-  fetch("/api/timesheets/pending")
-    .then(res => {
-      if (!res.ok) throw new Error("Failed to fetch pending timesheets");
-      return res.json();
-    })
-    .then(data => {
-      const tbody = document.querySelector("#pendingTable tbody");
-      if (!tbody) return;
+    if (!res.ok) throw new Error("Failed to fetch pending timesheets");
 
-      tbody.innerHTML = "";
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.first_name} ${row.last_name}</td>
-          <td>${row.site_name}</td>
-          <td>${row.cw_ticket_id}</td>
+    const data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      container.innerHTML = "<p>No pending timesheets found.</p>";
+      return;
+    }
+
+    // Build table
+    let html = `
+      <table border="1" cellpadding="6">
+        <thead>
+          <tr>
+            <th>First</th>
+            <th>Last</th>
+            <th>Site</th>
+            <th>Ticket</th>
+            <th>Date</th>
+            <th>Hours</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    data.forEach(row => {
+      html += `
+        <tr>
+          <td>${row.firstName}</td>
+          <td>${row.lastName}</td>
+          <td>${row.siteName}</td>
+          <td>${row.ticketId}</td>
           <td>${row.date}</td>
-          <td>${row.hours_decimal}</td>
+          <td>${row.hours}</td>
           <td>${row.status}</td>
           <td>
-            <button onclick="updateStatus(${row.timesheet_entry_id}, 'approved')">Approve</button>
-            <button onclick="updateStatus(${row.timesheet_entry_id}, 'rejected')">Reject</button>
+            <button onclick="approveTimesheet('${row.ticketId}', '${row.firstName}')">Approve</button>
+            <button onclick="rejectTimesheet('${row.ticketId}', '${row.firstName}')">Reject</button>
           </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    })
-    .catch(showError);
+        </tr>
+      `;
+    });
+
+    html += "</tbody></table>";
+    container.innerHTML = html;
+
+  } catch (err) {
+    console.error("Error loading timesheets:", err);
+    container.innerHTML = `<p style="color:red;">${err.message}</p>`;
+  }
 }
 
-// Update a timesheet status
-function updateStatus(entryId, status) {
-  fetch(`/api/timesheets/${entryId}/status`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status })
-  })
-    .then(res => {
-      if (!res.ok) throw new Error("Failed to update timesheet status");
-      return res.json();
-    })
-    .then(() => {
-      alert(`Timesheet ${entryId} ${status}`);
-      loadPendingTimesheets();
-    })
-    .catch(showError);
+// Dummy handlers (you’ll hook to API later)
+function approveTimesheet(ticketId, user) {
+  alert(`Approve clicked for ${user} (ticket ${ticketId})`);
 }
 
-// Initialize manager view
-document.addEventListener("DOMContentLoaded", () => {
-  loadPendingTimesheets();
-});
+function rejectTimesheet(ticketId, user) {
+  alert(`Reject clicked for ${user} (ticket ${ticketId})`);
+}
+
