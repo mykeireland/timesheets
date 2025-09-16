@@ -4,7 +4,7 @@ async function loadPendingTimesheets() {
 
   try {
     const res = await fetch(
-      "https://func-timesheetsnet-api-dev-ghdtdedagnf8a0a7.australiasoutheast-01.azurewebsites.net//api/timesheets/pending"
+      "https://func-timesheetsnet-api-dev-ghdtdedagnf8a0a7.australiasoutheast-01.azurewebsites.net/api/timesheets/pending"
     );
 
     if (!res.ok) throw new Error("Failed to fetch pending timesheets");
