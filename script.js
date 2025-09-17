@@ -1,108 +1,156 @@
-document.addEventListener("DOMContentLoaded", () => {
-  loadDropdowns();
-  addRow();
-
-  document.getElementById("addRow").addEventListener("click", addRow);
-  document.getElementById("printForm").addEventListener("click", () => window.print());
-  document.getElementById("managerView").addEventListener("click", () => {
-    window.location.href = "manager.html";
-  });
-
-  document.getElementById("timesheetForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    try {
-      const data = collectFormData();
-      const res = await fetch("/api/timesheets/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Submission failed");
-      alert("Timesheet submitted successfully!");
-      e.target.reset();
-      document.querySelector("#timesheetTable tbody").innerHTML = "";
-      addRow();
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "Error submitting timesheet");
-    }
-  });
+// script.js - Timesheet entry logic
+document.addEventListener('DOMContentLoaded', () => {
+  init().catch(showError);
 });
 
-async function loadDropdowns() {
-  try {
-    const [employeesRes, managersRes, sitesRes] = await Promise.all([
-      fetch("/api/employees"),
-      fetch("/api/managers"),
-      fetch("/api/sites"),
-    ]);
+/* -----------------------------
+   API Wrapper
+-------------------------------- */
+const Data = {
+  employees: async () => {
+    const res = await fetch("/api/employees");
+    if (!res.ok) throw new Error("Could not load employees");
+    return res.json();
+  },
+  tickets: async (employeeId) => {
+    const res = await fetch(`/api/tickets/${employeeId}`);
+    if (!res.ok) throw new Error("Could not load tickets");
+    return res.json();
+  },
+  submitEntry: async (payload) => {
+    const res = await fetch("/api/timesheets/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Submit failed");
+    return res.json();
+  },
+};
 
-    const [employees, managers, sites] = await Promise.all([
-      employeesRes.json(),
-      managersRes.json(),
-      sitesRes.json(),
-    ]);
-
-    populateDropdown("employee", employees, "employeeId", "fullName");
-    populateDropdown("manager", managers, "managerId", "fullName");
-    window.sites = sites;
-  } catch (err) {
-    console.error(err);
-    alert("Data invalid, or could not load data.");
-  }
+/* -----------------------------
+   Init + Form Wiring
+-------------------------------- */
+async function init() {
+  await populatePeople();
+  addRow(); // start with one row
+  wireForm();
 }
 
-function populateDropdown(id, data, valueKey, textKey) {
-  const select = document.getElementById(id);
-  select.innerHTML = `<option value="">Select</option>`;
-  data.forEach(item => {
-    const opt = document.createElement("option");
-    opt.value = item[valueKey];
-    opt.textContent = item[textKey];
-    select.appendChild(opt);
-  });
+async function populatePeople() {
+  const empSel = $('#employeeSelect');
+  const mgrSel = $('#managerSelect');
+  disable([empSel, mgrSel], true);
+
+  const employees = await Data.employees();
+  fillSelect(empSel, employees, 'Select Employee');
+  fillSelect(mgrSel, employees, 'Select Manager');
+
+  disable([empSel, mgrSel], false);
 }
 
-function addRow() {
-  const tbody = document.querySelector("#timesheetTable tbody");
-  const tr = document.createElement("tr");
-
+async function addRow() {
+  const tbody = $('#timesheetBody');
+  const tr = document.createElement('tr');
   tr.innerHTML = `
     <td><input type="date" required></td>
     <td>
-      <select required>
-        <option value="">Select</option>
-        ${window.sites ? window.sites.map(s => `<option value="${s.siteId}">${s.name}</option>`).join("") : ""}
+      <select class="ticketSelect" required>
+        <option value="">Select Ticket</option>
       </select>
     </td>
-    <td><input type="number" min="0" value="0" required></td>
-    <td><input type="number" min="0" value="0" required></td>
-    <td><input type="number" min="0" value="0" required></td>
-    <td><input type="text" placeholder="Notes (optional)"></td>
-    <td><button type="button" onclick="this.closest('tr').remove()">Remove</button></td>
+    <td><input type="number" step="0.1" min="0" value="0" required></td>
+    <td><input type="number" step="0.1" min="0" value="0"></td>
+    <td><input type="number" step="0.1" min="0" value="0"></td>
+    <td><input type="text" maxlength="500" placeholder="Notes (optional)"></td>
+    <td><button type="button" class="btn" onclick="this.closest('tr').remove()">Remove</button></td>
   `;
-
   tbody.appendChild(tr);
+
+  const empId = $('#employeeSelect').value;
+  if (empId) await refreshTicketsForRow(tr, empId);
 }
 
-function collectFormData() {
-  const employeeId = document.getElementById("employee").value;
-  const managerId = document.getElementById("manager").value;
-  const rows = [...document.querySelectorAll("#timesheetTable tbody tr")];
+async function refreshTicketsForRow(tr, employeeId) {
+  const sel = tr.querySelector('.ticketSelect');
+  sel.disabled = true;
+  const tickets = await Data.tickets(employeeId);
+  fillSelect(sel, tickets, 'Select Ticket');
+  sel.disabled = false;
+}
 
-  return {
-    employeeId,
-    managerId,
-    entries: rows.map(tr => {
-      const [date, ticket, standard, ot15, ot2, notes] = tr.querySelectorAll("input, select");
-      return {
-        date: date.value,
-        ticketId: ticket.value,
-        hoursStandard: parseFloat(standard.value),
-        hours15x: parseFloat(ot15.value),
-        hours2x: parseFloat(ot2.value),
-        notes: notes.value,
-      };
-    }),
+function wireForm() {
+  $('#employeeSelect').addEventListener('change', async (e) => {
+    const empId = e.target.value;
+    const rows = document.querySelectorAll('#timesheetBody tr');
+    for (const tr of rows) await refreshTicketsForRow(tr, empId);
+  });
+
+  $('#timesheetForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const payloads = collectEntries();
+      console.log('Submitting...', payloads);
+
+      for (const p of payloads) {
+        await Data.submitEntry(p);
+      }
+
+      alert('Timesheet submitted successfully');
+    } catch (err) {
+      showError(err);
+    }
+  });
+
+  // Manager view button
+  $('#managerBtn').addEventListener('click', () => {
+    window.location.href = "manager.html";
+  });
+}
+
+/* -----------------------------
+   Helpers
+-------------------------------- */
+function fillSelect(selOrArray, items, placeholder) {
+  const mk = (sel) => {
+    sel.innerHTML = ['<option value="">'+placeholder+'</option>']
+      .concat(items.map(i => `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}</option>`)).join('');
   };
+  Array.isArray(selOrArray) ? selOrArray.forEach(mk) : mk(selOrArray);
 }
+
+function collectEntries() {
+  const empId = toInt($('#employeeSelect').value, 'Employee');
+  const rows = [...document.querySelectorAll('#timesheetBody tr')];
+  if (!rows.length) throw new Error('No rows to submit');
+
+  return rows.map(tr => {
+    const date = tr.querySelector('input[type="date"]').value;
+    const ticketId = toInt(tr.querySelector('.ticketSelect').value, 'Ticket');
+    const nums = tr.querySelectorAll('input[type="number"]');
+    const hStd = toNum(nums[0].value);
+    const h15  = toNum(nums[1].value);
+    const h2   = toNum(nums[2].value);
+    const notes = tr.querySelector('input[type="text"]').value?.trim() || null;
+
+    if (!date) throw new Error('Date is required on all rows');
+    if (hStd + h15 + h2 <= 0) throw new Error('Hours must be greater than 0');
+
+    return {
+      employeeId: empId,
+      ticketId,
+      date,
+      hoursStandard: hStd,
+      hours15x: h15,
+      hours2x: h2,
+      notes
+    };
+  });
+}
+
+function $(sel) { return document.querySelector(sel); }
+function disable(nodes, v) { nodes.forEach(n => n.disabled = v); }
+function toInt(v, name) { const n = parseInt(v,10); if (isNaN(n)) throw new Error(`${name} is required`); return n; }
+function toNum(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function showError(err){ console.error(err); alert(err.message || String(err)); }
