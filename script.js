@@ -1,5 +1,5 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  await loadDropdowns();
+document.addEventListener("DOMContentLoaded", () => {
+  loadDropdowns();
   addRow();
 
   document.getElementById("addRow").addEventListener("click", addRow);
@@ -45,7 +45,7 @@ async function loadDropdowns() {
 
     populateDropdown("employee", employees, "employeeId", "fullName");
     populateDropdown("manager", managers, "managerId", "fullName");
-    window.sites = sites; // store for later row adds
+    window.sites = sites;
   } catch (err) {
     console.error(err);
     alert("Data invalid, or could not load data.");
