@@ -1,30 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8"> <!-- ✅ ensures arrows/dashes render correctly -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Insight Timesheet Submission</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #b73229; /* ✅ red header */
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    select, input[type="date"], input[type="number"], input[type="text"] {
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #e0e0e0;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background: #f9f9f9;
+    }
+    .btn {
+      padding: 6px 12px;
+      margin: 4px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      opacity: 0.9;
+    }
+    .btn.primary { background: #007bff; color: #fff; }
+    .btn.secondary { background: #6c757d; color: #fff; }
+    .btn.danger { background: #dc3545; color: #fff; } /* ✅ Manager View button */
+    .btn.light { background: #e0e0e0; color: #000; }
+  </style>
 </head>
 <body>
-  <header class="header">
+  <header>
     <h1>Insight Timesheet Submission</h1>
   </header>
 
-  <main class="container">
+  <div class="container">
     <form id="timesheetForm">
-      <div class="form-row">
-        <label for="employee">Employee:</label>
-        <select id="employee" required></select>
+      <div style="margin-bottom: 15px;">
+        <label for="employeeSelect">Employee:</label>
+        <select id="employeeSelect"></select>
 
-        <label for="manager">Manager:</label>
-        <select id="manager" required></select>
+        <label for="managerSelect" style="margin-left: 20px;">Manager:</label>
+        <select id="managerSelect"></select>
       </div>
 
-      <p><strong>Hours (Standard)</strong> = Normal hours (7.6hrs/day)</p>
-      <p><strong>Hours (1.5x)</strong> = First 2 hours of OT (Mon–Sat)</p>
-      <p><strong>Hours (2x)</strong> = OT after 2 hours (Mon–Sat), or all Sunday</p>
+      <p><b>Hours (Standard)</b> = Normal hours (7.6hrs/day)</p>
+      <p><b>Hours (1.5x)</b> = First 2 hours of OT (Mon–Sat)</p>
+      <p><b>Hours (2x)</b> = OT after 2 hours (Mon–Sat), or all Sunday</p>
 
-      <table id="timesheetTable">
+      <table>
         <thead>
           <tr>
             <th>Date</th>
@@ -33,23 +92,22 @@
             <th>1.5x</th>
             <th>2x</th>
             <th>Notes</th>
-            <th></th>
+            <th>Action</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="timesheetBody"></tbody>
       </table>
 
-      <div class="buttons">
-        <button type="button" id="addRow">+ Add Row</button>
-        <button type="reset" id="clearForm">Clear Form</button>
-        <button type="button" id="printForm">Print Form</button>
-        <button type="submit" id="submitForm">Submit</button>
-        <button type="button" id="managerView" class="danger">Manager View</button>
+      <div style="margin-top: 15px;">
+        <button type="button" class="btn light" onclick="addRow()">+ Add Row</button>
+        <button type="reset" class="btn secondary">Clear Form</button>
+        <button type="button" class="btn secondary" onclick="window.print()">Print Form</button>
+        <button type="submit" class="btn primary">Submit</button>
+        <button type="button" id="managerBtn" class="btn danger">Manager View</button>
       </div>
     </form>
-  </main>
+  </div>
 
-  <!-- keep your script name consistent -->
   <script src="script.js"></script>
 </body>
 </html>
