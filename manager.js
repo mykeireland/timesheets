@@ -12,14 +12,14 @@
     tbody.innerHTML = `<tr><td colspan="7">Loading...</td></tr>`;
 
     try {
-      const res = await fetch(
-        "https://func-timesheetsnet-api-dev-ghdtdedagnf8a0a7.australiasoutheast-01.azurewebsites.net/api/timesheets/pending"
-      );
+      // ✅ Call through SWA proxy, not the azurewebsites host
+      const res = await fetch("/api/timesheets/pending");
       if (!res.ok) throw new Error("Failed to fetch pending timesheets");
       timesheets = await res.json();
       renderTable();
     } catch (err) {
       showError(err);
+      tbody.innerHTML = `<tr><td colspan="7">Error loading timesheets</td></tr>`;
     }
   }
 
@@ -27,71 +27,50 @@
     const tbody = document.querySelector("#pendingTable tbody");
     tbody.innerHTML = "";
 
-    // filter
+    // Filter
     const filter = document.getElementById("filterInput").value.toLowerCase();
-    let filtered = timesheets.filter(ts =>
-      `${ts.firstName} ${ts.lastName} ${ts.siteName} ${ts.status}`
-        .toLowerCase()
-        .includes(filter)
+    let data = timesheets.filter(ts =>
+      `${ts.firstName} ${ts.lastName} ${ts.siteName} ${ts.status}`.toLowerCase().includes(filter)
     );
 
-    // sort
+    // Sort (typed comparisons)
     if (currentSort.col) {
-      filtered.sort((a, b) => {
-        let valA, valB;
+      data.sort((a, b) => {
+        let A, B;
         switch (currentSort.col) {
-          case "employee":
-            valA = `${a.firstName} ${a.lastName}`;
-            valB = `${b.firstName} ${b.lastName}`;
-            break;
-          case "site":
-            valA = a.siteName;
-            valB = b.siteName;
-            break;
-          case "ticket":
-            valA = a.ticketId;
-            valB = b.ticketId;
-            break;
-          case "date":
-            valA = new Date(a.date);
-            valB = new Date(b.date);
-            break;
-          case "hours":
-            valA = a.hours;
-            valB = b.hours;
-            break;
-          case "status":
-            valA = a.status;
-            valB = b.status;
-            break;
-          default:
-            valA = "";
-            valB = "";
+          case "employee": A = `${a.firstName} ${a.lastName}`.toLowerCase(); B = `${b.firstName} ${b.lastName}`.toLowerCase(); break;
+          case "site":     A = a.siteName.toLowerCase(); B = b.siteName.toLowerCase(); break;
+          case "ticket":   A = String(a.ticketId); B = String(b.ticketId); break;
+          case "date":     A = new Date(a.date); B = new Date(b.date); break;
+          case "hours":    A = parseFloat(a.hours); B = parseFloat(b.hours); break;
+          case "status":   A = a.status.toLowerCase(); B = b.status.toLowerCase(); break;
+          default:         A = ""; B = "";
         }
-        if (valA < valB) return currentSort.asc ? -1 : 1;
-        if (valA > valB) return currentSort.asc ? 1 : -1;
+        if (A < B) return currentSort.asc ? -1 : 1;
+        if (A > B) return currentSort.asc ? 1 : -1;
         return 0;
       });
     }
 
-    // render rows
-    if (filtered.length === 0) {
+    // Render
+    if (!data.length) {
       tbody.innerHTML = `<tr><td colspan="7">No timesheets found</td></tr>`;
+      updateSortIcons();
       return;
     }
 
-    for (const ts of filtered) {
+    for (const ts of data) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${ts.firstName} ${ts.lastName}</td>
-        <td>${ts.siteName}</td>
-        <td>${ts.ticketId}</td>
-        <td>${ts.date}</td>
-        <td>${ts.hours}</td>
-        <td>${ts.status}</td>
+        <td>${escapeHtml(ts.firstName)} ${escapeHtml(ts.lastName)}</td>
+        <td>${escapeHtml(ts.siteName)}</td>
+        <td>${escapeHtml(ts.ticketId)}</td>
+        <td>${escapeHtml(ts.date)}</td>
+        <td>${escapeHtml(ts.hours)}</td>
+        <td>${escapeHtml(ts.status)}</td>
         <td>
-          <button class="btn" onclick="approveTimesheet('${ts.ticketId}','${ts.date}')">Approve</button>
-          <button class="btn" onclick="rejectTimesheet('${ts.ticketId}','${ts.date}')">Reject</button>
+          <button class="btn" onclick="approveTimesheet(${ts.entryId})">Approve</button>
+          <button class="btn" onclick="rejectTimesheet(${ts.entryId})">Reject</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -102,10 +81,9 @@
 
   function sortBy(col) {
     if (currentSort.col === col) {
-      currentSort.asc = !currentSort.asc; // toggle asc/desc
+      currentSort.asc = !currentSort.asc;
     } else {
-      currentSort.col = col;
-      currentSort.asc = true;
+      currentSort = { col, asc: true };
     }
     renderTable();
   }
@@ -114,48 +92,31 @@
     ["employee", "site", "ticket", "date", "hours", "status"].forEach(c => {
       const el = document.getElementById(`sort-${c}`);
       if (!el) return;
-      if (currentSort.col === c) {
-        el.textContent = currentSort.asc ? "▲" : "▼";
-      } else {
-        el.textContent = "";
-      }
+      el.textContent = currentSort.col === c ? (currentSort.asc ? "▲" : "▼") : "";
     });
   }
 
-  async function approveTimesheet(ticketId, date) {
+  // ✅ Approve/Reject via SWA proxy using entryId path (matches your working Functions)
+  async function approveTimesheet(entryId) {
     try {
-      const res = await fetch(
-        `https://func-timesheetsnet-api-dev-ghdtdedagnf8a0a7.australiasoutheast-01.azurewebsites.net/api/timesheets/approve?ticketId=${ticketId}&date=${date}`,
-        { method: "POST" }
-      );
+      const res = await fetch(`/api/timesheets/approve/${entryId}`, { method: "POST" });
       if (!res.ok) throw new Error("Approve failed");
-      alert(`Approved ticket ${ticketId} for ${date}`);
       await loadPendingTimesheets();
-    } catch (err) {
-      showError(err);
-    }
+    } catch (err) { showError(err); }
   }
 
-  async function rejectTimesheet(ticketId, date) {
+  async function rejectTimesheet(entryId) {
     try {
-      const res = await fetch(
-        `https://func-timesheetsnet-api-dev-ghdtdedagnf8a0a7.australiasoutheast-01.azurewebsites.net/api/timesheets/reject?ticketId=${ticketId}&date=${date}`,
-        { method: "POST" }
-      );
+      const res = await fetch(`/api/timesheets/reject/${entryId}`, { method: "POST" });
       if (!res.ok) throw new Error("Reject failed");
-      alert(`Rejected ticket ${ticketId} for ${date}`);
       await loadPendingTimesheets();
-    } catch (err) {
-      showError(err);
-    }
+    } catch (err) { showError(err); }
   }
 
-  function showError(err) {
-    console.error(err);
-    alert(err.message || String(err));
-  }
+  function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function showError(err){ console.error(err); alert(err.message || String(err)); }
 
-  // expose sorting + actions to window so HTML can call them
+  // Expose for onclick handlers in HTML
   window.sortBy = sortBy;
   window.approveTimesheet = approveTimesheet;
   window.rejectTimesheet = rejectTimesheet;
