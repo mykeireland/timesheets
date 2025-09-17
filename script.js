@@ -37,6 +37,36 @@ async function init() {
   wireForm();
 }
 
+async function loadOpenTickets() {
+  try {
+    const res = await fetch("/api/tickets/open");
+    if (!res.ok) throw new Error("Failed to fetch open tickets");
+
+    const tickets = await res.json();
+    const ticketSelects = document.querySelectorAll("select.ticket-select");
+
+    ticketSelects.forEach(select => {
+      select.innerHTML = ""; // clear existing options
+
+      // default option
+      const defaultOpt = document.createElement("option");
+      defaultOpt.value = "";
+      defaultOpt.textContent = "Select Ticket";
+      select.appendChild(defaultOpt);
+
+      tickets.forEach(ticket => {
+        const opt = document.createElement("option");
+        opt.value = ticket.ticketId;  // 👈 backend needs ticketId
+        opt.textContent = `${ticket.cwTicketId} - ${ticket.siteName} - ${ticket.description}`;
+        select.appendChild(opt);
+      });
+    });
+  } catch (err) {
+    console.error("Error loading tickets:", err);
+    alert("Could not load open tickets");
+  }
+}
+
 async function populatePeople() {
   const empSel = $('#employeeSelect');
   const mgrSel = $('#managerSelect');
