@@ -184,3 +184,7 @@ function toInt(v, name) { const n = parseInt(v,10); if (isNaN(n)) throw new Erro
 function toNum(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function showError(err){ console.error(err); alert(err.message || String(err)); }
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadOpenTickets();   // load tickets when page starts
+});
