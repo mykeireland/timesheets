@@ -33,7 +33,7 @@
       `${ts.firstName} ${ts.lastName} ${ts.siteName} ${ts.status}`.toLowerCase().includes(filter)
     );
 
-    // Sort (typed comparisons)
+    // Sort
     if (currentSort.col) {
       data.sort((a, b) => {
         let A, B;
@@ -52,7 +52,7 @@
       });
     }
 
-    // Render
+    // Render rows
     if (!data.length) {
       tbody.innerHTML = `<tr><td colspan="7">No timesheets found</td></tr>`;
       updateSortIcons();
@@ -96,7 +96,6 @@
     });
   }
 
-  // ✅ Approve/Reject via SWA proxy using entryId path (matches your working Functions)
   async function approveTimesheet(entryId) {
     try {
       const res = await fetch(`/api/timesheets/approve/${entryId}`, { method: "POST" });
@@ -116,7 +115,7 @@
   function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function showError(err){ console.error(err); alert(err.message || String(err)); }
 
-  // Expose for onclick handlers in HTML
+  // Expose globally for onclick handlers
   window.sortBy = sortBy;
   window.approveTimesheet = approveTimesheet;
   window.rejectTimesheet = rejectTimesheet;
