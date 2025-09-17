@@ -5,20 +5,20 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <button onclick="window.location.href='index.html'" class="btn">Back to Timesheets</button>
   <h1>Pending Timesheets for Approval</h1>
 
-  <!-- Filter box -->
   <input type="text" id="filterInput" placeholder="Filter by employee, site, or status" />
 
   <table id="pendingTable">
     <thead>
       <tr>
-        <th data-col="employee">Employee ▲▼</th>
-        <th data-col="site">Site ▲▼</th>
-        <th data-col="ticket">Ticket ▲▼</th>
-        <th data-col="date">Date ▲▼</th>
-        <th data-col="hours">Hours ▲▼</th>
-        <th data-col="status">Status ▲▼</th>
+        <th onclick="sortBy('employee')">Employee <span id="sort-employee"></span></th>
+        <th onclick="sortBy('site')">Site <span id="sort-site"></span></th>
+        <th onclick="sortBy('ticket')">Ticket <span id="sort-ticket"></span></th>
+        <th onclick="sortBy('date')">Date <span id="sort-date"></span></th>
+        <th onclick="sortBy('hours')">Hours <span id="sort-hours"></span></th>
+        <th onclick="sortBy('status')">Status <span id="sort-status"></span></th>
         <th>Action</th>
       </tr>
     </thead>
