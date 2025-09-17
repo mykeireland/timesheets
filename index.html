@@ -1,76 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <title>Casual Timesheet Entry</title>
-  <link rel="stylesheet" href="style.css">
-  <meta charset="UTF-8" />
-  <title>Insight Timesheet</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insight Timesheet Submission</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <nav>
-    <button onclick="window.location.href='index.html'">Casual Entry</button>
-    <button onclick="window.location.href='manager.html'">Manager View</button>
-  </nav>
-  <header class="app-header">
-    <h1>Insight Timesheet Submission</h1>
-  </header>
-  <script src="data.js?v=13"></script>
-<script src="script.js?v=13"></script>
+  <h1>Insight Timesheet Submission</h1>
 
-  <main class="container">
-    <section class="selectors">
-      <label>
-        Employee:
-        <select id="employeeSelect" required>
-          <option value="">Select Employee</option>
-        </select>
-      </label>
-      <label>
-        Manager:
-        <select id="managerSelect" required>
-          <option value="">Select Manager</option>
-        </select>
-      </label>
-    </section>
+  <form id="timesheetForm">
+    <div class="form-row">
+      <label for="employeeSelect">Employee:</label>
+      <select id="employeeSelect" required></select>
 
-    <section class="instructions">
-      <p><strong>Hours (Standard)</strong> = Normal hours (7.6hrs/day)</p>
-      <p><strong>Hours (1.5x)</strong> = First 2 hours of OT (Mon–Sat)</p>
-      <p><strong>Hours (2x)</strong> = OT after 2 hours (Mon–Sat), or all Sunday</p>
-    </section>
+      <label for="managerSelect">Manager:</label>
+      <select id="managerSelect" required></select>
+    </div>
 
-    <form id="timesheetForm">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Ticket</th>
-            <th>Standard</th>
-            <th>1.5x</th>
-            <th>2x</th>
-            <th>Notes</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="timesheetBody"></tbody>
-      </table>
+    <p><b>Hours (Standard)</b> = Normal hours (7.6hrs/day)</p>
+    <p><b>Hours (1.5x)</b> = First 2 hours of OT (Mon–Sat)</p>
+    <p><b>Hours (2x)</b> = OT after 2 hours (Mon–Sat), or all Sunday</p>
 
-      <button type="button" class="btn" onclick="addRow()">+ Add Row</button>
+    <table id="timesheetTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Ticket</th>
+          <th>Standard</th>
+          <th>1.5x</th>
+          <th>2x</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="timesheetBody"></tbody>
+    </table>
 
-      <div class="form-actions">
-        <button type="button" class="btn secondary" onclick="clearForm()">Clear Form</button>
-        <button type="button" class="btn secondary" onclick="printForm()">Print Form</button>
-        <button type="submit" class="btn primary">Submit</button>
-      </div>
-    </form>
-  </main>
+    <div class="button-bar">
+      <button type="button" class="btn secondary" onclick="addRow()">+ Add Row</button>
+      <button type="reset" class="btn secondary">Clear Form</button>
+      <button type="button" class="btn secondary">Print Form</button>
+      <button type="submit" class="btn primary">Submit</button>
+    </div>
+  </form>
 
-  <!-- Data layer: talks toqwd tio iyourit Function API -->
-  <script src="data.js"></script>
-
-  <!-- UI logic: uses Data.* -->
   <script src="script.js"></script>
 </body>
 </html>
