@@ -5,11 +5,12 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <button onclick="window.location.href='index.html'" class="btn">Back to Timesheets</button>
   <h1>Pending Timesheets for Approval</h1>
 
+  <!-- Filter -->
   <input type="text" id="filterInput" placeholder="Filter by employee, site, or status" />
 
+  <!-- Table -->
   <table id="pendingTable">
     <thead>
       <tr>
@@ -24,6 +25,11 @@
     </thead>
     <tbody></tbody>
   </table>
+
+  <!-- Back button -->
+  <div style="margin-top:20px;">
+    <button onclick="window.location.href='index.html'">Back to Timesheet Entry</button>
+  </div>
 
   <script src="manager.js"></script>
 </body>
