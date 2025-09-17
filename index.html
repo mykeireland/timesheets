@@ -1,49 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Insight Timesheet Submission</title>
-  <link rel="stylesheet" href="style.css" />
   <meta charset="UTF-8">
+  <title>Insight Timesheet Submission</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Insight Timesheet Submission</h1>
+  <header class="header">
+    <h1>Insight Timesheet Submission</h1>
+  </header>
 
-  <form id="timesheetForm">
-    <div class="form-row">
-      <label for="employeeSelect">Employee:</label>
-      <select id="employeeSelect" required></select>
+  <main class="container">
+    <form id="timesheetForm">
+      <div class="form-row">
+        <label for="employee">Employee:</label>
+        <select id="employee" required></select>
 
-      <label for="managerSelect">Manager:</label>
-      <select id="managerSelect" required></select>
-    </div>
+        <label for="manager">Manager:</label>
+        <select id="manager" required></select>
+      </div>
 
-    <p><b>Hours (Standard)</b> = Normal hours (7.6hrs/day)</p>
-    <p><b>Hours (1.5x)</b> = First 2 hours of OT (Mon–Sat)</p>
-    <p><b>Hours (2x)</b> = OT after 2 hours (Mon–Sat), or all Sunday</p>
+      <p><strong>Hours (Standard)</strong> = Normal hours (7.6hrs/day)</p>
+      <p><strong>Hours (1.5x)</strong> = First 2 hours of OT (Mon–Sat)</p>
+      <p><strong>Hours (2x)</strong> = OT after 2 hours (Mon–Sat), or all Sunday</p>
 
-    <table id="timesheetTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Ticket</th>
-          <th>Standard</th>
-          <th>1.5x</th>
-          <th>2x</th>
-          <th>Notes</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="timesheetBody"></tbody>
-    </table>
+      <table id="timesheetTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Ticket</th>
+            <th>Standard</th>
+            <th>1.5x</th>
+            <th>2x</th>
+            <th>Notes</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
 
-    <div class="button-bar">
-      <button type="button" class="btn secondary" onclick="addRow()">+ Add Row</button>
-      <button type="reset" class="btn secondary">Clear Form</button>
-      <button type="button" class="btn secondary">Print Form</button>
-      <button type="submit" class="btn primary">Submit</button>
-    </div>
-  </form>
+      <div class="buttons">
+        <button type="button" id="addRow">+ Add Row</button>
+        <button type="reset" id="clearForm">Clear Form</button>
+        <button type="button" id="printForm">Print Form</button>
+        <button type="submit" id="submitForm">Submit</button>
+        <button type="button" id="managerView" class="danger">Manager View</button>
+      </div>
+    </form>
+  </main>
 
-  <script src="script.js"></script>
+  <script src="index.js"></script>
 </body>
 </html>
