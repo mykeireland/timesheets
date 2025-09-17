@@ -6,17 +6,19 @@
 </head>
 <body>
   <h1>Pending Timesheets for Approval</h1>
-  <button onclick="window.location.href='index.html'">Back to Timesheets</button>
+
+  <!-- Filter box -->
+  <input type="text" id="filterInput" placeholder="Filter by employee, site, or status" />
 
   <table id="pendingTable">
     <thead>
       <tr>
-        <th>Employee</th>
-        <th>Site</th>
-        <th>Ticket</th>
-        <th>Date</th>
-        <th>Hours</th>
-        <th>Status</th>
+        <th data-col="employee">Employee ▲▼</th>
+        <th data-col="site">Site ▲▼</th>
+        <th data-col="ticket">Ticket ▲▼</th>
+        <th data-col="date">Date ▲▼</th>
+        <th data-col="hours">Hours ▲▼</th>
+        <th data-col="status">Status ▲▼</th>
         <th>Action</th>
       </tr>
     </thead>
