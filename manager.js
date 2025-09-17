@@ -12,7 +12,6 @@
     tbody.innerHTML = `<tr><td colspan="7">Loading...</td></tr>`;
 
     try {
-      // ✅ Call through SWA proxy, not the azurewebsites host
       const res = await fetch("/api/timesheets/pending");
       if (!res.ok) throw new Error("Failed to fetch pending timesheets");
       timesheets = await res.json();
@@ -92,7 +91,13 @@
     ["employee", "site", "ticket", "date", "hours", "status"].forEach(c => {
       const el = document.getElementById(`sort-${c}`);
       if (!el) return;
-      el.textContent = currentSort.col === c ? (currentSort.asc ? "▲" : "▼") : "";
+      if (currentSort.col === c) {
+        el.textContent = currentSort.asc ? "▲" : "▼";
+        el.classList.add("active");
+      } else {
+        el.textContent = "⇅";
+        el.classList.remove("active");
+      }
     });
   }
 
@@ -115,7 +120,6 @@
   function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function showError(err){ console.error(err); alert(err.message || String(err)); }
 
-  // Expose globally for onclick handlers
   window.sortBy = sortBy;
   window.approveTimesheet = approveTimesheet;
   window.rejectTimesheet = rejectTimesheet;
