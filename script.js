@@ -130,7 +130,7 @@ function wireForm() {
       managerBtn.addEventListener("click", () => {
       window.location.href = "manager.html";
   });
-}
+
 
 
 /* -----------------------------
@@ -141,10 +141,6 @@ function showError(err) {
   alert(err.message || String(err));
 }
 
-
-/* -----------------------------
-   Helpers
--------------------------------- */
 function fillSelect(selOrArray, items, placeholder) {
   const mk = (sel) => {
     sel.innerHTML =
