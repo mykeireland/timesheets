@@ -69,7 +69,7 @@ async function loadOpenTickets(selectEl) {
   tickets.forEach((ticket) => {
     const opt = document.createElement("option");
     opt.value = ticket.ticketId; // backend expects ticketId
-    opt.textContent = `${ticket.cwTicketId} - ${ticket.siteName} - ${ticket.description}`;
+    opt.textContent = `${ticket.cwTicketId} - ${ticket.siteName} - ${ticket.ticketName}`;
     selectEl.appendChild(opt);
   });
 }
