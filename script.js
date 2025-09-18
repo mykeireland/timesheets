@@ -80,19 +80,20 @@ async function loadOpenTickets(selectEl) {
 async function addRow() {
   const tbody = $("#timesheetBody");
   const tr = document.createElement("tr");
-   tr.innerHTML = `
-    <td><input type="date" required></td>
-    <td>
-      <select class="ticketSelect" required></select>
-    </td>
-    <td><input type="number" step="0.1" min="0" value="0" required></td>
-    <td><input type="number" step="0.1" min="0" value="0"></td>
-    <td><input type="number" step="0.1" min="0" value="0"></td>
-    <td><input type="text" maxlength="500" placeholder="Notes (optional)"></td>
-    <td class="action-cell">
-      <button type="button" class="btn" onclick="this.closest('tr').remove()">Remove</button>
-    </td>
-  `;
+  tr.innerHTML = `
+  <td><input type="date" required></td>
+  <td>
+    <select class="ticketSelect" required></select>
+  </td>
+  <td><input type="number" step="0.1" min="0" value="0" required></td>
+  <td><input type="number" step="0.1" min="0" value="0"></td>
+  <td><input type="number" step="0.1" min="0" value="0"></td>
+  <td><input type="text" maxlength="500" placeholder="Notes (optional)"></td>
+  <td class="action-cell">
+    <button type="button" class="btn btn-danger remove-btn" onclick="this.closest('tr').remove()">Remove</button>
+  </td>
+`;
+
 
   tbody.appendChild(tr);
 
