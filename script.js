@@ -11,12 +11,12 @@ const Data = {
   employees: async () => {
     const res = await fetch("/api/employees");
     if (!res.ok) throw new Error("Could not load employees");
-    return res.json();
+    return res.json(); // [{ employee_id, first_name, last_name, ... }]
   },
   tickets: async () => {
     const res = await fetch("/api/tickets/open");
     if (!res.ok) throw new Error("Could not load tickets");
-    return res.json();
+    return res.json(); // [{ ticket_id, cw_ticket_id, name, open_flag }]
   },
   submitEntry: async (payload) => {
     const res = await fetch("/api/timesheets/submit", {
@@ -24,7 +24,10 @@ const Data = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error("Submit failed");
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Submit failed: ${text}`);
+    }
     return res.json();
   },
 };
@@ -33,7 +36,7 @@ const Data = {
    Init + Form Wiring
 -------------------------------- */
 async function init() {
-  await populatePeople();
+  await populateEmployees();
   await addRow(); // start with one row
   wireForm();
 }
@@ -41,33 +44,21 @@ async function init() {
 /* -----------------------------
    Load Employees
 -------------------------------- */
-async function populatePeople() {
+async function populateEmployees() {
   const empSel = $("#employeeSelect");
-  const mgrSel = $("#managerSelect");
-  disable([empSel, mgrSel], true);
+  disable([empSel], true);
 
   const employees = await Data.employees();
-
-  // Build options manually with correct IDs + names
-  empSel.innerHTML = '<option value="">Select Employee</option>';
-  mgrSel.innerHTML = '<option value="">Select Manager</option>';
-
+  empSel.innerHTML = `<option value="">Select Employee</option>`;
   employees.forEach(e => {
-    const fullName = `${e.first_name} ${e.last_name}`;
-    const opt1 = document.createElement("option");
-    opt1.value = e.employee_id;   // ✅ proper numeric ID
-    opt1.textContent = fullName;
-    empSel.appendChild(opt1);
-
-    const opt2 = document.createElement("option");
-    opt2.value = e.employee_id;   // ✅ proper numeric ID
-    opt2.textContent = fullName;
-    mgrSel.appendChild(opt2);
+    const opt = document.createElement("option");
+    opt.value = e.employee_id;
+    opt.textContent = `${e.first_name} ${e.last_name}`;
+    empSel.appendChild(opt);
   });
 
-  disable([empSel, mgrSel], false);
+  disable([empSel], false);
 }
-
 
 /* -----------------------------
    Load Open Tickets
@@ -75,20 +66,21 @@ async function populatePeople() {
 async function loadOpenTickets(selectEl) {
   try {
     const tickets = await Data.tickets();
-
-    selectEl.innerHTML = ""; // clear existing options
+    selectEl.innerHTML = "";
 
     const defaultOpt = document.createElement("option");
     defaultOpt.value = "";
     defaultOpt.textContent = "Select Ticket";
     selectEl.appendChild(defaultOpt);
 
-    tickets.forEach((ticket) => {
-      const opt = document.createElement("option");
-      opt.value = ticket.ticketId; // backend expects ticketId
-      opt.textContent = `${ticket.cwTicketId} - ${ticket.siteName} - ${ticket.description}`;
-      selectEl.appendChild(opt);
-    });
+    tickets
+      .filter(t => t.open_flag === true || t.open_flag === 1) // ✅ only open tickets
+      .forEach(ticket => {
+        const opt = document.createElement("option");
+        opt.value = ticket.ticket_id;
+        opt.textContent = `${ticket.cw_ticket_id} - ${ticket.name}`;
+        selectEl.appendChild(opt);
+      });
   } catch (err) {
     showError(err);
   }
@@ -100,36 +92,19 @@ async function loadOpenTickets(selectEl) {
 async function addRow() {
   const tbody = $("#timesheetBody");
   const tr = document.createElement("tr");
-
-  // inside addRow(), replace tr.innerHTML with:
-    tr.innerHTML = `
-      <td class="col-date">
-        <input type="date" required>
-      </td>
-      <td class="col-ticket">
-        <select class="ticketSelect" required></select>
-      </td>
-      <td class="col-num">
-        <input type="number" step="0.1" min="0" value="0" required>
-      </td>
-      <td class="col-num">
-        <input type="number" step="0.1" min="0" value="0">
-      </td>
-      <td class="col-num">
-        <input type="number" step="0.1" min="0" value="0">
-      </td>
-      <td class="col-notes">
-        <input type="text" maxlength="500" placeholder="Notes (optional)">
-      </td>
-      <td class="col-action action-cell">
-        <button type="button" class="btn remove-btn" onclick="this.closest('tr').remove()">Remove</button>
-      </td>
-    `;
-
-
+  tr.innerHTML = `
+    <td class="col-date"><input type="date" required></td>
+    <td class="col-ticket"><select class="ticketSelect" required></select></td>
+    <td class="col-num"><input type="number" step="0.1" min="0" value="0" required></td>
+    <td class="col-num"><input type="number" step="0.1" min="0" value="0"></td>
+    <td class="col-num"><input type="number" step="0.1" min="0" value="0"></td>
+    <td class="col-notes"><input type="text" maxlength="500" placeholder="Notes (optional)"></td>
+    <td class="col-action action-cell">
+      <button type="button" class="btn remove-btn" onclick="this.closest('tr').remove()">Remove</button>
+    </td>
+  `;
   tbody.appendChild(tr);
 
-  // Load open tickets into this row’s dropdown
   const ticketSel = tr.querySelector(".ticketSelect");
   await loadOpenTickets(ticketSel);
 }
@@ -138,14 +113,6 @@ async function addRow() {
    Form Wiring
 -------------------------------- */
 function wireForm() {
-  $("#employeeSelect").addEventListener("change", async (e) => {
-    const rows = document.querySelectorAll("#timesheetBody tr");
-    for (const tr of rows) {
-      const ticketSel = tr.querySelector(".ticketSelect");
-      await loadOpenTickets(ticketSel);
-    }
-  });
-
   $("#timesheetForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
@@ -173,77 +140,38 @@ function wireForm() {
 /* -----------------------------
    Helpers
 -------------------------------- */
-function fillSelect(selOrArray, items, placeholder) {
-  const mk = (sel) => {
-    sel.innerHTML =
-      ['<option value="">' + placeholder + "</option>"]
-        .concat(
-          items.map(
-            (i) =>
-              `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}</option>`
-          )
-        )
-        .join("");
-  };
-  Array.isArray(selOrArray) ? selOrArray.forEach(mk) : mk(selOrArray);
-}
-
 function collectEntries() {
   const empId = toInt($("#employeeSelect").value, "Employee");
   const rows = [...document.querySelectorAll("#timesheetBody tr")];
   if (!rows.length) throw new Error("No rows to submit");
 
-  return rows.map((tr) => {
+  return rows.map(tr => {
     const date = tr.querySelector('input[type="date"]').value;
     const ticketId = toInt(tr.querySelector(".ticketSelect").value, "Ticket");
     const nums = tr.querySelectorAll('input[type="number"]');
     const hStd = toNum(nums[0].value);
-    const h15 = toNum(nums[1].value);
-    const h2 = toNum(nums[2].value);
-    const notes =
-      tr.querySelector('input[type="text"]').value?.trim() || null;
+    const h15  = toNum(nums[1].value);
+    const h2   = toNum(nums[2].value);
+    const notes = tr.querySelector('input[type="text"]').value?.trim() || null;
 
     if (!date) throw new Error("Date is required on all rows");
-    if (hStd + h15 + h2 <= 0)
-      throw new Error("Hours must be greater than 0");
+    if (hStd + h15 + h2 <= 0) throw new Error("Hours must be greater than 0");
 
     return {
-      employeeId: empId,
-      ticketId,
+      employee_id: empId,   // ✅ match DB column
+      ticket_id: ticketId,  // ✅ match DB column
       date,
-      hoursStandard: hStd,
-      hours15x: h15,
-      hours2x: h2,
+      hours_standard: hStd,
+      hours_15x: h15,
+      hours_2x: h2,
       notes,
     };
   });
 }
 
-function $(sel) {
-  return document.querySelector(sel);
-}
-function disable(nodes, v) {
-  nodes.forEach((n) => (n.disabled = v));
-}
-function toInt(v, name) {
-  const n = parseInt(v, 10);
-  if (isNaN(n)) throw new Error(`${name} is required`);
-  return n;
-}
-function toNum(v) {
-  const n = parseFloat(v);
-  return isNaN(n) ? 0 : n;
-}
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  }[m]));
-}
-function showError(err) {
-  console.error(err);
-  alert(err.message || String(err));
-}
+function $(sel) { return document.querySelector(sel); }
+function disable(nodes, v) { nodes.forEach(n => n.disabled = v); }
+function toInt(v, name) { const n = parseInt(v, 10); if (isNaN(n)) throw new Error(`${name} is required`); return n; }
+function toNum(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function showError(err){ console.error(err); alert(err.message || String(err)); }
