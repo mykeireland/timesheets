@@ -103,19 +103,20 @@ async function init() {
 /* ============================
    Populate employees
 ============================ */
-async function populatePeople() {
-  const empSel = $('#employeeSelect');
-  const mgrSel = $('#managerSelect'); // can exist or not; harmless
+// inside Data object
+employees: async () => {
+  const res = await fetch("/api/employees");
+  if (!res.ok) throw new Error("Could not load employees");
 
-  if (empSel) empSel.innerHTML = `<option value="">Loading…</option>`;
-  if (mgrSel) mgrSel.innerHTML = `<option value="">Loading…</option>`;
-
-  const employeesRaw = await Data.employees();           // ← API call
-  const employees    = toEmployeeItems(employeesRaw);    // ← normalize to {id,name}
-
-  fillSelect(empSel, employees, 'Select Employee');
-  if (mgrSel) fillSelect(mgrSel, employees, 'Select Manager'); // safe reuse
-}
+  // handle servers that send wrong content-type
+  const text = await res.text();
+  try {
+    return JSON.parse(text); // normal JSON
+  } catch {
+    console.error("Employees API returned non-JSON:", text.slice(0, 200));
+    return []; // fallback safe empty
+  }
+},
 
 /* ============================
    Tickets per row
