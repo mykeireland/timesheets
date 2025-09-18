@@ -1,4 +1,6 @@
-/* Header banner */
+/* -----------------------------
+   Header Banner
+-------------------------------- */
 .header {
   background-color: #c0392b; /* red */
   padding: 10px 20px;
@@ -11,7 +13,21 @@
   font-size: 1.6em;
 }
 
-/* Form layout */
+/* -----------------------------
+   Container
+-------------------------------- */
+.container {
+  max-width: 1100px;
+  margin: 30px auto;
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* -----------------------------
+   Form Layout
+-------------------------------- */
 .form-row {
   display: flex;
   gap: 15px;
@@ -24,30 +40,51 @@
   margin-right: 5px;
 }
 
-/* Table cells uniform */
-#timesheetTable input,
-#timesheetTable select {
+/* -----------------------------
+   Table Styling
+-------------------------------- */
+#timesheetTable {
   width: 100%;
-  box-sizing: border-box;
-  padding: 4px 6px;
+  border-collapse: collapse;
+  margin-top: 15px;
   font-size: 0.9em;
+}
 
 #timesheetTable th,
 #timesheetTable td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: center;
+  vertical-align: middle;
 }
 
 #timesheetTable th {
   background-color: #f4f4f4;
+  font-weight: bold;
 }
 
-/* Buttons row: keep grouped, subtle spacing */
+#timesheetTable input,
+#timesheetTable select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  font-size: 0.9em;
+}
+
+/* Action column */
+#timesheetBody td.action-cell {
+  width: 120px;
+  text-align: center;
+}
+
+/* -----------------------------
+   Buttons
+-------------------------------- */
 .buttons {
   display: flex;
   gap: 8px;
   margin-top: 12px;
+  justify-content: center;
 }
 
 button {
@@ -58,12 +95,37 @@ button {
   cursor: pointer;
 }
 
-button#submitForm {
+button:hover {
+  opacity: 0.9;
+}
+
+/* Primary (Submit) */
+button#submitForm,
+.btn-primary {
   background-color: #2980b9;
   color: #fff;
 }
 
-button.danger {
+/* Danger (Manager View / Delete) */
+button.danger,
+.btn-danger {
   background-color: #e74c3c;
   color: #fff;
+}
+
+/* Secondary (Clear / Print) */
+.btn-secondary {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+/* Remove row button */
+.remove-btn {
+  background-color: #6c757d;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.remove-btn:hover {
+  background-color: #5a6268;
 }
