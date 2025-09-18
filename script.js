@@ -26,7 +26,7 @@ const Data = {
     });
     if (!res.ok) throw new Error("Submit failed");
     return res.json();
-  }
+  },
 };
 
 /* -----------------------------
@@ -57,21 +57,25 @@ async function populatePeople() {
    Load Open Tickets
 -------------------------------- */
 async function loadOpenTickets(selectEl) {
-  const tickets = await Data.tickets();
+  try {
+    const tickets = await Data.tickets();
 
-  selectEl.innerHTML = ""; // clear existing options
+    selectEl.innerHTML = ""; // clear existing options
 
-  const defaultOpt = document.createElement("option");
-  defaultOpt.value = "";
-  defaultOpt.textContent = "Select Ticket";
-  selectEl.appendChild(defaultOpt);
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "Select Ticket";
+    selectEl.appendChild(defaultOpt);
 
-  tickets.forEach((ticket) => {
-    const opt = document.createElement("option");
-    opt.value = ticket.ticketId; // backend expects ticketId
-    opt.textContent = `${ticket.cwTicketId} - ${ticket.siteName} - ${ticket.ticketName}`;
-    selectEl.appendChild(opt);
-  });
+    tickets.forEach((ticket) => {
+      const opt = document.createElement("option");
+      opt.value = ticket.ticketId; // backend expects ticketId
+      opt.textContent = `${ticket.cwTicketId} - ${ticket.siteName} - ${ticket.description}`;
+      selectEl.appendChild(opt);
+    });
+  } catch (err) {
+    showError(err);
+  }
 }
 
 /* -----------------------------
@@ -80,20 +84,20 @@ async function loadOpenTickets(selectEl) {
 async function addRow() {
   const tbody = $("#timesheetBody");
   const tr = document.createElement("tr");
-  tr.innerHTML = `
-  <td><input type="date" required></td>
-  <td>
-    <select class="ticketSelect" required></select>
-  </td>
-  <td><input type="number" step="0.1" min="0" value="0" required></td>
-  <td><input type="number" step="0.1" min="0" value="0"></td>
-  <td><input type="number" step="0.1" min="0" value="0"></td>
-  <td><input type="text" maxlength="500" placeholder="Notes (optional)"></td>
-  <td class="action-cell">
-    <button type="button" class="btn btn-danger remove-btn" onclick="this.closest('tr').remove()">Remove</button>
-  </td>
-`;
 
+  tr.innerHTML = `
+    <td><input type="date" required></td>
+    <td>
+      <select class="ticketSelect" required></select>
+    </td>
+    <td><input type="number" step="0.1" min="0" value="0" required></td>
+    <td><input type="number" step="0.1" min="0" value="0"></td>
+    <td><input type="number" step="0.1" min="0" value="0"></td>
+    <td><input type="text" maxlength="500" placeholder="Notes (optional)"></td>
+    <td class="action-cell">
+      <button type="button" class="btn remove-btn" onclick="this.closest('tr').remove()">Remove</button>
+    </td>
+  `;
 
   tbody.appendChild(tr);
 
@@ -106,16 +110,14 @@ async function addRow() {
    Form Wiring
 -------------------------------- */
 function wireForm() {
-  // Update tickets when employee changes
-  $("#employeeSelect").addEventListener("change", async () => {
+  $("#employeeSelect").addEventListener("change", async (e) => {
     const rows = document.querySelectorAll("#timesheetBody tr");
     for (const tr of rows) {
-      const sel = tr.querySelector(".ticketSelect");
-      await loadOpenTickets(sel);
+      const ticketSel = tr.querySelector(".ticketSelect");
+      await loadOpenTickets(ticketSel);
     }
   });
 
-  // Submit form
   $("#timesheetForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
@@ -132,7 +134,6 @@ function wireForm() {
     }
   });
 
-  // Manager view button
   const managerBtn = $("#managerBtn");
   if (managerBtn) {
     managerBtn.addEventListener("click", () => {
