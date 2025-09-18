@@ -4,7 +4,8 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     loadPendingTimesheets().catch(showError);
-    document.getElementById("filterInput").addEventListener("input", renderTable);
+    const f = document.getElementById("filterInput");
+    if (f) f.addEventListener("input", renderTable);
   });
 
   async function loadPendingTimesheets() {
@@ -12,8 +13,8 @@
     tbody.innerHTML = `<tr><td colspan="7">Loading...</td></tr>`;
 
     try {
-      const res = await fetch("/api/timesheets/pending");
-      if (!res.ok) throw new Error("Failed to fetch pending timesheets");
+      const res = await fetch("/api/timesheets/pending"); // SWA proxy
+      if (!res.ok) throw new Error(`Failed to fetch pending timesheets (HTTP ${res.status})`);
       timesheets = await res.json();
       renderTable();
     } catch (err) {
@@ -26,32 +27,29 @@
     const tbody = document.querySelector("#pendingTable tbody");
     tbody.innerHTML = "";
 
-    // Filter
-    const filter = document.getElementById("filterInput").value.toLowerCase();
+    const filter = (document.getElementById("filterInput")?.value || "").toLowerCase();
     let data = timesheets.filter(ts =>
       `${ts.firstName} ${ts.lastName} ${ts.siteName} ${ts.status}`.toLowerCase().includes(filter)
     );
 
-    // Sort
     if (currentSort.col) {
       data.sort((a, b) => {
         let A, B;
         switch (currentSort.col) {
           case "employee": A = `${a.firstName} ${a.lastName}`.toLowerCase(); B = `${b.firstName} ${b.lastName}`.toLowerCase(); break;
-          case "site":     A = a.siteName.toLowerCase(); B = b.siteName.toLowerCase(); break;
-          case "ticket":   A = String(a.ticketId); B = String(b.ticketId); break;
+          case "site":     A = (a.siteName||"").toLowerCase(); B = (b.siteName||"").toLowerCase(); break;
+          case "ticket":   A = String(a.ticketId||""); B = String(b.ticketId||""); break;
           case "date":     A = new Date(a.date); B = new Date(b.date); break;
-          case "hours":    A = parseFloat(a.hours); B = parseFloat(b.hours); break;
-          case "status":   A = a.status.toLowerCase(); B = b.status.toLowerCase(); break;
+          case "hours":    A = parseFloat(a.hours||0); B = parseFloat(b.hours||0); break;
+          case "status":   A = (a.status||"").toLowerCase(); B = (b.status||"").toLowerCase(); break;
           default:         A = ""; B = "";
         }
         if (A < B) return currentSort.asc ? -1 : 1;
-        if (A > B) return currentSort.asc ? 1 : -1;
+        if (A > B) return currentSort.asc ?  1 : -1;
         return 0;
       });
     }
 
-    // Render rows
     if (!data.length) {
       tbody.innerHTML = `<tr><td colspan="7">No timesheets found</td></tr>`;
       updateSortIcons();
@@ -67,13 +65,28 @@
         <td>${escapeHtml(ts.date)}</td>
         <td>${escapeHtml(ts.hours)}</td>
         <td>${escapeHtml(ts.status)}</td>
-        <td>
-          <button class="btn" onclick="approveTimesheet(${ts.entryId})">Approve</button>
-          <button class="btn" onclick="rejectTimesheet(${ts.entryId})">Reject</button>
+        <td class="col-action">
+          <button class="btn" data-id="${ts.entryId}" data-action="approve">Approve</button>
+          <button class="btn danger" data-id="${ts.entryId}" data-action="reject">Reject</button>
         </td>
       `;
       tbody.appendChild(tr);
     }
+
+    // delegate clicks for Approve/Reject
+    tbody.querySelectorAll("button[data-action]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = parseInt(e.currentTarget.getAttribute("data-id"), 10);
+        const action = e.currentTarget.getAttribute("data-action");
+        try {
+          if (action === "approve") await approveTimesheet(id);
+          else await rejectTimesheet(id);
+          await loadPendingTimesheets();
+        } catch (err) {
+          showError(err);
+        }
+      });
+    });
 
     updateSortIcons();
   }
@@ -91,36 +104,24 @@
     ["employee", "site", "ticket", "date", "hours", "status"].forEach(c => {
       const el = document.getElementById(`sort-${c}`);
       if (!el) return;
-      if (currentSort.col === c) {
-        el.textContent = currentSort.asc ? "▲" : "▼";
-        el.classList.add("active");
-      } else {
-        el.textContent = "⇅";
-        el.classList.remove("active");
-      }
+      el.textContent = currentSort.col === c ? (currentSort.asc ? "▲" : "▼") : "⇅";
     });
   }
 
   async function approveTimesheet(entryId) {
-    try {
-      const res = await fetch(`/api/timesheets/approve/${entryId}`, { method: "POST" });
-      if (!res.ok) throw new Error("Approve failed");
-      await loadPendingTimesheets();
-    } catch (err) { showError(err); }
+    const res = await fetch(`/api/timesheets/approve/${entryId}`, { method: "POST" });
+    if (!res.ok) throw new Error(`Approve failed (HTTP ${res.status})`);
   }
 
   async function rejectTimesheet(entryId) {
-    try {
-      const res = await fetch(`/api/timesheets/reject/${entryId}`, { method: "POST" });
-      if (!res.ok) throw new Error("Reject failed");
-      await loadPendingTimesheets();
-    } catch (err) { showError(err); }
+    const res = await fetch(`/api/timesheets/reject/${entryId}`, { method: "POST" });
+    if (!res.ok) throw new Error(`Reject failed (HTTP ${res.status})`);
   }
 
-  function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  /* utils */
+  function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function showError(err){ console.error(err); alert(err.message || String(err)); }
 
+  // expose for inline onclick if needed
   window.sortBy = sortBy;
-  window.approveTimesheet = approveTimesheet;
-  window.rejectTimesheet = rejectTimesheet;
 })();
