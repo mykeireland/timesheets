@@ -124,23 +124,17 @@ function wireForm() {
     }
   });
 
-      const managerBtn = $("#managerBtn");
-
-      if (managerBtn) {
-      managerBtn.addEventListener("click", () => {
+  const managerBtn = $("#managerBtn");
+  if (managerBtn) {
+    managerBtn.addEventListener("click", () => {
       window.location.href = "manager.html";
-  });
-
-
+    });
+  }
+}
 
 /* -----------------------------
    Helpers
 -------------------------------- */
-function showError(err) {
-  console.error(err);
-  alert(err.message || String(err));
-}
-
 function fillSelect(selOrArray, items, placeholder) {
   const mk = (sel) => {
     sel.innerHTML =
@@ -215,4 +209,3 @@ function showError(err) {
   console.error(err);
   alert(err.message || String(err));
 }
-      }
