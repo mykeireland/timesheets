@@ -1,5 +1,6 @@
 // script.js - Timesheet entry logic
-document.addEventListener('DOMContentLoaded', () => {
+
+document.addEventListener("DOMContentLoaded", () => {
   init().catch(showError);
 });
 
@@ -12,8 +13,8 @@ const Data = {
     if (!res.ok) throw new Error("Could not load employees");
     return res.json();
   },
-  tickets: async (employeeId) => {
-    const res = await fetch(`/api/tickets/${employeeId}`);
+  tickets: async () => {
+    const res = await fetch("/api/tickets/open");
     if (!res.ok) throw new Error("Could not load tickets");
     return res.json();
   },
@@ -33,61 +34,56 @@ const Data = {
 -------------------------------- */
 async function init() {
   await populatePeople();
-  addRow(); // start with one row
+  await addRow(); // start with one row
   wireForm();
 }
 
-async function loadOpenTickets() {
-  try {
-    const res = await fetch("/api/tickets/open");
-    if (!res.ok) throw new Error("Failed to fetch open tickets");
-
-    const tickets = await res.json();
-    const ticketSelects = document.querySelectorAll("select.ticket-select");
-
-    ticketSelects.forEach(select => {
-      select.innerHTML = ""; // clear existing options
-
-      // default option
-      const defaultOpt = document.createElement("option");
-      defaultOpt.value = "";
-      defaultOpt.textContent = "Select Ticket";
-      select.appendChild(defaultOpt);
-
-      tickets.forEach(ticket => {
-        const opt = document.createElement("option");
-        opt.value = ticket.ticketId;  // 👈 backend needs ticketId
-        opt.textContent = `${ticket.cwTicketId} - ${ticket.siteName} - ${ticket.description}`;
-        select.appendChild(opt);
-      });
-    });
-  } catch (err) {
-    console.error("Error loading tickets:", err);
-    alert("Could not load open tickets");
-  }
-}
-
+/* -----------------------------
+   Load Employees
+-------------------------------- */
 async function populatePeople() {
-  const empSel = $('#employeeSelect');
-  const mgrSel = $('#managerSelect');
+  const empSel = $("#employeeSelect");
+  const mgrSel = $("#managerSelect");
   disable([empSel, mgrSel], true);
 
   const employees = await Data.employees();
-  fillSelect(empSel, employees, 'Select Employee');
-  fillSelect(mgrSel, employees, 'Select Manager');
+  fillSelect(empSel, employees, "Select Employee");
+  fillSelect(mgrSel, employees, "Select Manager");
 
   disable([empSel, mgrSel], false);
 }
 
+/* -----------------------------
+   Load Open Tickets
+-------------------------------- */
+async function loadOpenTickets(selectEl) {
+  const tickets = await Data.tickets();
+
+  selectEl.innerHTML = ""; // clear existing options
+
+  const defaultOpt = document.createElement("option");
+  defaultOpt.value = "";
+  defaultOpt.textContent = "Select Ticket";
+  selectEl.appendChild(defaultOpt);
+
+  tickets.forEach((ticket) => {
+    const opt = document.createElement("option");
+    opt.value = ticket.ticketId; // backend expects ticketId
+    opt.textContent = `${ticket.cwTicketId} - ${ticket.siteName} - ${ticket.description}`;
+    selectEl.appendChild(opt);
+  });
+}
+
+/* -----------------------------
+   Rows + Tickets
+-------------------------------- */
 async function addRow() {
-  const tbody = $('#timesheetBody');
-  const tr = document.createElement('tr');
+  const tbody = $("#timesheetBody");
+  const tr = document.createElement("tr");
   tr.innerHTML = `
     <td><input type="date" required></td>
     <td>
-      <select class="ticketSelect" required>
-        <option value="">Select Ticket</option>
-      </select>
+      <select class="ticketSelect" required></select>
     </td>
     <td><input type="number" step="0.1" min="0" value="0" required></td>
     <td><input type="number" step="0.1" min="0" value="0"></td>
@@ -97,43 +93,33 @@ async function addRow() {
   `;
   tbody.appendChild(tr);
 
-  const empId = $('#employeeSelect').value;
-  if (empId) await refreshTicketsForRow(tr, empId);
+  // Load open tickets into this row’s dropdown
+  const ticketSel = tr.querySelector(".ticketSelect");
+  await loadOpenTickets(ticketSel);
 }
 
-async function refreshTicketsForRow(tr, employeeId) {
-  const sel = tr.querySelector('.ticketSelect');
-  sel.disabled = true;
-  const tickets = await Data.tickets(employeeId);
-  fillSelect(sel, tickets, 'Select Ticket');
-  sel.disabled = false;
-}
-
+/* -----------------------------
+   Form Wiring
+-------------------------------- */
 function wireForm() {
-  $('#employeeSelect').addEventListener('change', async (e) => {
-    const empId = e.target.value;
-    const rows = document.querySelectorAll('#timesheetBody tr');
-    for (const tr of rows) await refreshTicketsForRow(tr, empId);
-  });
-
-  $('#timesheetForm').addEventListener('submit', async (e) => {
+  $("#timesheetForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
       const payloads = collectEntries();
-      console.log('Submitting...', payloads);
+      console.log("Submitting...", payloads);
 
       for (const p of payloads) {
         await Data.submitEntry(p);
       }
 
-      alert('Timesheet submitted successfully');
+      alert("Timesheet submitted successfully");
     } catch (err) {
       showError(err);
     }
   });
 
   // Manager view button
-  $('#managerBtn').addEventListener('click', () => {
+  $("#managerBtn").addEventListener("click", () => {
     window.location.href = "manager.html";
   });
 }
@@ -143,28 +129,37 @@ function wireForm() {
 -------------------------------- */
 function fillSelect(selOrArray, items, placeholder) {
   const mk = (sel) => {
-    sel.innerHTML = ['<option value="">'+placeholder+'</option>']
-      .concat(items.map(i => `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}</option>`)).join('');
+    sel.innerHTML =
+      ['<option value="">' + placeholder + "</option>"]
+        .concat(
+          items.map(
+            (i) =>
+              `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}</option>`
+          )
+        )
+        .join("");
   };
   Array.isArray(selOrArray) ? selOrArray.forEach(mk) : mk(selOrArray);
 }
 
 function collectEntries() {
-  const empId = toInt($('#employeeSelect').value, 'Employee');
-  const rows = [...document.querySelectorAll('#timesheetBody tr')];
-  if (!rows.length) throw new Error('No rows to submit');
+  const empId = toInt($("#employeeSelect").value, "Employee");
+  const rows = [...document.querySelectorAll("#timesheetBody tr")];
+  if (!rows.length) throw new Error("No rows to submit");
 
-  return rows.map(tr => {
+  return rows.map((tr) => {
     const date = tr.querySelector('input[type="date"]').value;
-    const ticketId = toInt(tr.querySelector('.ticketSelect').value, 'Ticket');
+    const ticketId = toInt(tr.querySelector(".ticketSelect").value, "Ticket");
     const nums = tr.querySelectorAll('input[type="number"]');
     const hStd = toNum(nums[0].value);
-    const h15  = toNum(nums[1].value);
-    const h2   = toNum(nums[2].value);
-    const notes = tr.querySelector('input[type="text"]').value?.trim() || null;
+    const h15 = toNum(nums[1].value);
+    const h2 = toNum(nums[2].value);
+    const notes =
+      tr.querySelector('input[type="text"]').value?.trim() || null;
 
-    if (!date) throw new Error('Date is required on all rows');
-    if (hStd + h15 + h2 <= 0) throw new Error('Hours must be greater than 0');
+    if (!date) throw new Error("Date is required on all rows");
+    if (hStd + h15 + h2 <= 0)
+      throw new Error("Hours must be greater than 0");
 
     return {
       employeeId: empId,
@@ -173,18 +168,36 @@ function collectEntries() {
       hoursStandard: hStd,
       hours15x: h15,
       hours2x: h2,
-      notes
+      notes,
     };
   });
 }
 
-function $(sel) { return document.querySelector(sel); }
-function disable(nodes, v) { nodes.forEach(n => n.disabled = v); }
-function toInt(v, name) { const n = parseInt(v,10); if (isNaN(n)) throw new Error(`${name} is required`); return n; }
-function toNum(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-function showError(err){ console.error(err); alert(err.message || String(err)); }
-
-document.addEventListener("DOMContentLoaded", () => {
-  loadOpenTickets();   // load tickets when page starts
-});
+function $(sel) {
+  return document.querySelector(sel);
+}
+function disable(nodes, v) {
+  nodes.forEach((n) => (n.disabled = v));
+}
+function toInt(v, name) {
+  const n = parseInt(v, 10);
+  if (isNaN(n)) throw new Error(`${name} is required`);
+  return n;
+}
+function toNum(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[m]));
+}
+function showError(err) {
+  console.error(err);
+  alert(err.message || String(err));
+}
