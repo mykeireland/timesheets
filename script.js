@@ -107,10 +107,22 @@ async function populatePeople() {
   if (!empSel) return;
 
   empSel.disabled = true;
-  const raw = await Data.employees();
-  const employees = toEmployeeItems(raw);
-  fillSelect(empSel, employees, "Select Employee");
-  empSel.disabled = false;
+  empSel.innerHTML = `<option value="">Loading…</option>`;
+  try {
+     const raw = await Data.employees();
+     console.info("[populatePeople] /api/employees →", raw);
+    const employees = toEmployeeItems(raw);
+    if (!employees.length) {
+       empSel.innerHTML = `<option value="">No employees found</option>`;
+     } else {
+       fillSelect(empSel, employees, "Select Employee");
+     }
+   } catch (e) {
+     console.error(e);
+     empSel.innerHTML = `<option value="">Error loading employees</option>`;
+   } finally {
+     empSel.disabled = false;
+   }
 }
 
 /* ============================
