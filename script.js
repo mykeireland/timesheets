@@ -47,11 +47,27 @@ async function populatePeople() {
   disable([empSel, mgrSel], true);
 
   const employees = await Data.employees();
-  fillSelect(empSel, employees, "Select Employee");
-  fillSelect(mgrSel, employees, "Select Manager");
+
+  // Build options manually with correct IDs + names
+  empSel.innerHTML = '<option value="">Select Employee</option>';
+  mgrSel.innerHTML = '<option value="">Select Manager</option>';
+
+  employees.forEach(e => {
+    const fullName = `${e.first_name} ${e.last_name}`;
+    const opt1 = document.createElement("option");
+    opt1.value = e.employee_id;   // ✅ proper numeric ID
+    opt1.textContent = fullName;
+    empSel.appendChild(opt1);
+
+    const opt2 = document.createElement("option");
+    opt2.value = e.employee_id;   // ✅ proper numeric ID
+    opt2.textContent = fullName;
+    mgrSel.appendChild(opt2);
+  });
 
   disable([empSel, mgrSel], false);
 }
+
 
 /* -----------------------------
    Load Open Tickets
