@@ -111,27 +111,30 @@ async function populateEmployees() {
   disable([empSel], false);
 }
 
-/* ============================
-   TICKETS (OPEN ONLY)
-============================ */
+/* -----------------------------
+   Load Open Tickets
+-------------------------------- */
 async function loadOpenTickets(selectEl) {
-  disable([selectEl], true);
-  selectEl.innerHTML = `<option value="">Loading tickets…</option>`;
+  try {
+    const tickets = await Data.tickets();
 
-  const raw = await Data.ticketsOpen();
-  console.debug("Tickets raw:", raw);
+    selectEl.innerHTML = ""; // clear existing options
 
-  const tickets = normalizeTickets(raw);
-  selectEl.innerHTML = `<option value="">Select Ticket</option>`;
+    // default option
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "Select Ticket";
+    selectEl.appendChild(defaultOpt);
 
-  tickets.forEach(t => {
-    const opt = document.createElement("option");
-    opt.value = String(t.id);
-    opt.textContent = t.label;
-    selectEl.appendChild(opt);
-  });
-
-  disable([selectEl], false);
+    tickets.forEach((ticket) => {
+      const opt = document.createElement("option");
+      opt.value = ticket.ticketId; // backend expects ticketId
+      opt.textContent = `${ticket.cwTicketId} – ${ticket.ticketName} (${ticket.siteName})`;
+      selectEl.appendChild(opt);
+    });
+  } catch (err) {
+    showError(err);
+  }
 }
 
 /* ============================
