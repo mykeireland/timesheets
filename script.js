@@ -1,5 +1,4 @@
-// script.js — minimal, backward-compatible, and stable
-
+// script.js — stable and consistent
 "use strict";
 
 /* ============================
@@ -52,10 +51,13 @@ function showError(err){ console.error(err); alert(err.message || String(err)); 
    Normalisers (ONLY map shapes)
 ============================ */
 function toEmployeeItems(raw) {
+  // Expect array; tolerate alternate shapes
   if (!Array.isArray(raw)) return [];
   return raw.map(e => {
     if (!e) return null;
+    // candidate id fields
     const id = e.employee_id ?? e.employeeId ?? e.id ?? e.user_id ?? e.userId ?? null;
+    // build a display name
     const first = e.first_name ?? e.firstName ?? "";
     const last  = e.last_name  ?? e.lastName  ?? "";
     let name = `${first} ${last}`.trim();
@@ -73,6 +75,7 @@ function toTicketItems(raw) {
     const cw    = t.cwTicketId  ?? t.cw_ticket_id ?? t.cwId ?? "";
     const name  = t.ticketName  ?? t.ticket_name ?? t.name ?? "";
     const site  = t.siteName    ?? t.site_name ?? t.site ?? "";
+    // if an open flag exists and is false, skip
     const openFlag = t.open_flag ?? t.openFlag ?? t.open ?? t.isOpen;
     if (openFlag !== undefined) {
       const ok = (openFlag === true || openFlag === 1 || String(openFlag).toLowerCase() === "true");
@@ -117,9 +120,10 @@ async function loadOpenTickets(selectEl) {
   if (!selectEl) return;
   selectEl.innerHTML = `<option value="">Loading…</option>`;
 
-  const ticketsRaw = await Data.tickets();
-  const tickets    = toTicketItems(ticketsRaw);
+  const ticketsRaw = await Data.tickets();            // ← uses stable alias
+  const tickets    = toTicketItems(ticketsRaw);       // ← normalize to {id,label}
 
+  // Build options
   selectEl.innerHTML = `<option value="">Select Ticket</option>`;
   tickets.forEach(t => {
     const opt = document.createElement("option");
@@ -148,7 +152,10 @@ async function addRow() {
   `.trim();
   tbody.appendChild(tr);
 
+  // hook remove (no inline handlers)
   tr.querySelector('.remove-btn').addEventListener('click', () => tr.remove());
+
+  // populate tickets for this row
   await loadOpenTickets(tr.querySelector('.ticketSelect'));
 }
 
@@ -156,6 +163,7 @@ async function addRow() {
    Form wiring
 ============================ */
 function wireForm() {
+  // Employee change → refresh ticket selects (keeps it simple)
   const empSel = $('#employeeSelect');
   if (empSel) {
     empSel.addEventListener('change', async () => {
@@ -166,6 +174,7 @@ function wireForm() {
     });
   }
 
+  // Submit
   const form = $('#timesheetForm');
   if (form) {
     form.addEventListener('submit', async (e) => {
@@ -176,6 +185,7 @@ function wireForm() {
           await Data.submitEntry(p);
         }
         alert('Timesheet submitted successfully');
+        // reset to a single row
         $('#timesheetBody').innerHTML = '';
         await addRow();
       } catch (err) {
@@ -184,11 +194,13 @@ function wireForm() {
     });
   }
 
+  // Manager view
   const mgrBtn = $('#managerBtn');
   if (mgrBtn) {
     mgrBtn.addEventListener('click', () => { window.location.href = 'manager.html'; });
   }
 
+  // Add row button (if you have one with id="addRowBtn")
   const addBtn = $('#addRowBtn');
   if (addBtn) addBtn.addEventListener('click', () => addRow().catch(showError));
 }
