@@ -1,29 +1,28 @@
-// script.js — Single-authority, stable front-end API + UI wiring
-// Drop this file into the same place your index.html loads script.js from.
+// script.js — minimal, backward-compatible, and stable
 
 "use strict";
 
 /* ============================
-   API (stable surface)
+   API (stable names)
 ============================ */
 const Data = {
-  // low-level fetch with good error messages
+  // generic JSON fetch with better errors
   fetchJson: async (url, opts) => {
     const res = await fetch(url, opts);
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       throw new Error(`HTTP ${res.status} on ${url}${txt ? ` — ${txt}` : ""}`);
     }
-    // If empty body, return []
     const ct = res.headers.get("content-type") || "";
     if (!ct.includes("application/json")) return [];
     return res.json();
   },
 
-  // stable high-level methods — keep both names so old code works
+  // DO NOT RENAME these — keep both for compatibility
   employees: () => Data.fetchJson("/api/employees"),
+  tickets:   () => Data.fetchJson("/api/tickets/open"),
+  // alias that some earlier drafts referenced
   ticketsOpen: () => Data.fetchJson("/api/tickets/open"),
-  tickets: () => Data.ticketsOpen(), // alias for historical compatibility
 
   submitEntry: async (payload) => {
     const res = await fetch("/api/timesheets/submit", {
@@ -35,130 +34,115 @@ const Data = {
       const txt = await res.text().catch(() => "");
       throw new Error(`Submit failed (HTTP ${res.status})${txt ? ` — ${txt}` : ""}`);
     }
-    // optional JSON response expected; ignore or return {} if none
-    return res.text().then(t => {
-      try { return JSON.parse(t || "{}"); } catch (_) { return {}; }
-    });
-  }
+    // handle empty body gracefully
+    return res.text().then(t => { try { return t ? JSON.parse(t) : {}; } catch { return {}; } });
+  },
 };
 
 /* ============================
-   UTILITIES
+   Small helpers
 ============================ */
 function $(sel) { return document.querySelector(sel); }
-function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
-function disable(nodes, v) { (Array.isArray(nodes) ? nodes : [nodes]).forEach(n => n && (n.disabled = v)); }
-function toInt(v, name) { const n = parseInt(v, 10); if (isNaN(n)) throw new Error(`${name} is required`); return n; }
+function toInt(v, name) { const n = parseInt(v,10); if (isNaN(n)) throw new Error(`${name} is required`); return n; }
 function toNum(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
-function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function showError(err){ console.error(err); alert(err.message || String(err)); }
 
 /* ============================
-   NORMALISERS (make UI resilient)
-   - Employees: return { id, name }
-   - Tickets: return { id, cwId, name, site }
+   Normalisers (ONLY map shapes)
 ============================ */
-function normalizeEmployees(raw) {
+function toEmployeeItems(raw) {
+  // Expect array; tolerate alternate shapes
   if (!Array.isArray(raw)) return [];
   return raw.map(e => {
+    if (!e) return null;
+    // candidate id fields
     const id = e.employee_id ?? e.employeeId ?? e.id ?? e.user_id ?? e.userId ?? null;
+    // build a display name
     const first = e.first_name ?? e.firstName ?? "";
-    const last = e.last_name ?? e.lastName ?? "";
+    const last  = e.last_name  ?? e.lastName  ?? "";
     let name = `${first} ${last}`.trim();
-    if (!name) name = e.display_name ?? e.name ?? `${id}`;
+    if (!name) name = e.display_name ?? e.displayName ?? e.name ?? e.email ?? (id != null ? `#${id}` : "");
     if (id == null) return null;
     return { id: Number(id), name: String(name) };
   }).filter(Boolean);
 }
 
-function normalizeTickets(raw) {
+function toTicketItems(raw) {
   if (!Array.isArray(raw)) return [];
   return raw.map(t => {
-    const id = t.ticket_id ?? t.ticketId ?? t.id ?? null;
-    const cw = t.cw_ticket_id ?? t.cwTicketId ?? t.cwId ?? "";
-    const name = t.ticketName ?? t.ticket_name ?? t.name ?? t.ticket_name_display ?? "";
-    const site = t.siteName ?? t.site_name ?? t.site ?? "";
-    // open flag handling (if present)
+    if (!t) return null;
+    const id    = t.ticketId    ?? t.ticket_id ?? t.id ?? null;
+    const cw    = t.cwTicketId  ?? t.cw_ticket_id ?? t.cwId ?? "";
+    const name  = t.ticketName  ?? t.ticket_name ?? t.name ?? "";
+    const site  = t.siteName    ?? t.site_name ?? t.site ?? "";
+    // if an open flag exists and is false, skip
     const openFlag = t.open_flag ?? t.openFlag ?? t.open ?? t.isOpen;
-    // If openFlag exists and is false-y, skip
-    if (openFlag !== undefined && !(openFlag === true || openFlag === 1 || String(openFlag).toLowerCase() === "true")) {
-      return null;
+    if (openFlag !== undefined) {
+      const ok = (openFlag === true || openFlag === 1 || String(openFlag).toLowerCase() === "true");
+      if (!ok) return null;
     }
     if (!id) return null;
-    return { id: Number(id), cwId: String(cw), name: String(name), site: String(site) };
+    return { id: Number(id), label: `${cw || "—"} - ${name || "(no title)"}${site ? " - " + site : ""}` };
   }).filter(Boolean);
 }
 
 /* ============================
-   UI: populate employees
+   Init + wiring
 ============================ */
-async function populateEmployees() {
-  const empSel = $("#employeeSelect");
-  if (!empSel) return;
-  try {
-    disable([empSel], true);
-    empSel.innerHTML = `<option value="">Loading employees…</option>`;
+document.addEventListener("DOMContentLoaded", () => {
+  init().catch(showError);
+});
 
-    const raw = await Data.employees();
-    console.debug("Employees raw:", raw);
-    const list = normalizeEmployees(raw);
-
-    empSel.innerHTML = `<option value="">Select Employee</option>`;
-    list.forEach(e => {
-      const opt = document.createElement("option");
-      opt.value = String(e.id);
-      opt.textContent = e.name;
-      empSel.appendChild(opt);
-    });
-
-    disable([empSel], false);
-  } catch (err) {
-    empSel.innerHTML = `<option value="">Error loading employees</option>`;
-    showError(err);
-  }
+async function init() {
+  await populatePeople();
+  await addRow();   // start with one row
+  wireForm();
 }
 
 /* ============================
-   UI: load open tickets into a specific select element
-   (uses Data.ticketsOpen() under the hood)
+   Populate employees
 ============================ */
-async function loadOpenTicketsInto(selectEl) {
+async function populatePeople() {
+  const empSel = $('#employeeSelect');
+  const mgrSel = $('#managerSelect'); // can exist or not; harmless
+
+  if (empSel) empSel.innerHTML = `<option value="">Loading…</option>`;
+  if (mgrSel) mgrSel.innerHTML = `<option value="">Loading…</option>`;
+
+  const employeesRaw = await Data.employees();           // ← API call
+  const employees    = toEmployeeItems(employeesRaw);    // ← normalize to {id,name}
+
+  fillSelect(empSel, employees, 'Select Employee');
+  if (mgrSel) fillSelect(mgrSel, employees, 'Select Manager'); // safe reuse
+}
+
+/* ============================
+   Tickets per row
+============================ */
+async function loadOpenTickets(selectEl) {
   if (!selectEl) return;
-  try {
-    disable([selectEl], true);
-    selectEl.innerHTML = `<option value="">Loading tickets…</option>`;
+  selectEl.innerHTML = `<option value="">Loading…</option>`;
 
-    const raw = await Data.ticketsOpen();
-    console.debug("Tickets raw:", raw);
-    const tickets = normalizeTickets(raw);
+  const ticketsRaw = await Data.tickets();            // ← uses stable alias
+  const tickets    = toTicketItems(ticketsRaw);       // ← normalize to {id,label}
 
-    selectEl.innerHTML = `<option value="">Select Ticket</option>`;
-    tickets.forEach(t => {
-      const opt = document.createElement("option");
-      opt.value = String(t.id);
-      // human-friendly label
-      const cw = t.cwId || "—";
-      const label = `${cw} — ${t.name || "(no title)"}${t.site ? ` (${t.site})` : ""}`;
-      opt.textContent = label;
-      selectEl.appendChild(opt);
-    });
-
-    disable([selectEl], false);
-  } catch (err) {
-    selectEl.innerHTML = `<option value="">Error loading tickets</option>`;
-    console.error("Failed to load tickets:", err);
-    // Do not alert user every time ticket load fails to prevent noise; show once.
-  }
+  // Build options
+  selectEl.innerHTML = `<option value="">Select Ticket</option>`;
+  tickets.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = String(t.id);
+    opt.textContent = t.label;
+    selectEl.appendChild(opt);
+  });
 }
 
 /* ============================
-   Rows: add one row (ticket select will be loaded)
+   Add row
 ============================ */
 async function addRow() {
-  const tbody = $("#timesheetBody");
-  if (!tbody) throw new Error("Timesheet table body (#timesheetBody) not found");
-
-  const tr = document.createElement("tr");
+  const tbody = $('#timesheetBody');
+  const tr = document.createElement('tr');
   tr.innerHTML = `
     <td class="col-date"><input type="date" required></td>
     <td class="col-ticket"><select class="ticketSelect" required></select></td>
@@ -166,74 +150,47 @@ async function addRow() {
     <td class="col-num"><input type="number" step="0.1" min="0" value="0"></td>
     <td class="col-num"><input type="number" step="0.1" min="0" value="0"></td>
     <td class="col-notes"><input type="text" maxlength="500" placeholder="Notes (optional)"></td>
-    <td class="col-action action-cell"><button type="button" class="btn remove-btn">Remove</button></td>
+    <td class="col-action action-cell">
+      <button type="button" class="btn remove-btn">Remove</button>
+    </td>
   `.trim();
-
   tbody.appendChild(tr);
 
-  // hook remove button (avoid inline onclick)
-  const rem = tr.querySelector(".remove-btn");
-  if (rem) rem.addEventListener("click", () => tr.remove());
+  // hook remove (no inline handlers)
+  tr.querySelector('.remove-btn').addEventListener('click', () => tr.remove());
 
-  // load tickets for this row
-  const ticketSel = tr.querySelector(".ticketSelect");
-  await loadOpenTicketsInto(ticketSel);
+  // populate tickets for this row
+  await loadOpenTickets(tr.querySelector('.ticketSelect'));
 }
 
 /* ============================
-   Collect entries and submit
-============================ */
-function collectEntries() {
-  const empId = $("#employeeSelect")?.value;
-  if (!empId) throw new Error("Please select an employee");
-
-  const rows = [...document.querySelectorAll("#timesheetBody tr")];
-  if (!rows.length) throw new Error("No rows to submit");
-
-  return rows.map(tr => {
-    const date = tr.querySelector('input[type="date"]').value;
-    const ticketVal = tr.querySelector('.ticketSelect')?.value;
-    const nums = tr.querySelectorAll('input[type="number"]');
-    const notes = tr.querySelector('input[type="text"]')?.value?.trim() || null;
-
-    const hoursStandard = toNum(nums[0]?.value || 0);
-    const hours15x = toNum(nums[1]?.value || 0);
-    const hours2x = toNum(nums[2]?.value || 0);
-
-    if (!date) throw new Error("Date is required on all rows");
-    if (!ticketVal) throw new Error("Please select a ticket for each row");
-    const total = +(hoursStandard + hours15x + hours2x).toFixed(2);
-    if (total <= 0) throw new Error("Hours must be greater than 0");
-
-    return {
-      employeeId: Number(empId),
-      ticketId: Number(ticketVal),
-      date,
-      hoursStandard,
-      hours15x,
-      hours2x,
-      notes
-    };
-  });
-}
-
-/* ============================
-   Wiring: attach events
+   Form wiring
 ============================ */
 function wireForm() {
-  const form = $("#timesheetForm");
+  // Employee change → refresh ticket selects (keeps it simple)
+  const empSel = $('#employeeSelect');
+  if (empSel) {
+    empSel.addEventListener('change', async () => {
+      const rows = document.querySelectorAll('#timesheetBody tr');
+      for (const tr of rows) {
+        await loadOpenTickets(tr.querySelector('.ticketSelect'));
+      }
+    });
+  }
+
+  // Submit
+  const form = $('#timesheetForm');
   if (form) {
-    form.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
       try {
         const payloads = collectEntries();
-        console.debug("Submitting payloads:", payloads);
-        for (const payload of payloads) {
-          await Data.submitEntry(payload);
+        for (const p of payloads) {
+          await Data.submitEntry(p);
         }
-        alert("Timesheet(s) submitted successfully");
-        // reset table to one fresh row
-        $("#timesheetBody").innerHTML = "";
+        alert('Timesheet submitted successfully');
+        // reset to a single row
+        $('#timesheetBody').innerHTML = '';
         await addRow();
       } catch (err) {
         showError(err);
@@ -241,45 +198,52 @@ function wireForm() {
     });
   }
 
-  // Employee change: reload tickets per row (optional)
-  const empSel = $("#employeeSelect");
-  if (empSel) {
-    empSel.addEventListener("change", async () => {
-      // refresh ticket dropdowns (keeps user choices simpler)
-      const rows = [...document.querySelectorAll("#timesheetBody tr")];
-      for (const tr of rows) {
-        const ticketSel = tr.querySelector(".ticketSelect");
-        await loadOpenTicketsInto(ticketSel);
-      }
-    });
+  // Manager view
+  const mgrBtn = $('#managerBtn');
+  if (mgrBtn) {
+    mgrBtn.addEventListener('click', () => { window.location.href = 'manager.html'; });
   }
 
-  // Manager view button
-  const managerBtn = $("#managerBtn");
-  if (managerBtn) {
-    managerBtn.addEventListener("click", () => {
-      // go to manager page (same origin)
-      window.location.href = "manager.html";
-    });
-  }
-
-  // Add row button
-  const addBtn = $("#addRowBtn");
-  if (addBtn) {
-    addBtn.addEventListener("click", () => addRow().catch(showError));
-  }
+  // Add row button (if you have one with id="addRowBtn")
+  const addBtn = $('#addRowBtn');
+  if (addBtn) addBtn.addEventListener('click', () => addRow().catch(showError));
 }
 
 /* ============================
-   INIT
+   Helpers (unchanged UI contract)
 ============================ */
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    await populateEmployees();
-    // start with a single row
-    await addRow();
-    wireForm();
-  } catch (err) {
-    showError(err);
-  }
-});
+function fillSelect(sel, items, placeholder) {
+  if (!sel) return;
+  sel.innerHTML = ['<option value="">'+placeholder+'</option>']
+    .concat(items.map(i => `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}</option>`))
+    .join('');
+}
+
+function collectEntries() {
+  const empId = toInt($('#employeeSelect').value, 'Employee');
+  const rows = [...document.querySelectorAll('#timesheetBody tr')];
+  if (!rows.length) throw new Error('No rows to submit');
+
+  return rows.map(tr => {
+    const date = tr.querySelector('input[type="date"]').value;
+    const ticketId = toInt(tr.querySelector('.ticketSelect').value, 'Ticket');
+    const nums = tr.querySelectorAll('input[type="number"]');
+    const hStd = toNum(nums[0].value);
+    const h15  = toNum(nums[1].value);
+    const h2   = toNum(nums[2].value);
+    const notes = tr.querySelector('input[type="text"]').value?.trim() || null;
+
+    if (!date) throw new Error('Date is required on all rows');
+    if (hStd + h15 + h2 <= 0) throw new Error('Hours must be greater than 0');
+
+    return {
+      employeeId: empId,
+      ticketId,
+      date,
+      hoursStandard: hStd,
+      hours15x: h15,
+      hours2x: h2,
+      notes
+    };
+  });
+}
