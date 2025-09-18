@@ -26,8 +26,8 @@ const Data = {
     });
     if (!res.ok) throw new Error("Submit failed");
     return res.json();
-  },
-
+  }
+};
 
 /* -----------------------------
    Init + Form Wiring
@@ -102,28 +102,33 @@ async function addRow() {
    Form Wiring
 -------------------------------- */
 function wireForm() {
-  $('#employeeSelect').addEventListener('change', async (e) => {
-    const empId = e.target.value;
-    const rows = document.querySelectorAll('#timesheetBody tr');
-    for (const tr of rows) await refreshTicketsForRow(tr, empId);
+  // Update tickets when employee changes
+  $("#employeeSelect").addEventListener("change", async () => {
+    const rows = document.querySelectorAll("#timesheetBody tr");
+    for (const tr of rows) {
+      const sel = tr.querySelector(".ticketSelect");
+      await loadOpenTickets(sel);
+    }
   });
 
-  $('#timesheetForm').addEventListener('submit', async (e) => {
+  // Submit form
+  $("#timesheetForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
       const payloads = collectEntries();
-      console.log('Submitting...', payloads);
+      console.log("Submitting...", payloads);
 
       for (const p of payloads) {
         await Data.submitEntry(p);
       }
 
-      alert('Timesheet submitted successfully');
+      alert("Timesheet submitted successfully");
     } catch (err) {
       showError(err);
     }
   });
 
+  // Manager view button
   const managerBtn = $("#managerBtn");
   if (managerBtn) {
     managerBtn.addEventListener("click", () => {
