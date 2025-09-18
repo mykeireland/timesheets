@@ -85,19 +85,31 @@ async function addRow() {
   const tbody = $("#timesheetBody");
   const tr = document.createElement("tr");
 
-  tr.innerHTML = `
-    <td><input type="date" required></td>
-    <td>
-      <select class="ticketSelect" required></select>
-    </td>
-    <td><input type="number" step="0.1" min="0" value="0" required></td>
-    <td><input type="number" step="0.1" min="0" value="0"></td>
-    <td><input type="number" step="0.1" min="0" value="0"></td>
-    <td><input type="text" maxlength="500" placeholder="Notes (optional)"></td>
-    <td class="action-cell">
-      <button type="button" class="btn remove-btn" onclick="this.closest('tr').remove()">Remove</button>
-    </td>
-  `;
+  // inside addRow(), replace tr.innerHTML with:
+    tr.innerHTML = `
+      <td class="col-date">
+        <input type="date" required>
+      </td>
+      <td class="col-ticket">
+        <select class="ticketSelect" required></select>
+      </td>
+      <td class="col-num">
+        <input type="number" step="0.1" min="0" value="0" required>
+      </td>
+      <td class="col-num">
+        <input type="number" step="0.1" min="0" value="0">
+      </td>
+      <td class="col-num">
+        <input type="number" step="0.1" min="0" value="0">
+      </td>
+      <td class="col-notes">
+        <input type="text" maxlength="500" placeholder="Notes (optional)">
+      </td>
+      <td class="col-action action-cell">
+        <button type="button" class="btn remove-btn" onclick="this.closest('tr').remove()">Remove</button>
+      </td>
+    `;
+
 
   tbody.appendChild(tr);
 
