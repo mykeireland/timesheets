@@ -11,12 +11,12 @@ const Data = {
   employees: async () => {
     const res = await fetch("/api/employees");
     if (!res.ok) throw new Error("Could not load employees");
-    return res.json(); // [{ employee_id, first_name, last_name, ... }]
+    return res.json(); // expects employee_id, first_name, last_name
   },
   tickets: async () => {
     const res = await fetch("/api/tickets/open");
     if (!res.ok) throw new Error("Could not load tickets");
-    return res.json(); // [{ ticket_id, cw_ticket_id, name, open_flag }]
+    return res.json(); // expects ticket_id, cw_ticket_id, name, open_flag
   },
   submitEntry: async (payload) => {
     const res = await fetch("/api/timesheets/submit", {
@@ -158,8 +158,8 @@ function collectEntries() {
     if (hStd + h15 + h2 <= 0) throw new Error("Hours must be greater than 0");
 
     return {
-      employee_id: empId,   // ✅ match DB column
-      ticket_id: ticketId,  // ✅ match DB column
+      employee_id: empId,
+      ticket_id: ticketId,
       date,
       hours_standard: hStd,
       hours_15x: h15,
