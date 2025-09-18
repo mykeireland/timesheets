@@ -27,7 +27,7 @@ const Data = {
     if (!res.ok) throw new Error("Submit failed");
     return res.json();
   },
-};
+
 
 /* -----------------------------
    Init + Form Wiring
@@ -215,3 +215,4 @@ function showError(err) {
   console.error(err);
   alert(err.message || String(err));
 }
+      }
