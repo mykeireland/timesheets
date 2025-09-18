@@ -124,12 +124,14 @@ function wireForm() {
     }
   });
 
-    /const managerBtn = $("#managerBtn");
-  if (managerBtn) {
-    managerBtn.addEventListener("click", () => {
+      const managerBtn = $("#managerBtn");
+
+      if (managerBtn) {
+      managerBtn.addEventListener("click", () => {
       window.location.href = "manager.html";
-    });
-  }
+  });
+}
+
 
 /* -----------------------------
    Helpers
