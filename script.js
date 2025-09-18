@@ -124,11 +124,12 @@ function wireForm() {
     }
   });
 
-  // ✅ Manager view button — no extra `}`
-  $('#managerBtn').addEventListener('click', () => {
-    window.location.href = "manager.html";
-  });
-}  // <--- closes wireForm properly
+    /const managerBtn = $("#managerBtn");
+  if (managerBtn) {
+    managerBtn.addEventListener("click", () => {
+      window.location.href = "manager.html";
+    });
+  }
 
 /* -----------------------------
    Helpers
