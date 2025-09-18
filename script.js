@@ -102,27 +102,42 @@ async function addRow() {
    Form Wiring
 -------------------------------- */
 function wireForm() {
-  $("#timesheetForm").addEventListener("submit", async (e) => {
+  $('#employeeSelect').addEventListener('change', async (e) => {
+    const empId = e.target.value;
+    const rows = document.querySelectorAll('#timesheetBody tr');
+    for (const tr of rows) await refreshTicketsForRow(tr, empId);
+  });
+
+  $('#timesheetForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
       const payloads = collectEntries();
-      console.log("Submitting...", payloads);
+      console.log('Submitting...', payloads);
 
       for (const p of payloads) {
         await Data.submitEntry(p);
       }
 
-      alert("Timesheet submitted successfully");
+      alert('Timesheet submitted successfully');
     } catch (err) {
       showError(err);
     }
   });
 
-  // Manager view button
-  $("#managerBtn").addEventListener("click", () => {
+  // ✅ Manager view button — no extra `}`
+  $('#managerBtn').addEventListener('click', () => {
     window.location.href = "manager.html";
   });
+}  // <--- closes wireForm properly
+
+/* -----------------------------
+   Helpers
+-------------------------------- */
+function showError(err) {
+  console.error(err);
+  alert(err.message || String(err));
 }
+
 
 /* -----------------------------
    Helpers
