@@ -25,14 +25,11 @@ body {
   text-align: center;
   color: #fff;
 }
-.header h1 {
-  margin: 0;
-  font-size: 1.6em;
-}
+.header h1 { margin: 0; font-size: 1.6em; }
 
 /* ===== Card/container ===== */
 .container {
-  max-width: 1280px;        /* wide enough that the row fits */
+  max-width: 1280px;
   margin: 28px auto;
   background: #fff;
   padding: 20px 28px;
@@ -40,10 +37,10 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
 
-/* Optional wrapper to allow horizontal scroll on tiny screens */
+/* Allow horizontal scroll only on tiny screens so the table never rips the card */
 .table-wrap { overflow-x: auto; }
 
-/* ===== Form rows (employee/manager) ===== */
+/* ===== Form row ===== */
 .form-row {
   display: flex;
   gap: 16px;
@@ -51,21 +48,14 @@ body {
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
-.form-row label {
-  font-weight: 600;
-  margin-right: 6px;
-}
-.form-row select {
-  min-width: 220px;
-  padding: 6px 8px;
-  font-size: .95em;
-}
+.form-row label { font-weight: 600; margin-right: 6px; }
+.form-row select { min-width: 220px; padding: 6px 8px; font-size: .95em; }
 
 /* ===== Table ===== */
 #timesheetTable {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;      /* important: widths respected and Notes can flex */
+  table-layout: fixed;   /* important: widths respected & Notes flexes */
   margin-top: 12px;
   font-size: .94em;
 }
@@ -73,9 +63,10 @@ body {
 #timesheetTable th,
 #timesheetTable td {
   border: 1px solid #ddd;
-  padding: 8px;
+  padding: 6px;         /* slightly tighter to fit comfortably */
   text-align: center;
   vertical-align: middle;
+  white-space: nowrap;  /* stop headers/buttons from stretching cells */
 }
 
 #timesheetTable th {
@@ -92,15 +83,22 @@ body {
 }
 
 /* ===== Column sizing =====
-   - Date / Ticket: fixed, readable
-   - Standard / 1.5x / 2x / Action: small & equal
-   - Notes: elastic
+   - Date / Ticket: fixed
+   - Standard / 1.5x / 2x / Action: equal & small
+   - Notes: elastic (the only flexible column)
 */
-#timesheetTable .col-date   { width: 10rem; }   /* ~160px */
-#timesheetTable .col-ticket { width: 18rem; }   /* ~288px */
-#timesheetTable .col-num    { width: 7rem;  }   /* Standard, 1.5x, 2x */
-#timesheetTable .col-action { width: 7rem;  }   /* Remove button cell */
-#timesheetTable .col-notes  { width: auto; min-width: 12rem; }
+#timesheetTable .col-date   { width: 9rem; }     /* ~144px */
+#timesheetTable .col-ticket { width: 15rem; }    /* ~240px */
+#timesheetTable .col-num    { width: 5.75rem; }  /* ~92px each */
+#timesheetTable .col-action { width: 6rem; }     /* ~96px */
+#timesheetTable .col-notes  { width: auto; min-width: 8rem; } /* flex */
+
+/* Keep the Remove button from growing the cell */
+.action-cell .remove-btn {
+  background: var(--gray-600);
+  color: #fff;
+  padding: 6px 10px;
+}
 
 /* ===== Buttons row ===== */
 .buttons {
@@ -120,33 +118,25 @@ button {
 button:hover { background: var(--gray-300); }
 button#submitForm,
 button#submitBtn,
-button.primary {
-  background: var(--blue);
-  color: #fff;
-}
+button.primary { background: var(--blue); color: #fff; }
 button.primary:hover { filter: brightness(0.95); }
-button.danger,
-.action-cell .remove-btn {
-  background: var(--gray-600);
-  color: #fff;
-}
 
 /* ===== Responsive tweaks ===== */
 @media (max-width: 1200px) {
-  #timesheetTable .col-ticket { width: 16rem; }
+  #timesheetTable .col-ticket { width: 14rem; }
   #timesheetTable .col-num,
-  #timesheetTable .col-action { width: 6.5rem; }
+  #timesheetTable .col-action { width: 5.5rem; }
 }
 
 @media (max-width: 992px) {
   .container { padding-left: 18px; padding-right: 18px; }
-  #timesheetTable .col-ticket { width: 14rem; }
-  #timesheetTable .col-date   { width: 9rem;  }
+  #timesheetTable .col-ticket { width: 13rem; }
+  #timesheetTable .col-date   { width: 8.5rem; }
   #timesheetTable .col-num,
-  #timesheetTable .col-action { width: 6rem;  }
+  #timesheetTable .col-action { width: 5.25rem; }
 }
 
 @media (max-width: 820px) {
   .container  { padding-left: 14px; padding-right: 14px; }
-  .table-wrap { overflow-x: auto; }
+  .table-wrap { overflow-x: auto; } /* ensures no clipping on small screens */
 }
