@@ -6,16 +6,16 @@
 ============================ */
 const Data = {
   // generic JSON fetch with better errors
-  fetchJson: async (url, opts) => {
-    const res = await fetch(url, opts);
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status} on ${url}${txt ? ` — ${txt}` : ""}`);
-    }
-    const ct = res.headers.get("content-type") || "";
-    if (!ct.includes("application/json")) return [];
-    return res.json();
-  },
+    fetchJson: async (url, opts) => {
+      const res = await fetch(url, { ...(opts||{}), headers: { ...(opts?.headers||{}), Accept: "application/json" }});
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status} on ${url}${txt ? ` — ${txt}` : ""}`);
+      }
+      const text = await res.text().catch(() => "");
+      if (!text) return [];
+      try { return JSON.parse(text); } catch { return []; }
+    },
 
   // DO NOT RENAME these — keep both for compatibility
   employees: () => Data.fetchJson("/api/employees"),
