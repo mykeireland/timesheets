@@ -18,13 +18,13 @@ const Data = {
     },
 
   // DO NOT RENAME these — keep both for compatibility
-  employees: () => Data.fetchJson("/api/employees"),
-  tickets:   () => Data.fetchJson("/api/tickets/open"),
+  employees: () => Data.fetchJson(`${window.API_BASE}/employees`),
+  tickets:   () => Data.fetchJson(`${window.API_BASE}/tickets/open`),
   // alias that some earlier drafts referenced
-  ticketsOpen: () => Data.fetchJson("/api/tickets/open"),
+  ticketsOpen: () => Data.fetchJson(`${window.API_BASE}/tickets/open`),
 
   submitEntry: async (payload) => {
-    const res = await fetch("/api/timesheets/submit", {
+    const res = await fetch(`${window.API_BASE}/timesheets/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
