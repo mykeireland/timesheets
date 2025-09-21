@@ -13,7 +13,7 @@
     tbody.innerHTML = `<tr><td colspan="7">Loading...</td></tr>`;
 
     try {
-      const res = await fetch("/api/timesheets/pending"); // SWA proxy
+      const res = await fetch(`${window.API_BASE}/timesheets/pending`);
       if (!res.ok) throw new Error(`Failed to fetch pending timesheets (HTTP ${res.status})`);
       timesheets = await res.json();
       renderTable();
@@ -109,12 +109,12 @@
   }
 
   async function approveTimesheet(entryId) {
-    const res = await fetch(`/api/timesheets/approve/${entryId}`, { method: "POST" });
+    const res = await fetch(`${window.API_BASE}/timesheets/approve/${entryId}`, { method: "POST" });
     if (!res.ok) throw new Error(`Approve failed (HTTP ${res.status})`);
   }
 
   async function rejectTimesheet(entryId) {
-    const res = await fetch(`/api/timesheets/reject/${entryId}`, { method: "POST" });
+    const res = await fetch(`${window.API_BASE}/timesheets/reject/${entryId}`, { method: "POST" });
     if (!res.ok) throw new Error(`Reject failed (HTTP ${res.status})`);
   }
 
