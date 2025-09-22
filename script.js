@@ -150,54 +150,50 @@ async function loadOpenTickets(selectEl) {
 ============================ */
 async function addRow() {
   const tbody = $('#timesheetBody');
-  const tr = document.createElement('tr');
 
-  tr.innerHTML = `
+  // First row: date, ticket, notes
+  const tr1 = document.createElement('tr');
+  tr1.innerHTML = `
     <td class="col-date">
       <input type="date" required>
     </td>
-
     <td class="col-ticket">
       <select class="ticketSelect" required></select>
     </td>
-
-    <!-- NEW: start time (24h, 15-min increments) -->
-    <td>
-      <input type="time" step="900" class="start-time" required>
-    </td>
-
-    <!-- NEW: hours (decimal, 0.25 = 15min) -->
-    <td>
-      <input type="number" step="0.25" min="0.25" class="hours" required>
-    </td>
-
-    <td class="col-num">
-      <input type="number" step="0.1" min="0" value="0" class="standard" required>
-    </td>
-    <td class="col-num">
-      <input type="number" step="0.1" min="0" value="0" class="ot15">
-    </td>
-    <td class="col-num">
-      <input type="number" step="0.1" min="0" value="0" class="ot2">
-    </td>
-
     <td class="col-notes">
       <input type="text" maxlength="500" placeholder="Notes (optional)" class="notes">
     </td>
+  `.trim();
 
-    <td class="col-action action-cell">
+  // Second row: start time + hours
+  const tr2 = document.createElement('tr');
+  tr2.innerHTML = `
+    <td class="col-time">
+      <input type="time" step="900" class="start-time" required>
+    </td>
+    <td class="col-hours">
+      <input type="number" step="0.25" min="0.25" class="hours standard" required placeholder="Std">
+      <input type="number" step="0.25" min="0" class="hours ot15" placeholder="1.5x">
+      <input type="number" step="0.25" min="0" class="hours ot2" placeholder="2x">
+    </td>
+    <td class="col-action">
       <button type="button" class="btn remove-btn">Remove</button>
     </td>
   `.trim();
 
-  tbody.appendChild(tr);
+  tbody.appendChild(tr1);
+  tbody.appendChild(tr2);
 
-  // hook remove (no inline handlers)
-  tr.querySelector('.remove-btn').addEventListener('click', () => tr.remove());
+  // Hook remove
+  tr2.querySelector('.remove-btn').addEventListener('click', () => {
+    tr1.remove();
+    tr2.remove();
+  });
 
-  // populate tickets for this row
-  await loadOpenTickets(tr.querySelector('.ticketSelect'));
+  // Populate tickets for this row
+  await loadOpenTickets(tr1.querySelector('.ticketSelect'));
 }
+
 
 
 /* ============================
