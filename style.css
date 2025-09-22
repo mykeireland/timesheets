@@ -126,6 +126,14 @@ tbody tr:hover {
 #timesheetTable .col-num    { width: 5.75rem; }
 #timesheetTable .col-action { width: 6rem; }
 
+/* Notes column flex */
+.col-notes {
+  width: auto;
+  min-width: 10rem;
+  text-align: left;
+  white-space: normal;
+}
+
 /* =========================================================
    TABLES: MANAGER VIEW
    ========================================================= */
