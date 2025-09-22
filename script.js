@@ -164,13 +164,27 @@
       return null;
     }
 
-    const start = els.entryStart.value.trim();
+   const start = getSelectedTime();
     if (!start) {
-      alert("Please enter a start time.");
-      els.entryStart.focus();
+      alert("Please select a start time (hours, minutes, AM/PM).");
       return null;
-    }
+  }
 
+  // ---------- Hour and Minute Pickers ----------
+    function getSelectedTime() {
+      const hour = document.getElementById("entryHour").value;
+      const minute = document.getElementById("entryMinute").value;
+      const ampm = document.getElementById("entryAmPm").value;
+    
+      if (!hour || !minute || !ampm) return null;
+    
+      let h = parseInt(hour, 10);
+      if (ampm === "PM" && h < 12) h += 12;
+      if (ampm === "AM" && h === 12) h = 0;
+    
+      return `${String(h).padStart(2, "0")}:${minute}`;
+    }
+    
     const hoursStd = asNumber(els.hoursStd.value);
     const hours15 = asNumber(els.hours15.value);
     const hours2 = asNumber(els.hours2.value);
@@ -242,6 +256,10 @@
     els.entryNotes.value = "";
     els.entryDate.focus();
   }
+  
+  document.getElementById("entryHour").selectedIndex = 0;
+  document.getElementById("entryMinute").selectedIndex = 0;
+  document.getElementById("entryAmPm").selectedIndex = 0;
 
   function renderQueue() {
     const q = state.queue;
