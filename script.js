@@ -255,6 +255,10 @@
     els.hours2.value = "0";
     els.entryNotes.value = "";
     els.entryDate.focus();
+    // Ensure reset clears dynamic selects
+    els.form.addEventListener("reset", () => {
+    // Reset ticket dropdown
+    els.entryTicket.selectedIndex = 0;
   }
   
   document.getElementById("entryHour").selectedIndex = 0;
