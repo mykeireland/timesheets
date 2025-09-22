@@ -151,40 +151,66 @@ async function loadOpenTickets(selectEl) {
 async function addRow() {
   const tbody = $('#timesheetBody');
 
-  // First row: date, ticket, notes
-  const tr1 = document.createElement('tr');
-  tr1.innerHTML = `
-    <td><input type="date" required></td>
-    <td><select class="ticketSelect" required></select></td>
-    <td><input type="text" maxlength="500" placeholder="Notes (optional)" class="notes"></td>
+  // Row 1: Date/Ticket/Notes header
+  const trHead1 = document.createElement('tr');
+  trHead1.classList.add('entry-header-top');
+  trHead1.innerHTML = `
+    <th>Date</th>
+    <th>Ticket</th>
+    <th colspan="2">Notes</th>
   `.trim();
 
-  // Second row: start time + hours + action
-  const tr2 = document.createElement('tr');
-  tr2.innerHTML = `
+  // Row 2: inputs for Date/Ticket/Notes
+  const trData1 = document.createElement('tr');
+  trData1.classList.add('entry-data-top');
+  trData1.innerHTML = `
+    <td><input type="date" required></td>
+    <td><select class="ticketSelect" required></select></td>
+    <td colspan="2"><input type="text" maxlength="500" placeholder="Notes (optional)" class="notes" style="width:100%"></td>
+  `.trim();
+
+  // Row 3: Time + Hours header
+  const trHead2 = document.createElement('tr');
+  trHead2.classList.add('entry-header-bottom');
+  trHead2.innerHTML = `
+    <th>Start Time</th>
+    <th colspan="3">Hours (Std / 1.5x / 2x)</th>
+    <th>Action</th>
+  `.trim();
+
+  // Row 4: inputs for Time + Hours + Actions
+  const trData2 = document.createElement('tr');
+  trData2.classList.add('entry-data-bottom');
+  trData2.innerHTML = `
     <td><input type="time" step="900" class="start-time" required></td>
-    <td colspan="2">
-      <input type="number" step="0.25" min="0.25" class="hours standard" required placeholder="Std">
-      <input type="number" step="0.25" min="0" class="hours ot15" placeholder="1.5x">
-      <input type="number" step="0.25" min="0" class="hours ot2" placeholder="2x">
-    </td>
+    <td><input type="number" step="0.25" min="0.25" class="hours standard" required placeholder="Std"></td>
+    <td><input type="number" step="0.25" min="0" class="hours ot15" placeholder="1.5x"></td>
+    <td><input type="number" step="0.25" min="0" class="hours ot2" placeholder="2x"></td>
     <td>
+      <button type="button" class="btn add-btn">Add</button>
       <button type="button" class="btn remove-btn">Remove</button>
     </td>
   `.trim();
 
-  tbody.appendChild(tr1);
-  tbody.appendChild(tr2);
+  // Append everything
+  tbody.appendChild(trHead1);
+  tbody.appendChild(trData1);
+  tbody.appendChild(trHead2);
+  tbody.appendChild(trData2);
 
-  // hook remove
-  tr2.querySelector('.remove-btn').addEventListener('click', () => {
-    tr1.remove();
-    tr2.remove();
+  // Hook actions
+  trData2.querySelector('.add-btn').addEventListener('click', () => addRow());
+  trData2.querySelector('.remove-btn').addEventListener('click', () => {
+    trHead1.remove();
+    trData1.remove();
+    trHead2.remove();
+    trData2.remove();
   });
 
-  // populate tickets for this row
-  await loadOpenTickets(tr1.querySelector('.ticketSelect'));
+  // Populate tickets
+  await loadOpenTickets(trData1.querySelector('.ticketSelect'));
 }
+
 
 /* ============================
    Form wiring
