@@ -135,19 +135,30 @@ async function loadOpenTickets(selectEl) {
    Wire form
 ============================ */
 function wireForm() {
-  const form = $("#timesheetForm");
+  const form = $('#timesheetForm');
   if (!form) return;
 
-  // Manager view
-  const mgrBtn = $("#managerBtn");
-  if (mgrBtn) mgrBtn.addEventListener("click", () => { window.location.href = "manager.html"; });
+  // Add → queue entry
+  const addBtn = $('#addRowBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        const entry = collectSingleEntry();
+        queueEntry(entry);
+        form.reset();
+      } catch (err) {
+        showError(err);
+      }
+    });
+  }
 
-  // Submit all queued
-  form.addEventListener("submit", async (e) => {
+  // Submit → only check queue
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
       const payloads = getQueuedEntries();
-      if (!payloads.length) throw new Error("No entries queued");
+      if (!payloads.length) throw new Error("No entries queued");  // ✅ only rule
       for (const p of payloads) {
         await Data.submitEntry(p);
       }
@@ -157,6 +168,12 @@ function wireForm() {
       showError(err);
     }
   });
+
+  // Manager view
+  const mgrBtn = $('#managerBtn');
+  if (mgrBtn) {
+    mgrBtn.addEventListener('click', () => { window.location.href = 'manager.html'; });
+  }
 }
 
 /* ============================
