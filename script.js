@@ -154,6 +154,8 @@ async function addRow() {
   tr.innerHTML = `
     <td class="col-date"><input type="date" required></td>
     <td class="col-ticket"><select class="ticketSelect" required></select></td>
+    <td><input type="time" step="900" class="start-time" required></td>
+    <td><input type="number" step="0.25" min="0.25" class="hours" required></td>
     <td class="col-num"><input type="number" step="0.1" min="0" value="0" required></td>
     <td class="col-num"><input type="number" step="0.1" min="0" value="0"></td>
     <td class="col-num"><input type="number" step="0.1" min="0" value="0"></td>
