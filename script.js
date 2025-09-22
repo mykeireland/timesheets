@@ -95,7 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function init() {
   await populatePeople();
-  await addRow();   // start with one row
   wireForm();
 }
 
@@ -269,7 +268,6 @@ function wireForm() {
         alert('Timesheet submitted successfully');
         // reset to a single row
         $('#timesheetBody').innerHTML = '';
-        await addRow();
       } catch (err) {
         showError(err);
       }
@@ -284,7 +282,7 @@ function wireForm() {
 
   // Add row button (if you have one with id="addRowBtn")
   const addBtn = $('#addRowBtn');
-  if (addBtn) addBtn.addEventListener('click', () => addRow().catch(showError));
+  if (addBtn) addBtn.addEventListener('click', () => addToQueue().catch(showError));
 }
 
 /* ============================
