@@ -151,19 +151,45 @@ async function loadOpenTickets(selectEl) {
 async function addRow() {
   const tbody = $('#timesheetBody');
   const tr = document.createElement('tr');
+
   tr.innerHTML = `
-    <td class="col-date"><input type="date" required></td>
-    <td class="col-ticket"><select class="ticketSelect" required></select></td>
-    <td><input type="time" step="900" class="start-time" required></td>
-    <td><input type="number" step="0.25" min="0.25" class="hours" required></td>
-    <td class="col-num"><input type="number" step="0.1" min="0" value="0" required></td>
-    <td class="col-num"><input type="number" step="0.1" min="0" value="0"></td>
-    <td class="col-num"><input type="number" step="0.1" min="0" value="0"></td>
-    <td class="col-notes"><input type="text" maxlength="500" placeholder="Notes (optional)"></td>
+    <td class="col-date">
+      <input type="date" required>
+    </td>
+
+    <td class="col-ticket">
+      <select class="ticketSelect" required></select>
+    </td>
+
+    <!-- NEW: start time (24h, 15-min increments) -->
+    <td>
+      <input type="time" step="900" class="start-time" required>
+    </td>
+
+    <!-- NEW: hours (decimal, 0.25 = 15min) -->
+    <td>
+      <input type="number" step="0.25" min="0.25" class="hours" required>
+    </td>
+
+    <td class="col-num">
+      <input type="number" step="0.1" min="0" value="0" class="standard" required>
+    </td>
+    <td class="col-num">
+      <input type="number" step="0.1" min="0" value="0" class="ot15">
+    </td>
+    <td class="col-num">
+      <input type="number" step="0.1" min="0" value="0" class="ot2">
+    </td>
+
+    <td class="col-notes">
+      <input type="text" maxlength="500" placeholder="Notes (optional)" class="notes">
+    </td>
+
     <td class="col-action action-cell">
       <button type="button" class="btn remove-btn">Remove</button>
     </td>
   `.trim();
+
   tbody.appendChild(tr);
 
   // hook remove (no inline handlers)
@@ -172,6 +198,7 @@ async function addRow() {
   // populate tickets for this row
   await loadOpenTickets(tr.querySelector('.ticketSelect'));
 }
+
 
 /* ============================
    Form wiring
@@ -235,25 +262,40 @@ function collectEntries() {
   if (!rows.length) throw new Error('No rows to submit');
 
   return rows.map(tr => {
-    const date = tr.querySelector('input[type="date"]').value;
-    const ticketId = toInt(tr.querySelector('.ticketSelect').value, 'Ticket');
-    const nums = tr.querySelectorAll('input[type="number"]');
-    const hStd = toNum(nums[0].value);
-    const h15  = toNum(nums[1].value);
-    const h2   = toNum(nums[2].value);
-    const notes = tr.querySelector('input[type="text"]').value?.trim() || null;
+    const dateEl      = tr.querySelector('input[type="date"]');
+    const ticketEl    = tr.querySelector('.ticketSelect');
+    const startEl     = tr.querySelector('.start-time');
+    const hoursEl     = tr.querySelector('.hours');
+    const stdEl       = tr.querySelector('.standard');
+    const ot15El      = tr.querySelector('.ot15');
+    const ot2El       = tr.querySelector('.ot2');
+    const notesEl     = tr.querySelector('.notes');
+
+    const date   = dateEl?.value || '';
+    const ticketId = toInt(ticketEl?.value, 'Ticket');
+    const start_time = startEl?.value || '';                 // "HH:MM" (24h)
+    const hours = parseFloat(hoursEl?.value || '0');         // decimal, 0.25 step
+
+    const hoursStandard = toNum(stdEl?.value);
+    const hours15x      = toNum(ot15El?.value);
+    const hours2x       = toNum(ot2El?.value);
+    const notes         = (notesEl?.value || '').trim() || null;
 
     if (!date) throw new Error('Date is required on all rows');
-    if (hStd + h15 + h2 <= 0) throw new Error('Hours must be greater than 0');
+    if (!start_time) throw new Error('Start time is required on all rows');
+    if (!(hours > 0)) throw new Error('Hours must be greater than 0');
 
     return {
       employeeId: empId,
       ticketId,
-      date,
-      hoursStandard: hStd,
-      hours15x: h15,
-      hours2x: h2,
+      date,                 // keep as YYYY-MM-DD (from <input type="date">)
+      start_time,           // NEW: "HH:MM" 24h
+      hours,                // NEW: decimal hours (0.25 increments)
+      hoursStandard,
+      hours15x,
+      hours2x,
       notes
     };
   });
 }
+
