@@ -1,4 +1,3 @@
-// manager.js
 // Manager view: fetches pending timesheets, renders them with Approve/Reject,
 // supports filtering + sorting.
 
@@ -12,9 +11,11 @@
     tableBody: document.querySelector("#pendingTable tbody"),
   };
 
-  let timesheets = []; // full dataset from API
-  let sortField = null;
-  let sortDir = 1; // 1 = asc, -1 = desc
+  const state = {
+    timesheets: [],
+    sortField: null,
+    sortDir: 1, // 1 = asc, -1 = desc
+  };
 
   // -------- Fetch & render --------
   async function loadPending() {
@@ -22,16 +23,16 @@
       const res = await fetch(`${API_BASE}/timesheets/pending`);
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error("Unexpected response");
-      timesheets = data;
+      state.timesheets = data;
       renderTable();
     } catch (err) {
       console.error("Failed to load pending timesheets:", err);
-      els.tableBody.innerHTML = `<tr><td colspan="7">Error loading timesheets</td></tr>`;
+      els.tableBody.innerHTML = `<tr><td colspan="8">Error loading timesheets</td></tr>`;
     }
   }
 
   function renderTable() {
-    let rows = [...timesheets];
+    let rows = [...state.timesheets];
 
     // Apply filter
     const q = els.filterInput.value.trim().toLowerCase();
@@ -44,17 +45,19 @@
     }
 
     // Apply sort
-    if (sortField) {
+    if (state.sortField) {
       rows.sort((a, b) => {
-        const va = a[sortField] ?? "";
-        const vb = b[sortField] ?? "";
-        return va > vb ? sortDir : va < vb ? -sortDir : 0;
+        const va = (a[state.sortField] ?? "").toString().toLowerCase();
+        const vb = (b[state.sortField] ?? "").toString().toLowerCase();
+        if (va < vb) return -1 * state.sortDir;
+        if (va > vb) return 1 * state.sortDir;
+        return 0;
       });
     }
 
     // Render
     if (rows.length === 0) {
-      els.tableBody.innerHTML = `<tr><td colspan="7">No pending timesheets</td></tr>`;
+      els.tableBody.innerHTML = `<tr><td colspan="8">No pending timesheets</td></tr>`;
       return;
     }
 
@@ -62,12 +65,13 @@
       .map(
         (r) => `
       <tr data-id="${r.entryId}">
-        <td>${r.firstName} ${r.lastName}</td>
-        <td>${r.siteName}</td>
-        <td>${r.ticketId}</td>
-        <td>${r.date}</td>
-        <td>${r.hours}</td>
-        <td><span class="status ${r.status}">${r.status}</span></td>
+        <td>${escapeHtml(r.firstName)} ${escapeHtml(r.lastName)}</td>
+        <td>${escapeHtml(r.siteName)}</td>
+        <td>${escapeHtml(r.ticketId)}</td>
+        <td>${escapeHtml(r.date)}</td>
+        <td>${escapeHtml(r.hours)}</td>
+        <td><span class="status ${escapeHtml(r.status)}">${escapeHtml(r.status)}</span></td>
+        <td class="col-notes">${escapeHtml(r.notes || "")}</td>
         <td>
           <button class="btn approve" data-approve="${r.entryId}">Approve</button>
           <button class="btn reject" data-reject="${r.entryId}">Reject</button>
@@ -82,7 +86,7 @@
     try {
       const res = await fetch(`${API_BASE}/timesheets/approve/${entryId}`, { method: "POST" });
       if (!res.ok) throw new Error(await res.text());
-      timesheets = timesheets.filter((t) => t.entryId !== entryId);
+      state.timesheets = state.timesheets.filter((t) => t.entryId !== entryId);
       renderTable();
     } catch (err) {
       alert("Approve failed: " + err.message);
@@ -93,7 +97,7 @@
     try {
       const res = await fetch(`${API_BASE}/timesheets/reject/${entryId}`, { method: "POST" });
       if (!res.ok) throw new Error(await res.text());
-      timesheets = timesheets.filter((t) => t.entryId !== entryId);
+      state.timesheets = state.timesheets.filter((t) => t.entryId !== entryId);
       renderTable();
     } catch (err) {
       alert("Reject failed: " + err.message);
@@ -114,11 +118,11 @@
     } else if (t.closest(".sort-btn")) {
       const th = t.closest("th");
       const field = th.getAttribute("data-field");
-      if (sortField === field) {
-        sortDir *= -1; // toggle
+      if (state.sortField === field) {
+        state.sortDir *= -1; // toggle
       } else {
-        sortField = field;
-        sortDir = 1;
+        state.sortField = field;
+        state.sortDir = 1;
       }
       updateSortIcons();
       renderTable();
@@ -127,10 +131,19 @@
 
   function updateSortIcons() {
     document.querySelectorAll("th .sort-icon").forEach((el) => (el.textContent = "⇅"));
-    if (sortField) {
-      const icon = document.querySelector(`th[data-field="${sortField}"] .sort-icon`);
-      if (icon) icon.textContent = sortDir === 1 ? "↑" : "↓";
+    if (state.sortField) {
+      const icon = document.querySelector(`th[data-field="${state.sortField}"] .sort-icon`);
+      if (icon) icon.textContent = state.sortDir === 1 ? "↑" : "↓";
     }
+  }
+
+  // -------- Helpers --------
+  function escapeHtml(s) {
+    return (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   // -------- Init --------
