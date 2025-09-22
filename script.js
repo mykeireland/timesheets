@@ -1,4 +1,3 @@
-// script.js
 // Timesheet entry + queue flow with clean separation of validations.
 // - "Add": validates entry row (employee, date, ticket, start, hours>0), pushes to queue
 // - "Submit": validates ONLY queue length (>0), posts each entry to API
@@ -17,7 +16,6 @@
     employeeSelect: /** @type {HTMLSelectElement} */ (byId("employeeSelect")),
     entryDate: /** @type {HTMLInputElement} */ (byId("entryDate")),
     entryTicket: /** @type {HTMLSelectElement} */ (byId("entryTicket")),
-    entryStart: /** @type {HTMLInputElement} */ (byId("entryStart")),
     hoursStd: /** @type {HTMLInputElement} */ (byId("hoursStd")),
     hours15: /** @type {HTMLInputElement} */ (byId("hours15")),
     hours2: /** @type {HTMLInputElement} */ (byId("hours2")),
@@ -27,7 +25,6 @@
     managerBtn: /** @type {HTMLButtonElement} */ (byId("managerBtn")),
   };
 
-  // Will be resolved after DOMContentLoaded for disabling text on submit button
   let submitBtn /** @type {HTMLButtonElement | null} */ = null;
 
   const state = {
@@ -56,7 +53,7 @@
     const res = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
     const text = await res.text();
     let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { /* keep data as null */ }
+    try { data = text ? JSON.parse(text) : null; } catch { /* ignore */ }
     if (!res.ok) {
       const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
       throw new Error(msg);
@@ -68,7 +65,6 @@
   async function loadEmployees() {
     try {
       const data = await fetchJSON(`${API_BASE}/employees`);
-      // expected: [{ id, name }]
       state.employees = Array.isArray(data) ? data : [];
       populateEmployeeSelect();
     } catch (err) {
@@ -80,7 +76,6 @@
   async function loadTickets() {
     try {
       const data = await fetchJSON(`${API_BASE}/tickets/open`);
-      // expected: [{ ticketId, cwTicketId, ticketName, siteName }]
       state.tickets = Array.isArray(data) ? data : [];
       populateTicketSelect();
     } catch (err) {
@@ -92,7 +87,6 @@
   function populateEmployeeSelect() {
     const sel = els.employeeSelect;
     sel.innerHTML = "";
-
     const opt0 = document.createElement("option");
     opt0.value = "";
     opt0.textContent = "Select employee…";
@@ -111,7 +105,6 @@
   function populateTicketSelect() {
     const sel = els.entryTicket;
     sel.innerHTML = "";
-
     const opt0 = document.createElement("option");
     opt0.value = "";
     opt0.textContent = "Select ticket…";
@@ -122,7 +115,6 @@
     for (const t of state.tickets) {
       const opt = document.createElement("option");
       opt.value = String(t.ticketId);
-      // Prefer CW ID if present, then name + site
       const left = t.cwTicketId ? `#${t.cwTicketId}` : `Ticket ${t.ticketId}`;
       const right = [t.ticketName, t.siteName].filter(Boolean).join(" — ");
       opt.textContent = right ? `${left} · ${right}` : left;
@@ -140,9 +132,22 @@
     sel.appendChild(opt);
   }
 
-  // ---------- Validation (entry row ONLY for Add) ----------
+  // ---------- Time picker helper ----------
+  function getSelectedTime() {
+    const hour = document.getElementById("entryHour").value;
+    const minute = document.getElementById("entryMinute").value;
+    const ampm = document.getElementById("entryAmPm").value;
+    if (!hour || !minute || !ampm) return null;
+
+    let h = parseInt(hour, 10);
+    if (ampm === "PM" && h < 12) h += 12;
+    if (ampm === "AM" && h === 12) h = 0;
+
+    return `${String(h).padStart(2, "0")}:${minute}`;
+  }
+
+  // ---------- Validation ----------
   function validateEntryRow() {
-    // order matters for "remind the next required field"
     const employeeId = els.employeeSelect.value.trim();
     if (!employeeId) {
       alert("Please select an employee.");
@@ -164,41 +169,23 @@
       return null;
     }
 
-   const start = getSelectedTime();
+    const start = getSelectedTime();
     if (!start) {
       alert("Please select a start time (hours, minutes, AM/PM).");
       return null;
-  }
-
-  // ---------- Hour and Minute Pickers ----------
-    function getSelectedTime() {
-      const hour = document.getElementById("entryHour").value;
-      const minute = document.getElementById("entryMinute").value;
-      const ampm = document.getElementById("entryAmPm").value;
-    
-      if (!hour || !minute || !ampm) return null;
-    
-      let h = parseInt(hour, 10);
-      if (ampm === "PM" && h < 12) h += 12;
-      if (ampm === "AM" && h === 12) h = 0;
-    
-      return `${String(h).padStart(2, "0")}:${minute}`;
     }
-    
+
     const hoursStd = asNumber(els.hoursStd.value);
     const hours15 = asNumber(els.hours15.value);
     const hours2 = asNumber(els.hours2.value);
     const total = hoursStd + hours15 + hours2;
-
     if (total <= 0) {
       alert("Please enter at least one hour (Std / 1.5x / 2x).");
       (hoursStd ? els.hours15 : els.hoursStd).focus();
       return null;
     }
 
-    // build the entry (notes optional)
-    /** @type {QueueEntry} */
-    const entry = {
+    return {
       employeeId: parseInt(employeeId, 10),
       employeeName: getEmployeeNameById(parseInt(employeeId, 10)),
       date,
@@ -210,8 +197,6 @@
       hours2,
       notes: (els.entryNotes.value || "").trim(),
     };
-
-    return entry;
   }
 
   function getEmployeeNameById(id) {
@@ -232,12 +217,11 @@
     const entry = validateEntryRow();
     if (!entry) return;
 
-    // If queue has entries for a different employee, block or offer to clear
     if (state.queue.length > 0 && state.queue[0].employeeId !== entry.employeeId) {
       const proceed = confirm(
         "Your queue contains entries for a different employee.\n" +
-          "Submitting mixed employees is not supported.\n\n" +
-          "Clear queue and add this entry?"
+        "Submitting mixed employees is not supported.\n\n" +
+        "Clear queue and add this entry?"
       );
       if (!proceed) return;
       state.queue = [];
@@ -246,53 +230,41 @@
     state.queue.push(entry);
     renderQueue();
 
-    // Reset only the entry inputs (not employee)
+    // Reset entry fields (not employee)
     els.entryDate.value = "";
     els.entryTicket.selectedIndex = 0;
-    els.entryStart.value = "";
     els.hoursStd.value = "0";
     els.hours15.value = "0";
     els.hours2.value = "0";
     els.entryNotes.value = "";
     els.entryDate.focus();
-    // Ensure reset clears dynamic selects
-    els.form.addEventListener("reset", () => {
-    // Reset ticket dropdown
-    els.entryTicket.selectedIndex = 0;
+
+    // Reset time picker
+    document.getElementById("entryHour").selectedIndex = 0;
+    document.getElementById("entryMinute").selectedIndex = 0;
+    document.getElementById("entryAmPm").selectedIndex = 0;
   }
-  
-  document.getElementById("entryHour").selectedIndex = 0;
-  document.getElementById("entryMinute").selectedIndex = 0;
-  document.getElementById("entryAmPm").selectedIndex = 0;
 
   function renderQueue() {
     const q = state.queue;
     els.queueTable.innerHTML = "";
-
     if (q.length === 0) {
       els.queuedWrap.style.display = "none";
       return;
     }
-
     els.queuedWrap.style.display = "block";
-
-    const rows = q
-      .map((e, idx) => {
-        return `
-          <tr data-idx="${idx}">
-            <td>${e.date}</td>
-            <td title="${escapeHtml(e.ticketLabel)}">${escapeHtml(shorten(e.ticketLabel, 64))}</td>
-            <td>${e.start}</td>
-            <td>${e.hoursStd}</td>
-            <td>${e.hours15}</td>
-            <td>${e.hours2}</td>
-            <td>${escapeHtml(e.notes || "")}</td>
-            <td><button type="button" class="btn danger" data-remove="${idx}">Remove</button></td>
-          </tr>
-        `;
-      })
-      .join("");
-
+    const rows = q.map((e, idx) => `
+      <tr data-idx="${idx}">
+        <td>${e.date}</td>
+        <td title="${escapeHtml(e.ticketLabel)}">${escapeHtml(shorten(e.ticketLabel, 64))}</td>
+        <td>${e.start}</td>
+        <td>${e.hoursStd}</td>
+        <td>${e.hours15}</td>
+        <td>${e.hours2}</td>
+        <td>${escapeHtml(e.notes || "")}</td>
+        <td><button type="button" class="btn danger" data-remove="${idx}">Remove</button></td>
+      </tr>
+    `).join("");
     els.queueTable.insertAdjacentHTML("beforeend", rows);
   }
 
@@ -302,30 +274,23 @@
     renderQueue();
   }
 
-  // ---------- Submit flow (ONLY validates queue length) ----------
+  // ---------- Submit flow ----------
   async function handleSubmit(e) {
     e.preventDefault();
-
     if (state.queue.length === 0) {
       alert("Please add at least one entry before submitting.");
       return;
     }
-
-    // (Optional) hard-guard: ensure all entries share the same employee
     const empId = state.queue[0].employeeId;
     if (!state.queue.every((x) => x.employeeId === empId)) {
       alert("All queued entries must belong to the same employee.");
       return;
     }
-
     setSubmitting(true);
-
     try {
-      // Submit each entry sequentially (preserves order and easy error handling)
       for (const entry of state.queue) {
         await submitSingleEntry(entry);
       }
-
       alert("Timesheet submitted successfully!");
       state.queue = [];
       renderQueue();
@@ -347,13 +312,10 @@
       Hours2x: entry.hours2,
       Notes: entry.notes || null,
     };
-
     const res = await fetchJSON(`${API_BASE}/timesheets/submit`, {
       method: "POST",
       body: JSON.stringify(payload),
     });
-
-    // The Azure Function typically returns { ok: true, entry_id, ... }
     if (res && res.ok === false) {
       throw new Error(res.error || "Server rejected the entry.");
     }
@@ -366,12 +328,11 @@
       submitBtn.disabled = isSubmitting;
       submitBtn.textContent = isSubmitting ? "Submitting…" : "Submit";
     }
-    // You can also disable Add while submitting if you want:
     const addBtn = document.querySelector('button.btn.light[onclick="addToQueue()"]');
     if (addBtn instanceof HTMLButtonElement) addBtn.disabled = isSubmitting;
   }
 
-  // ---------- Small helpers ----------
+  // ---------- Helpers ----------
   function escapeHtml(s) {
     return (s || "")
       .replace(/&/g, "&amp;")
@@ -379,16 +340,13 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
   }
-
   function shorten(s, max) {
     return s && s.length > max ? s.slice(0, max - 1) + "…" : s;
   }
 
-  // ---------- Global functions for inline handlers ----------
-  // index.html calls: onclick="addToQueue()"
+  // ---------- Global hooks ----------
   window.addToQueue = addToQueue;
 
-  // We render Remove buttons with data-remove and delegate clicks:
   document.addEventListener("click", (ev) => {
     const btn = ev.target;
     if (btn && btn instanceof HTMLElement && btn.hasAttribute("data-remove")) {
@@ -399,7 +357,6 @@
 
   // ---------- Init ----------
   function attachEmployeeChangeGuard() {
-    // Ask before switching employee when queue has items
     state.lastEmployeeIdSelected = els.employeeSelect.value || null;
     els.employeeSelect.addEventListener("change", () => {
       if (state.queue.length > 0 && state.lastEmployeeIdSelected && els.employeeSelect.value !== state.lastEmployeeIdSelected) {
@@ -407,7 +364,6 @@
           "Changing the employee will clear the current queue.\nDo you want to continue?"
         );
         if (!proceed) {
-          // revert
           els.employeeSelect.value = state.lastEmployeeIdSelected;
           return;
         }
@@ -430,6 +386,18 @@
     wireManagerButton();
     attachEmployeeChangeGuard();
     els.form.addEventListener("submit", handleSubmit);
+
+    // Reset handler for "Clear Form" button
+    els.form.addEventListener("reset", () => {
+      els.entryTicket.selectedIndex = 0;
+      document.getElementById("entryHour").selectedIndex = 0;
+      document.getElementById("entryMinute").selectedIndex = 0;
+      document.getElementById("entryAmPm").selectedIndex = 0;
+      els.hoursStd.value = "0";
+      els.hours15.value = "0";
+      els.hours2.value = "0";
+      els.entryNotes.value = "";
+    });
 
     await Promise.all([loadEmployees(), loadTickets()]);
   }
