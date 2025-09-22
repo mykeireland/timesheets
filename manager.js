@@ -1,127 +1,138 @@
-(() => {
-  let timesheets = [];
-  let currentSort = { col: null, asc: true };
+// manager.js
+// Manager view: fetches pending timesheets, renders them with Approve/Reject,
+// supports filtering + sorting.
 
-  document.addEventListener("DOMContentLoaded", () => {
-    loadPendingTimesheets().catch(showError);
-    const f = document.getElementById("filterInput");
-    if (f) f.addEventListener("input", renderTable);
-  });
+(function () {
+  "use strict";
 
-  async function loadPendingTimesheets() {
-    const tbody = document.querySelector("#pendingTable tbody");
-    tbody.innerHTML = `<tr><td colspan="7">Loading...</td></tr>`;
+  const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
 
+  const els = {
+    filterInput: document.getElementById("filterInput"),
+    tableBody: document.querySelector("#pendingTable tbody"),
+  };
+
+  let timesheets = []; // full dataset from API
+  let sortField = null;
+  let sortDir = 1; // 1 = asc, -1 = desc
+
+  // -------- Fetch & render --------
+  async function loadPending() {
     try {
-      const res = await fetch(`${window.API_BASE}/timesheets/pending`);
-      if (!res.ok) throw new Error(`Failed to fetch pending timesheets (HTTP ${res.status})`);
-      timesheets = await res.json();
+      const res = await fetch(`${API_BASE}/timesheets/pending`);
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("Unexpected response");
+      timesheets = data;
       renderTable();
     } catch (err) {
-      showError(err);
-      tbody.innerHTML = `<tr><td colspan="7">Error loading timesheets</td></tr>`;
+      console.error("Failed to load pending timesheets:", err);
+      els.tableBody.innerHTML = `<tr><td colspan="7">Error loading timesheets</td></tr>`;
     }
   }
 
   function renderTable() {
-    const tbody = document.querySelector("#pendingTable tbody");
-    tbody.innerHTML = "";
+    let rows = [...timesheets];
 
-    const filter = (document.getElementById("filterInput")?.value || "").toLowerCase();
-    let data = timesheets.filter(ts =>
-      `${ts.firstName} ${ts.lastName} ${ts.siteName} ${ts.status}`.toLowerCase().includes(filter)
-    );
+    // Apply filter
+    const q = els.filterInput.value.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter((r) =>
+        [r.firstName, r.lastName, r.siteName, r.status, r.ticketId]
+          .map((x) => (x ? String(x).toLowerCase() : ""))
+          .some((s) => s.includes(q))
+      );
+    }
 
-    if (currentSort.col) {
-      data.sort((a, b) => {
-        let A, B;
-        switch (currentSort.col) {
-          case "employee": A = `${a.firstName} ${a.lastName}`.toLowerCase(); B = `${b.firstName} ${b.lastName}`.toLowerCase(); break;
-          case "site":     A = (a.siteName||"").toLowerCase(); B = (b.siteName||"").toLowerCase(); break;
-          case "ticket":   A = String(a.ticketId||""); B = String(b.ticketId||""); break;
-          case "date":     A = new Date(a.date); B = new Date(b.date); break;
-          case "hours":    A = parseFloat(a.hours||0); B = parseFloat(b.hours||0); break;
-          case "status":   A = (a.status||"").toLowerCase(); B = (b.status||"").toLowerCase(); break;
-          default:         A = ""; B = "";
-        }
-        if (A < B) return currentSort.asc ? -1 : 1;
-        if (A > B) return currentSort.asc ?  1 : -1;
-        return 0;
+    // Apply sort
+    if (sortField) {
+      rows.sort((a, b) => {
+        const va = a[sortField] ?? "";
+        const vb = b[sortField] ?? "";
+        return va > vb ? sortDir : va < vb ? -sortDir : 0;
       });
     }
 
-    if (!data.length) {
-      tbody.innerHTML = `<tr><td colspan="7">No timesheets found</td></tr>`;
-      updateSortIcons();
+    // Render
+    if (rows.length === 0) {
+      els.tableBody.innerHTML = `<tr><td colspan="7">No pending timesheets</td></tr>`;
       return;
     }
 
-    for (const ts of data) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(ts.firstName)} ${escapeHtml(ts.lastName)}</td>
-        <td>${escapeHtml(ts.siteName)}</td>
-        <td>${escapeHtml(ts.ticketId)}</td>
-        <td>${escapeHtml(ts.date)}</td>
-        <td>${escapeHtml(ts.hours)}</td>
-        <td>${escapeHtml(ts.status)}</td>
-        <td class="col-action">
-          <button class="btn" data-id="${ts.entryId}" data-action="approve">Approve</button>
-          <button class="btn danger" data-id="${ts.entryId}" data-action="reject">Reject</button>
+    els.tableBody.innerHTML = rows
+      .map(
+        (r) => `
+      <tr data-id="${r.entryId}">
+        <td>${r.firstName} ${r.lastName}</td>
+        <td>${r.siteName}</td>
+        <td>${r.ticketId}</td>
+        <td>${r.date}</td>
+        <td>${r.hours}</td>
+        <td><span class="status ${r.status}">${r.status}</span></td>
+        <td>
+          <button class="btn approve" data-approve="${r.entryId}">Approve</button>
+          <button class="btn reject" data-reject="${r.entryId}">Reject</button>
         </td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    // delegate clicks for Approve/Reject
-    tbody.querySelectorAll("button[data-action]").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        const id = parseInt(e.currentTarget.getAttribute("data-id"), 10);
-        const action = e.currentTarget.getAttribute("data-action");
-        try {
-          if (action === "approve") await approveTimesheet(id);
-          else await rejectTimesheet(id);
-          await loadPendingTimesheets();
-        } catch (err) {
-          showError(err);
-        }
-      });
-    });
-
-    updateSortIcons();
+      </tr>`
+      )
+      .join("");
   }
 
-  function sortBy(col) {
-    if (currentSort.col === col) {
-      currentSort.asc = !currentSort.asc;
-    } else {
-      currentSort = { col, asc: true };
+  // -------- Actions --------
+  async function approve(entryId) {
+    try {
+      const res = await fetch(`${API_BASE}/timesheets/approve/${entryId}`, { method: "POST" });
+      if (!res.ok) throw new Error(await res.text());
+      timesheets = timesheets.filter((t) => t.entryId !== entryId);
+      renderTable();
+    } catch (err) {
+      alert("Approve failed: " + err.message);
     }
-    renderTable();
   }
+
+  async function reject(entryId) {
+    try {
+      const res = await fetch(`${API_BASE}/timesheets/reject/${entryId}`, { method: "POST" });
+      if (!res.ok) throw new Error(await res.text());
+      timesheets = timesheets.filter((t) => t.entryId !== entryId);
+      renderTable();
+    } catch (err) {
+      alert("Reject failed: " + err.message);
+    }
+  }
+
+  // -------- Events --------
+  els.filterInput.addEventListener("input", renderTable);
+
+  document.addEventListener("click", (ev) => {
+    const t = ev.target;
+    if (!(t instanceof HTMLElement)) return;
+
+    if (t.dataset.approve) {
+      approve(parseInt(t.dataset.approve, 10));
+    } else if (t.dataset.reject) {
+      reject(parseInt(t.dataset.reject, 10));
+    } else if (t.closest(".sort-btn")) {
+      const th = t.closest("th");
+      const field = th.getAttribute("data-field");
+      if (sortField === field) {
+        sortDir *= -1; // toggle
+      } else {
+        sortField = field;
+        sortDir = 1;
+      }
+      updateSortIcons();
+      renderTable();
+    }
+  });
 
   function updateSortIcons() {
-    ["employee", "site", "ticket", "date", "hours", "status"].forEach(c => {
-      const el = document.getElementById(`sort-${c}`);
-      if (!el) return;
-      el.textContent = currentSort.col === c ? (currentSort.asc ? "▲" : "▼") : "⇅";
-    });
+    document.querySelectorAll("th .sort-icon").forEach((el) => (el.textContent = "⇅"));
+    if (sortField) {
+      const icon = document.querySelector(`th[data-field="${sortField}"] .sort-icon`);
+      if (icon) icon.textContent = sortDir === 1 ? "↑" : "↓";
+    }
   }
 
-  async function approveTimesheet(entryId) {
-    const res = await fetch(`${window.API_BASE}/timesheets/approve/${entryId}`, { method: "POST" });
-    if (!res.ok) throw new Error(`Approve failed (HTTP ${res.status})`);
-  }
-
-  async function rejectTimesheet(entryId) {
-    const res = await fetch(`${window.API_BASE}/timesheets/reject/${entryId}`, { method: "POST" });
-    if (!res.ok) throw new Error(`Reject failed (HTTP ${res.status})`);
-  }
-
-  /* utils */
-  function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-  function showError(err){ console.error(err); alert(err.message || String(err)); }
-
-  // expose for inline onclick if needed
-  window.sortBy = sortBy;
+  // -------- Init --------
+  loadPending();
 })();
