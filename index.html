@@ -7,7 +7,7 @@
 </script>
 
 <head>
-  <meta charset="UTF-8"> <!-- ✅ ensures arrows/dashes render correctly -->
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Insight Casual Timesheet Submission</title>
   <link rel="stylesheet" href="style.css">
@@ -19,7 +19,7 @@
       padding: 0;
     }
     header {
-      background-color: #b73229; /* ✅ red header */
+      background-color: #b73229;
       color: #fff;
       padding: 20px;
       text-align: center;
@@ -32,11 +32,8 @@
       border-radius: 6px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    label {
-      font-weight: bold;
-      margin-right: 10px;
-    }
-    select, input[type="date"], input[type="number"], input[type="text"] {
+    label { font-weight: bold; margin-right: 10px; }
+    select, input[type="date"], input[type="time"], input[type="number"], input[type="text"] {
       padding: 6px;
       border-radius: 4px;
       border: 1px solid #ccc;
@@ -51,9 +48,7 @@
       padding: 8px;
       text-align: center;
     }
-    th {
-      background: #f9f9f9;
-    }
+    th { background: #f9f9f9; }
     .btn {
       padding: 6px 12px;
       margin: 4px;
@@ -61,15 +56,14 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    .btn:hover {
-      opacity: 0.9;
-    }
+    .btn:hover { opacity: 0.9; }
     .btn.primary { background: #007bff; color: #fff; }
     .btn.secondary { background: #6c757d; color: #fff; }
-    .btn.danger { background: #dc3545; color: #fff; } /* ✅ Manager View button */
+    .btn.danger { background: #dc3545; color: #fff; }
     .btn.light { background: #e0e0e0; color: #000; }
   </style>
 </head>
+
 <body>
   <header>
     <h1>InSight Casual Timesheet Submission</h1>
@@ -86,23 +80,7 @@
       <p><b>Hours (1.5x)</b> = First 2 hours of OT (Mon–Sat)</p>
       <p><b>Hours (2x)</b> = OT after 2 hours (Mon–Sat), or all Sunday</p>
 
-     <table class="table">
-      <tbody id="timesheetBody"></tbody>
-     </table>
-
-      <div style="margin-top: 15px;">
-        <button type="button" class="btn light" onclick="addToQueue()">+ Add Row</button>
-        <button type="reset" class="btn secondary">Clear Form</button>
-        <button type="button" class="btn secondary" onclick="window.print()">Print Form</button>
-        <button type="submit" class="btn primary">Submit</button>
-        <button type="button" id="managerBtn" class="btn danger">Manager View</button>
-      </div>
-    </form>
-  </div>
-  
-  <div id="queuedEntries" class="container" style="margin-top:20px; display:none;">
-    <h3>Queued Entries</h3>
-    <div id="entriesList">
+      <!-- Entry Form -->
       <table>
         <thead>
           <tr>
@@ -116,24 +94,48 @@
         </thead>
         <tbody>
           <tr>
-            <td><input type="date" id="dateInput" required></td>
-            <td><select id="ticketSelect" required></select></td>
-            <td><input type="time" id="startTime" step="900" required></td>
+            <td><input type="date" id="entryDate" required></td>
+            <td><select id="entryTicket" required></select></td>
+            <td><input type="time" id="entryStart" step="900" required></td>
             <td>
               <input type="number" id="hoursStd" step="0.25" min="0" value="0" style="width:60px;">
               <input type="number" id="hours15" step="0.25" min="0" value="0" style="width:60px;">
               <input type="number" id="hours2" step="0.25" min="0" value="0" style="width:60px;">
             </td>
-            <td>
-                <input type="text" id="notes" placeholder="Notes (optional)" style="width:100%;">
-            </td>
-            <td>
-              <button type="button" id="addRowBtn" class="btn light">Add</button>
-            </td>
+            <td><input type="text" id="entryNotes" placeholder="Notes (optional)" style="width:100%;"></td>
+            <td><button type="button" class="btn light" onclick="addToQueue()">Add</button></td>
           </tr>
         </tbody>
       </table>
-    </div>
+
+      <!-- Queue of added entries -->
+      <div id="queuedEntries" style="margin-top:20px; display:none;">
+        <h3>Queued Entries</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Ticket</th>
+              <th>Start Time</th>
+              <th>Std</th>
+              <th>1.5x</th>
+              <th>2x</th>
+              <th>Notes</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="queueTable"></tbody>
+        </table>
+      </div>
+
+      <!-- Buttons -->
+      <div style="margin-top: 15px;">
+        <button type="reset" class="btn secondary">Clear Form</button>
+        <button type="button" class="btn secondary" onclick="window.print()">Print Form</button>
+        <button type="submit" class="btn primary">Submit</button>
+        <button type="button" id="managerBtn" class="btn danger">Manager View</button>
+      </div>
+    </form>
   </div>
 
   <script src="script.js"></script>
