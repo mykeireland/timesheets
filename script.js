@@ -1,323 +1,420 @@
-"use strict";
+// script.js
+// Timesheet entry + queue flow with clean separation of validations.
+// - "Add": validates entry row (employee, date, ticket, start, hours>0), pushes to queue
+// - "Submit": validates ONLY queue length (>0), posts each entry to API
 
-/* ============================
-   API (stable names)
-============================ */
-const Data = {
-  fetchJson: async (url, opts) => {
-    const res = await fetch(url, {
-      ...(opts || {}),
-      headers: { ...(opts?.headers || {}), Accept: "application/json" },
-    });
+(function () {
+  "use strict";
+
+  // ---------- Utilities ----------
+  const byId = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
+  const asNumber = (v) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+
+  const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
+
+  const els = {
+    form: /** @type {HTMLFormElement} */ (byId("timesheetForm")),
+    employeeSelect: /** @type {HTMLSelectElement} */ (byId("employeeSelect")),
+    entryDate: /** @type {HTMLInputElement} */ (byId("entryDate")),
+    entryTicket: /** @type {HTMLSelectElement} */ (byId("entryTicket")),
+    entryStart: /** @type {HTMLInputElement} */ (byId("entryStart")),
+    hoursStd: /** @type {HTMLInputElement} */ (byId("hoursStd")),
+    hours15: /** @type {HTMLInputElement} */ (byId("hours15")),
+    hours2: /** @type {HTMLInputElement} */ (byId("hours2")),
+    entryNotes: /** @type {HTMLInputElement} */ (byId("entryNotes")),
+    queuedWrap: byId("queuedEntries"),
+    queueTable: /** @type {HTMLTableSectionElement} */ (byId("queueTable")),
+    managerBtn: /** @type {HTMLButtonElement} */ (byId("managerBtn")),
+  };
+
+  // Will be resolved after DOMContentLoaded for disabling text on submit button
+  let submitBtn /** @type {HTMLButtonElement | null} */ = null;
+
+  const state = {
+    employees: /** @type {{id:number, name:string}[]} */ ([]),
+    tickets: /** @type {{ticketId:number, cwTicketId?:string, ticketName?:string, siteName?:string}[]} */ ([]),
+    queue: /** @type {QueueEntry[]} */ ([]),
+    lastEmployeeIdSelected: null,
+  };
+
+  /**
+   * @typedef {Object} QueueEntry
+   * @property {number} employeeId
+   * @property {string} employeeName
+   * @property {string} date // yyyy-mm-dd
+   * @property {number} ticketId
+   * @property {string} ticketLabel
+   * @property {string} start // HH:mm
+   * @property {number} hoursStd
+   * @property {number} hours15
+   * @property {number} hours2
+   * @property {string} notes
+   */
+
+  // ---------- Fetch helpers ----------
+  async function fetchJSON(url, options = {}) {
+    const res = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { /* keep data as null */ }
     if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(
-        `HTTP ${res.status} on ${url}${txt ? ` — ${txt}` : ""}`
-      );
+      const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
+      throw new Error(msg);
     }
-    const text = await res.text().catch(() => "");
-    if (!text) return [];
+    return data;
+  }
+
+  // ---------- Data loading ----------
+  async function loadEmployees() {
     try {
-      return JSON.parse(text);
-    } catch {
-      return [];
+      const data = await fetchJSON(`${API_BASE}/employees`);
+      // expected: [{ id, name }]
+      state.employees = Array.isArray(data) ? data : [];
+      populateEmployeeSelect();
+    } catch (err) {
+      console.error("Employees load failed:", err);
+      fillSelectWithError(els.employeeSelect, "Failed to load employees");
     }
-  },
+  }
 
-  employees: () => Data.fetchJson(`${window.API_BASE}/employees`),
-  tickets: () => Data.fetchJson(`${window.API_BASE}/tickets/open`),
-  ticketsOpen: () => Data.fetchJson(`${window.API_BASE}/tickets/open`),
+  async function loadTickets() {
+    try {
+      const data = await fetchJSON(`${API_BASE}/tickets/open`);
+      // expected: [{ ticketId, cwTicketId, ticketName, siteName }]
+      state.tickets = Array.isArray(data) ? data : [];
+      populateTicketSelect();
+    } catch (err) {
+      console.error("Tickets load failed:", err);
+      fillSelectWithError(els.entryTicket, "Failed to load tickets");
+    }
+  }
 
-  submitEntry: async (payload) => {
-    const res = await fetch(`${window.API_BASE}/timesheets/submit`, {
+  function populateEmployeeSelect() {
+    const sel = els.employeeSelect;
+    sel.innerHTML = "";
+
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "Select employee…";
+    opt0.disabled = true;
+    opt0.selected = true;
+    sel.appendChild(opt0);
+
+    for (const e of state.employees) {
+      const opt = document.createElement("option");
+      opt.value = String(e.id);
+      opt.textContent = e.name;
+      sel.appendChild(opt);
+    }
+  }
+
+  function populateTicketSelect() {
+    const sel = els.entryTicket;
+    sel.innerHTML = "";
+
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "Select ticket…";
+    opt0.disabled = true;
+    opt0.selected = true;
+    sel.appendChild(opt0);
+
+    for (const t of state.tickets) {
+      const opt = document.createElement("option");
+      opt.value = String(t.ticketId);
+      // Prefer CW ID if present, then name + site
+      const left = t.cwTicketId ? `#${t.cwTicketId}` : `Ticket ${t.ticketId}`;
+      const right = [t.ticketName, t.siteName].filter(Boolean).join(" — ");
+      opt.textContent = right ? `${left} · ${right}` : left;
+      sel.appendChild(opt);
+    }
+  }
+
+  function fillSelectWithError(sel, message) {
+    sel.innerHTML = "";
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = message;
+    opt.disabled = true;
+    opt.selected = true;
+    sel.appendChild(opt);
+  }
+
+  // ---------- Validation (entry row ONLY for Add) ----------
+  function validateEntryRow() {
+    // order matters for "remind the next required field"
+    const employeeId = els.employeeSelect.value.trim();
+    if (!employeeId) {
+      alert("Please select an employee.");
+      els.employeeSelect.focus();
+      return null;
+    }
+
+    const date = els.entryDate.value.trim();
+    if (!date) {
+      alert("Please select a date.");
+      els.entryDate.focus();
+      return null;
+    }
+
+    const ticketId = els.entryTicket.value.trim();
+    if (!ticketId) {
+      alert("Please select a ticket.");
+      els.entryTicket.focus();
+      return null;
+    }
+
+    const start = els.entryStart.value.trim();
+    if (!start) {
+      alert("Please enter a start time.");
+      els.entryStart.focus();
+      return null;
+    }
+
+    const hoursStd = asNumber(els.hoursStd.value);
+    const hours15 = asNumber(els.hours15.value);
+    const hours2 = asNumber(els.hours2.value);
+    const total = hoursStd + hours15 + hours2;
+
+    if (total <= 0) {
+      alert("Please enter at least one hour (Std / 1.5x / 2x).");
+      (hoursStd ? els.hours15 : els.hoursStd).focus();
+      return null;
+    }
+
+    // build the entry (notes optional)
+    /** @type {QueueEntry} */
+    const entry = {
+      employeeId: parseInt(employeeId, 10),
+      employeeName: getEmployeeNameById(parseInt(employeeId, 10)),
+      date,
+      ticketId: parseInt(ticketId, 10),
+      ticketLabel: getTicketLabelById(parseInt(ticketId, 10)),
+      start,
+      hoursStd,
+      hours15,
+      hours2,
+      notes: (els.entryNotes.value || "").trim(),
+    };
+
+    return entry;
+  }
+
+  function getEmployeeNameById(id) {
+    const found = state.employees.find((e) => e.id === id);
+    return found ? found.name : `Employee ${id}`;
+  }
+
+  function getTicketLabelById(id) {
+    const found = state.tickets.find((t) => t.ticketId === id);
+    if (!found) return `Ticket ${id}`;
+    const left = found.cwTicketId ? `#${found.cwTicketId}` : `Ticket ${id}`;
+    const right = [found.ticketName, found.siteName].filter(Boolean).join(" — ");
+    return right ? `${left} · ${right}` : left;
+  }
+
+  // ---------- Queue operations ----------
+  function addToQueue() {
+    const entry = validateEntryRow();
+    if (!entry) return;
+
+    // If queue has entries for a different employee, block or offer to clear
+    if (state.queue.length > 0 && state.queue[0].employeeId !== entry.employeeId) {
+      const proceed = confirm(
+        "Your queue contains entries for a different employee.\n" +
+          "Submitting mixed employees is not supported.\n\n" +
+          "Clear queue and add this entry?"
+      );
+      if (!proceed) return;
+      state.queue = [];
+    }
+
+    state.queue.push(entry);
+    renderQueue();
+
+    // Reset only the entry inputs (not employee)
+    els.entryDate.value = "";
+    els.entryTicket.selectedIndex = 0;
+    els.entryStart.value = "";
+    els.hoursStd.value = "0";
+    els.hours15.value = "0";
+    els.hours2.value = "0";
+    els.entryNotes.value = "";
+    els.entryDate.focus();
+  }
+
+  function renderQueue() {
+    const q = state.queue;
+    els.queueTable.innerHTML = "";
+
+    if (q.length === 0) {
+      els.queuedWrap.style.display = "none";
+      return;
+    }
+
+    els.queuedWrap.style.display = "block";
+
+    const rows = q
+      .map((e, idx) => {
+        return `
+          <tr data-idx="${idx}">
+            <td>${e.date}</td>
+            <td title="${escapeHtml(e.ticketLabel)}">${escapeHtml(shorten(e.ticketLabel, 64))}</td>
+            <td>${e.start}</td>
+            <td>${e.hoursStd}</td>
+            <td>${e.hours15}</td>
+            <td>${e.hours2}</td>
+            <td>${escapeHtml(e.notes || "")}</td>
+            <td><button type="button" class="btn danger" data-remove="${idx}">Remove</button></td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    els.queueTable.insertAdjacentHTML("beforeend", rows);
+  }
+
+  function removeFromQueueByIndex(idx) {
+    if (idx < 0 || idx >= state.queue.length) return;
+    state.queue.splice(idx, 1);
+    renderQueue();
+  }
+
+  // ---------- Submit flow (ONLY validates queue length) ----------
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    if (state.queue.length === 0) {
+      alert("Please add at least one entry before submitting.");
+      return;
+    }
+
+    // (Optional) hard-guard: ensure all entries share the same employee
+    const empId = state.queue[0].employeeId;
+    if (!state.queue.every((x) => x.employeeId === empId)) {
+      alert("All queued entries must belong to the same employee.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Submit each entry sequentially (preserves order and easy error handling)
+      for (const entry of state.queue) {
+        await submitSingleEntry(entry);
+      }
+
+      alert("Timesheet submitted successfully!");
+      state.queue = [];
+      renderQueue();
+    } catch (err) {
+      console.error("Submit failed:", err);
+      alert("Failed to submit timesheet: " + (err && err.message ? err.message : String(err)));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function submitSingleEntry(entry) {
+    const payload = {
+      EmployeeId: entry.employeeId,
+      TicketId: entry.ticketId,
+      Date: entry.date,
+      HoursStandard: entry.hoursStd,
+      Hours15x: entry.hours15,
+      Hours2x: entry.hours2,
+      Notes: entry.notes || null,
+    };
+
+    const res = await fetchJSON(`${API_BASE}/timesheets/submit`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(
-        `Submit failed (HTTP ${res.status})${txt ? ` — ${txt}` : ""}`
-      );
+
+    // The Azure Function typically returns { ok: true, entry_id, ... }
+    if (res && res.ok === false) {
+      throw new Error(res.error || "Server rejected the entry.");
     }
-    return res.text().then((t) => {
-      try {
-        return t ? JSON.parse(t) : {};
-      } catch {
-        return {};
-      }
-    });
-  },
-};
-
-/* ============================
-   Helpers
-============================ */
-function $(sel) {
-  return document.querySelector(sel);
-}
-function toInt(v, name) {
-  const n = parseInt(v, 10);
-  if (isNaN(n)) throw new Error(`${name} is required`);
-  return n;
-}
-function toNum(v) {
-  const n = parseFloat(v);
-  return isNaN(n) ? 0 : n;
-}
-function escapeHtml(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (m) =>
-    ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[m])
-  );
-}
-function showError(err) {
-  console.error(err);
-  alert(err.message || String(err));
-}
-
-/* ============================
-   Normalisers
-============================ */
-function toEmployeeItems(raw) {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((e) => {
-      if (!e) return null;
-      const id =
-        e.employee_id ?? e.employeeId ?? e.id ?? e.user_id ?? e.userId ?? null;
-      const first = e.first_name ?? e.firstName ?? "";
-      const last = e.last_name ?? e.lastName ?? "";
-      let name = `${first} ${last}`.trim();
-      if (!name)
-        name =
-          e.display_name ??
-          e.displayName ??
-          e.name ??
-          e.email ??
-          (id != null ? `#${id}` : "");
-      if (id == null) return null;
-      return { id: Number(id), name: String(name) };
-    })
-    .filter(Boolean);
-}
-
-function toTicketItems(raw) {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((t) => {
-      if (!t) return null;
-      const id = t.ticketId ?? t.ticket_id ?? t.id ?? null;
-      const cw = t.cwTicketId ?? t.cw_ticket_id ?? t.cwId ?? "";
-      const name = t.ticketName ?? t.ticket_name ?? t.name ?? "";
-      const site = t.siteName ?? t.site_name ?? t.site ?? "";
-      const openFlag = t.open_flag ?? t.openFlag ?? t.open ?? t.isOpen;
-      if (openFlag !== undefined) {
-        const ok =
-          openFlag === true ||
-          openFlag === 1 ||
-          String(openFlag).toLowerCase() === "true";
-        if (!ok) return null;
-      }
-      if (!id) return null;
-      return {
-        id: Number(id),
-        label: `${cw || "—"} - ${name || "(no title)"}${
-          site ? " - " + site : ""
-        }`,
-      };
-    })
-    .filter(Boolean);
-}
-
-/* ============================
-   Init
-============================ */
-document.addEventListener("DOMContentLoaded", () => {
-  init().catch(showError);
-});
-
-async function init() {
-  await populatePeople();
-  await loadOpenTickets($("#entryTicket"));
-  wireForm();
-}
-
-/* ============================
-   Populate employees
-============================ */
-async function populatePeople() {
-  const empSel = $("#employeeSelect");
-  if (!empSel) return;
-  empSel.disabled = true;
-  empSel.innerHTML = `<option value="">Loading…</option>`;
-  try {
-    const raw = await Data.employees();
-    const employees = toEmployeeItems(raw);
-    if (!employees.length) {
-      empSel.innerHTML = `<option value="">No employees found</option>`;
-    } else {
-      fillSelect(empSel, employees, "Select Employee");
-    }
-  } catch (e) {
-    console.error(e);
-    empSel.innerHTML = `<option value="">Error loading employees</option>`;
-  } finally {
-    empSel.disabled = false;
-  }
-}
-
-/* ============================
-   Tickets
-============================ */
-async function loadOpenTickets(selectEl) {
-  if (!selectEl) return;
-  selectEl.innerHTML = `<option value="">Loading…</option>`;
-  const ticketsRaw = await Data.tickets();
-  const tickets = toTicketItems(ticketsRaw);
-  selectEl.innerHTML = `<option value="">Select Ticket</option>`;
-  tickets.forEach((t) => {
-    const opt = document.createElement("option");
-    opt.value = String(t.id);
-    opt.textContent = t.label;
-    selectEl.appendChild(opt);
-  });
-}
-
-/* ============================
-   Wire form
-============================ */
-function wireForm() {
-  const form = $("#timesheetForm");
-  if (!form) return;
-
-  // ADD button
-  const addBtn = $("#addRowBtn");
-  if (addBtn) {
-    addBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      addToQueue();
-    });
+    return res;
   }
 
-  // SUBMIT button
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    try {
-      const payloads = getQueuedEntries();
-      if (!payloads.length) throw new Error("No entries queued"); // ✅ only rule
-      for (const p of payloads) {
-        await Data.submitEntry(p);
-      }
-      alert("Timesheet submitted successfully");
-      clearQueuedEntries();
-    } catch (err) {
-      showError(err);
+  function setSubmitting(isSubmitting) {
+    if (!submitBtn) submitBtn = els.form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = isSubmitting;
+      submitBtn.textContent = isSubmitting ? "Submitting…" : "Submit";
+    }
+    // You can also disable Add while submitting if you want:
+    const addBtn = document.querySelector('button.btn.light[onclick="addToQueue()"]');
+    if (addBtn instanceof HTMLButtonElement) addBtn.disabled = isSubmitting;
+  }
+
+  // ---------- Small helpers ----------
+  function escapeHtml(s) {
+    return (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function shorten(s, max) {
+    return s && s.length > max ? s.slice(0, max - 1) + "…" : s;
+  }
+
+  // ---------- Global functions for inline handlers ----------
+  // index.html calls: onclick="addToQueue()"
+  window.addToQueue = addToQueue;
+
+  // We render Remove buttons with data-remove and delegate clicks:
+  document.addEventListener("click", (ev) => {
+    const btn = ev.target;
+    if (btn && btn instanceof HTMLElement && btn.hasAttribute("data-remove")) {
+      const idx = parseInt(btn.getAttribute("data-remove") || "-1", 10);
+      removeFromQueueByIndex(idx);
     }
   });
 
-  // Manager view
-  const mgrBtn = $("#managerBtn");
-  if (mgrBtn) {
-    mgrBtn.addEventListener(
-      "click",
-      () => (window.location.href = "manager.html")
-    );
+  // ---------- Init ----------
+  function attachEmployeeChangeGuard() {
+    // Ask before switching employee when queue has items
+    state.lastEmployeeIdSelected = els.employeeSelect.value || null;
+    els.employeeSelect.addEventListener("change", () => {
+      if (state.queue.length > 0 && state.lastEmployeeIdSelected && els.employeeSelect.value !== state.lastEmployeeIdSelected) {
+        const proceed = confirm(
+          "Changing the employee will clear the current queue.\nDo you want to continue?"
+        );
+        if (!proceed) {
+          // revert
+          els.employeeSelect.value = state.lastEmployeeIdSelected;
+          return;
+        }
+        state.queue = [];
+        renderQueue();
+      }
+      state.lastEmployeeIdSelected = els.employeeSelect.value || null;
+    });
   }
-}
 
-/* ============================
-   Collect + Queue
-============================ */
-function collectSingleEntry() {
-  const empId = toInt($("#employeeSelect").value, "Employee");
-  const date = $("#entryDate").value;
-  const ticketId = toInt($("#entryTicket").value, "Ticket");
-  const start = $("#entryStart").value;
-  const hStd = toNum($("#hoursStd").value);
-  const h15 = toNum($("#hours15").value);
-  const h2 = toNum($("#hours2").value);
-  const notes = $("#entryNotes").value?.trim() || null;
-
-  if (!date) throw new Error("Date required");
-  if (!start) throw new Error("Start time required");
-  if (hStd + h15 + h2 <= 0) throw new Error("At least 1 hour required");
-
-  return {
-    employeeId: empId,
-    ticketId,
-    date,
-    startTime: start,
-    hoursStandard: hStd,
-    hours15x: h15,
-    hours2x: h2,
-    notes,
-  };
-}
-
-function addToQueue() {
-  try {
-    const entry = collectSingleEntry();
-    const tbody = $("#queueTable");
-    $("#queuedEntries").style.display = "block";
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${escapeHtml(entry.date)}</td>
-      <td>${escapeHtml(entry.ticketId)}</td>
-      <td>${escapeHtml(entry.startTime)}</td>
-      <td>${entry.hoursStandard}</td>
-      <td>${entry.hours15x}</td>
-      <td>${entry.hours2x}</td>
-      <td>${escapeHtml(entry.notes || "")}</td>
-      <td><button type="button" class="btn danger">Remove</button></td>
-    `;
-    tr.dataset.entry = JSON.stringify(entry);
-
-    tr.querySelector("button").addEventListener("click", () => tr.remove());
-
-    tbody.appendChild(tr);
-
-    // reset inputs for next add
-    $("#entryDate").value = "";
-    $("#entryStart").value = "";
-    $("#hoursStd").value = "0";
-    $("#hours15").value = "0";
-    $("#hours2").value = "0";
-    $("#entryNotes").value = "";
-    $("#entryTicket").selectedIndex = 0;
-  } catch (err) {
-    showError(err);
+  function wireManagerButton() {
+    if (els.managerBtn) {
+      els.managerBtn.addEventListener("click", () => {
+        window.location.href = "manager.html";
+      });
+    }
   }
-}
 
-function getQueuedEntries() {
-  return [...document.querySelectorAll("#queueTable tr")].map((tr) =>
-    JSON.parse(tr.dataset.entry)
-  );
-}
+  async function init() {
+    wireManagerButton();
+    attachEmployeeChangeGuard();
+    els.form.addEventListener("submit", handleSubmit);
 
-function clearQueuedEntries() {
-  $("#queueTable").innerHTML = "";
-  $("#queuedEntries").style.display = "none";
-}
+    await Promise.all([loadEmployees(), loadTickets()]);
+  }
 
-/* ============================
-   Fill select helper
-============================ */
-function fillSelect(sel, items, placeholder) {
-  if (!sel) return;
-  sel.innerHTML = [`<option value="">${placeholder}</option>`]
-    .concat(
-      items.map(
-        (i) =>
-          `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}</option>`
-      )
-    )
-    .join("");
-}
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  } else {
+    init();
+  }
+})();
