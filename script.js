@@ -257,41 +257,38 @@ function collectEntries() {
   const rows = [...document.querySelectorAll('#timesheetBody tr')];
   if (!rows.length) throw new Error('No rows to submit');
 
-  return rows.map(tr => {
-    const dateEl      = tr.querySelector('input[type="date"]');
-    const ticketEl    = tr.querySelector('.ticketSelect');
-    const startEl     = tr.querySelector('.start-time');
-    const hoursEl     = tr.querySelector('.hours');
-    const stdEl       = tr.querySelector('.standard');
-    const ot15El      = tr.querySelector('.ot15');
-    const ot2El       = tr.querySelector('.ot2');
-    const notesEl     = tr.querySelector('.notes');
+  const payloads = [];
+  for (let i = 0; i < rows.length; i += 2) {
+    const tr1 = rows[i];
+    const tr2 = rows[i+1];
+    if (!tr1 || !tr2) continue;
 
-    const date   = dateEl?.value || '';
-    const ticketId = toInt(ticketEl?.value, 'Ticket');
-    const start_time = startEl?.value || '';                 // "HH:MM" (24h)
-    const hours = parseFloat(hoursEl?.value || '0');         // decimal, 0.25 step
+    const date      = tr1.querySelector('input[type="date"]')?.value || '';
+    const ticketId  = toInt(tr1.querySelector('.ticketSelect')?.value, 'Ticket');
+    const notes     = (tr1.querySelector('.notes')?.value || '').trim() || null;
 
-    const hoursStandard = toNum(stdEl?.value);
-    const hours15x      = toNum(ot15El?.value);
-    const hours2x       = toNum(ot2El?.value);
-    const notes         = (notesEl?.value || '').trim() || null;
+    const start_time = tr2.querySelector('.start-time')?.value || '';
+    const hoursStandard = toNum(tr2.querySelector('.standard')?.value);
+    const hours15x      = toNum(tr2.querySelector('.ot15')?.value);
+    const hours2x       = toNum(tr2.querySelector('.ot2')?.value);
 
-    if (!date) throw new Error('Date is required on all rows');
-    if (!start_time) throw new Error('Start time is required on all rows');
-    if (!(hours > 0)) throw new Error('Hours must be greater than 0');
+    if (!date) throw new Error('Date is required');
+    if (!start_time) throw new Error('Start time is required');
+    if (hoursStandard + hours15x + hours2x <= 0) {
+      throw new Error('At least one hours field must be > 0');
+    }
 
-    return {
+    payloads.push({
       employeeId: empId,
       ticketId,
-      date,                 // keep as YYYY-MM-DD (from <input type="date">)
-      start_time,           // NEW: "HH:MM" 24h
-      hours,                // NEW: decimal hours (0.25 increments)
+      date,
+      start_time,
       hoursStandard,
       hours15x,
       hours2x,
       notes
-    };
-  });
-}
+    });
+  }
 
+  return payloads;
+}
