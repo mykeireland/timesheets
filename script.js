@@ -148,69 +148,98 @@ async function loadOpenTickets(selectEl) {
 /* ============================
    Add row
 ============================ */
-async function addRow() {
-  const tbody = $('#timesheetBody');
+function wireForm() {
+  const form = $('#timesheetForm');
+  if (!form) return;
 
-  // Row 1: Date/Ticket/Notes header
-  const trHead1 = document.createElement('tr');
-  trHead1.classList.add('entry-header-top');
-  trHead1.innerHTML = `
-    <th>Date</th>
-    <th>Ticket</th>
-    <th colspan="2">Notes</th>
-  `.trim();
+  // Add button → queue entry
+  const addBtn = $('#addRowBtn'); // rename this in HTML: <button id="addRowBtn">Add</button>
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        const entry = collectSingleEntry(); // grab current form
+        queueEntry(entry); // add to list below
+        form.reset(); // clear form for next entry
+      } catch (err) {
+        showError(err);
+      }
+    });
+  }
 
-  // Row 2: inputs for Date/Ticket/Notes
-  const trData1 = document.createElement('tr');
-  trData1.classList.add('entry-data-top');
-  trData1.innerHTML = `
-    <td><input type="date" required></td>
-    <td><select class="ticketSelect" required></select></td>
-    <td colspan="2"><input type="text" maxlength="500" placeholder="Notes (optional)" class="notes" style="width:100%"></td>
-  `.trim();
-
-  // Row 3: Time + Hours header
-  const trHead2 = document.createElement('tr');
-  trHead2.classList.add('entry-header-bottom');
-  trHead2.innerHTML = `
-    <th>Start Time</th>
-    <th colspan="3">Hours (Std / 1.5x / 2x)</th>
-    <th>Action</th>
-  `.trim();
-
-  // Row 4: inputs for Time + Hours + Actions
-  const trData2 = document.createElement('tr');
-  trData2.classList.add('entry-data-bottom');
-  trData2.innerHTML = `
-    <td><input type="time" step="900" class="start-time" required></td>
-    <td><input type="number" step="0.25" min="0.25" class="hours standard" required placeholder="Std"></td>
-    <td><input type="number" step="0.25" min="0" class="hours ot15" placeholder="1.5x"></td>
-    <td><input type="number" step="0.25" min="0" class="hours ot2" placeholder="2x"></td>
-    <td>
-      <button type="button" class="btn add-btn">Add</button>
-      <button type="button" class="btn remove-btn">Remove</button>
-    </td>
-  `.trim();
-
-  // Append everything
-  tbody.appendChild(trHead1);
-  tbody.appendChild(trData1);
-  tbody.appendChild(trHead2);
-  tbody.appendChild(trData2);
-
-  // Hook actions
-  trData2.querySelector('.add-btn').addEventListener('click', () => addRow());
-  trData2.querySelector('.remove-btn').addEventListener('click', () => {
-    trHead1.remove();
-    trData1.remove();
-    trHead2.remove();
-    trData2.remove();
+  // Submit → send all queued
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const payloads = getQueuedEntries();
+      if (!payloads.length) throw new Error("No entries queued");
+      for (const p of payloads) {
+        await Data.submitEntry(p);
+      }
+      alert('Timesheet submitted successfully');
+      clearQueuedEntries();
+    } catch (err) {
+      showError(err);
+    }
   });
-
-  // Populate tickets
-  await loadOpenTickets(trData1.querySelector('.ticketSelect'));
 }
 
+/* ---- helpers ---- */
+
+// collect one entry from the input panel
+function collectSingleEntry() {
+  const empId = toInt($('#employeeSelect').value, 'Employee');
+  const date = $('#dateInput').value;
+  const ticketId = toInt($('#ticketSelect').value, 'Ticket');
+  const start = $('#startTime').value;
+  const hStd = toNum($('#hoursStd').value);
+  const h15 = toNum($('#hours15').value);
+  const h2 = toNum($('#hours2').value);
+  const notes = $('#notes').value?.trim() || null;
+
+  if (!date) throw new Error('Date required');
+  if (!start) throw new Error('Start time required');
+  if (hStd + h15 + h2 <= 0) throw new Error('At least 1 hour required');
+
+  return { employeeId: empId, ticketId, date, startTime: start, hoursStandard: hStd, hours15x: h15, hours2x: h2, notes };
+}
+
+// add entry card to queued list
+function queueEntry(entry) {
+  const list = $('#entriesList');
+  $('#queuedEntries').style.display = 'block'; // reveal container
+
+  const div = document.createElement('div');
+  div.className = 'entry-card';
+  div.style.border = '1px solid #ddd';
+  div.style.padding = '8px';
+  div.style.margin = '6px 0';
+  div.style.borderRadius = '4px';
+  div.style.background = '#fafafa';
+
+  div.textContent = `${entry.date} ${entry.startTime} — Ticket #${entry.ticketId} — Std: ${entry.hoursStandard}, 1.5x: ${entry.hours15x}, 2x: ${entry.hours2x} — Notes: ${entry.notes || ""}`;
+
+  const btn = document.createElement('button');
+  btn.textContent = "Remove";
+  btn.className = "btn danger";
+  btn.style.marginLeft = "10px";
+  btn.onclick = () => div.remove();
+
+  div.appendChild(btn);
+  list.appendChild(div);
+}
+
+// get all queued entry objects
+function getQueuedEntries() {
+  const list = [...document.querySelectorAll('#entriesList .entry-card')];
+  return list.map(div => JSON.parse(div.dataset.entry));
+}
+
+// clear queue
+function clearQueuedEntries() {
+  $('#entriesList').innerHTML = "";
+  $('#queuedEntries').style.display = 'none';
+}
 
 /* ============================
    Form wiring
