@@ -154,29 +154,21 @@ async function addRow() {
   // First row: date, ticket, notes
   const tr1 = document.createElement('tr');
   tr1.innerHTML = `
-    <td class="col-date">
-      <input type="date" required>
-    </td>
-    <td class="col-ticket">
-      <select class="ticketSelect" required></select>
-    </td>
-    <td class="col-notes">
-      <input type="text" maxlength="500" placeholder="Notes (optional)" class="notes">
-    </td>
+    <td><input type="date" required></td>
+    <td><select class="ticketSelect" required></select></td>
+    <td><input type="text" maxlength="500" placeholder="Notes (optional)" class="notes"></td>
   `.trim();
 
-  // Second row: start time + hours
+  // Second row: start time + hours + action
   const tr2 = document.createElement('tr');
   tr2.innerHTML = `
-    <td class="col-time">
-      <input type="time" step="900" class="start-time" required>
-    </td>
-    <td class="col-hours">
+    <td><input type="time" step="900" class="start-time" required></td>
+    <td colspan="2">
       <input type="number" step="0.25" min="0.25" class="hours standard" required placeholder="Std">
       <input type="number" step="0.25" min="0" class="hours ot15" placeholder="1.5x">
       <input type="number" step="0.25" min="0" class="hours ot2" placeholder="2x">
     </td>
-    <td class="col-action">
+    <td>
       <button type="button" class="btn remove-btn">Remove</button>
     </td>
   `.trim();
@@ -184,17 +176,15 @@ async function addRow() {
   tbody.appendChild(tr1);
   tbody.appendChild(tr2);
 
-  // Hook remove
+  // hook remove
   tr2.querySelector('.remove-btn').addEventListener('click', () => {
     tr1.remove();
     tr2.remove();
   });
 
-  // Populate tickets for this row
+  // populate tickets for this row
   await loadOpenTickets(tr1.querySelector('.ticketSelect'));
 }
-
-
 
 /* ============================
    Form wiring
