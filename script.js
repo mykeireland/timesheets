@@ -5,18 +5,27 @@
 ============================ */
 const Data = {
   fetchJson: async (url, opts) => {
-    const res = await fetch(url, { ...(opts||{}), headers: { ...(opts?.headers||{}), Accept: "application/json" }});
+    const res = await fetch(url, {
+      ...(opts || {}),
+      headers: { ...(opts?.headers || {}), Accept: "application/json" },
+    });
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status} on ${url}${txt ? ` — ${txt}` : ""}`);
+      throw new Error(
+        `HTTP ${res.status} on ${url}${txt ? ` — ${txt}` : ""}`
+      );
     }
     const text = await res.text().catch(() => "");
     if (!text) return [];
-    try { return JSON.parse(text); } catch { return []; }
+    try {
+      return JSON.parse(text);
+    } catch {
+      return [];
+    }
   },
 
   employees: () => Data.fetchJson(`${window.API_BASE}/employees`),
-  tickets:   () => Data.fetchJson(`${window.API_BASE}/tickets/open`),
+  tickets: () => Data.fetchJson(`${window.API_BASE}/tickets/open`),
   ticketsOpen: () => Data.fetchJson(`${window.API_BASE}/tickets/open`),
 
   submitEntry: async (payload) => {
@@ -27,54 +36,103 @@ const Data = {
     });
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
-      throw new Error(`Submit failed (HTTP ${res.status})${txt ? ` — ${txt}` : ""}`);
+      throw new Error(
+        `Submit failed (HTTP ${res.status})${txt ? ` — ${txt}` : ""}`
+      );
     }
-    return res.text().then(t => { try { return t ? JSON.parse(t) : {}; } catch { return {}; } });
+    return res.text().then((t) => {
+      try {
+        return t ? JSON.parse(t) : {};
+      } catch {
+        return {};
+      }
+    });
   },
 };
 
 /* ============================
    Helpers
 ============================ */
-function $(sel) { return document.querySelector(sel); }
-function toInt(v, name) { const n = parseInt(v,10); if (isNaN(n)) throw new Error(`${name} is required`); return n; }
-function toNum(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
-function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-function showError(err){ console.error(err); alert(err.message || String(err)); }
+function $(sel) {
+  return document.querySelector(sel);
+}
+function toInt(v, name) {
+  const n = parseInt(v, 10);
+  if (isNaN(n)) throw new Error(`${name} is required`);
+  return n;
+}
+function toNum(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (m) =>
+    ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }[m])
+  );
+}
+function showError(err) {
+  console.error(err);
+  alert(err.message || String(err));
+}
 
 /* ============================
    Normalisers
 ============================ */
 function toEmployeeItems(raw) {
   if (!Array.isArray(raw)) return [];
-  return raw.map(e => {
-    if (!e) return null;
-    const id = e.employee_id ?? e.employeeId ?? e.id ?? e.user_id ?? e.userId ?? null;
-    const first = e.first_name ?? e.firstName ?? "";
-    const last  = e.last_name  ?? e.lastName  ?? "";
-    let name = `${first} ${last}`.trim();
-    if (!name) name = e.display_name ?? e.displayName ?? e.name ?? e.email ?? (id != null ? `#${id}` : "");
-    if (id == null) return null;
-    return { id: Number(id), name: String(name) };
-  }).filter(Boolean);
+  return raw
+    .map((e) => {
+      if (!e) return null;
+      const id =
+        e.employee_id ?? e.employeeId ?? e.id ?? e.user_id ?? e.userId ?? null;
+      const first = e.first_name ?? e.firstName ?? "";
+      const last = e.last_name ?? e.lastName ?? "";
+      let name = `${first} ${last}`.trim();
+      if (!name)
+        name =
+          e.display_name ??
+          e.displayName ??
+          e.name ??
+          e.email ??
+          (id != null ? `#${id}` : "");
+      if (id == null) return null;
+      return { id: Number(id), name: String(name) };
+    })
+    .filter(Boolean);
 }
 
 function toTicketItems(raw) {
   if (!Array.isArray(raw)) return [];
-  return raw.map(t => {
-    if (!t) return null;
-    const id    = t.ticketId ?? t.ticket_id ?? t.id ?? null;
-    const cw    = t.cwTicketId ?? t.cw_ticket_id ?? t.cwId ?? "";
-    const name  = t.ticketName ?? t.ticket_name ?? t.name ?? "";
-    const site  = t.siteName ?? t.site_name ?? t.site ?? "";
-    const openFlag = t.open_flag ?? t.openFlag ?? t.open ?? t.isOpen;
-    if (openFlag !== undefined) {
-      const ok = (openFlag === true || openFlag === 1 || String(openFlag).toLowerCase() === "true");
-      if (!ok) return null;
-    }
-    if (!id) return null;
-    return { id: Number(id), label: `${cw || "—"} - ${name || "(no title)"}${site ? " - " + site : ""}` };
-  }).filter(Boolean);
+  return raw
+    .map((t) => {
+      if (!t) return null;
+      const id = t.ticketId ?? t.ticket_id ?? t.id ?? null;
+      const cw = t.cwTicketId ?? t.cw_ticket_id ?? t.cwId ?? "";
+      const name = t.ticketName ?? t.ticket_name ?? t.name ?? "";
+      const site = t.siteName ?? t.site_name ?? t.site ?? "";
+      const openFlag = t.open_flag ?? t.openFlag ?? t.open ?? t.isOpen;
+      if (openFlag !== undefined) {
+        const ok =
+          openFlag === true ||
+          openFlag === 1 ||
+          String(openFlag).toLowerCase() === "true";
+        if (!ok) return null;
+      }
+      if (!id) return null;
+      return {
+        id: Number(id),
+        label: `${cw || "—"} - ${name || "(no title)"}${
+          site ? " - " + site : ""
+        }`,
+      };
+    })
+    .filter(Boolean);
 }
 
 /* ============================
@@ -123,7 +181,7 @@ async function loadOpenTickets(selectEl) {
   const ticketsRaw = await Data.tickets();
   const tickets = toTicketItems(ticketsRaw);
   selectEl.innerHTML = `<option value="">Select Ticket</option>`;
-  tickets.forEach(t => {
+  tickets.forEach((t) => {
     const opt = document.createElement("option");
     opt.value = String(t.id);
     opt.textContent = t.label;
@@ -135,30 +193,24 @@ async function loadOpenTickets(selectEl) {
    Wire form
 ============================ */
 function wireForm() {
-  const form = $('#timesheetForm');
+  const form = $("#timesheetForm");
   if (!form) return;
 
-  // Add → queue entry
-  const addBtn = $('#addRowBtn');
+  // ADD button
+  const addBtn = $("#addRowBtn");
   if (addBtn) {
-    addBtn.addEventListener('click', (e) => {
+    addBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      try {
-        const entry = collectSingleEntry();
-        queueEntry(entry);
-        form.reset();
-      } catch (err) {
-        showError(err);
-      }
+      addToQueue();
     });
   }
 
-  // Submit → only check queue
-  form.addEventListener('submit', async (e) => {
+  // SUBMIT button
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
       const payloads = getQueuedEntries();
-      if (!payloads.length) throw new Error("No entries queued");  // ✅ only rule
+      if (!payloads.length) throw new Error("No entries queued"); // ✅ only rule
       for (const p of payloads) {
         await Data.submitEntry(p);
       }
@@ -170,9 +222,12 @@ function wireForm() {
   });
 
   // Manager view
-  const mgrBtn = $('#managerBtn');
+  const mgrBtn = $("#managerBtn");
   if (mgrBtn) {
-    mgrBtn.addEventListener('click', () => { window.location.href = 'manager.html'; });
+    mgrBtn.addEventListener(
+      "click",
+      () => (window.location.href = "manager.html")
+    );
   }
 }
 
@@ -193,7 +248,16 @@ function collectSingleEntry() {
   if (!start) throw new Error("Start time required");
   if (hStd + h15 + h2 <= 0) throw new Error("At least 1 hour required");
 
-  return { employeeId: empId, ticketId, date, startTime: start, hoursStandard: hStd, hours15x: h15, hours2x: h2, notes };
+  return {
+    employeeId: empId,
+    ticketId,
+    date,
+    startTime: start,
+    hoursStandard: hStd,
+    hours15x: h15,
+    hours2x: h2,
+    notes,
+  };
 }
 
 function addToQueue() {
@@ -219,7 +283,7 @@ function addToQueue() {
 
     tbody.appendChild(tr);
 
-    // reset form inputs for next add
+    // reset inputs for next add
     $("#entryDate").value = "";
     $("#entryStart").value = "";
     $("#hoursStd").value = "0";
@@ -233,7 +297,9 @@ function addToQueue() {
 }
 
 function getQueuedEntries() {
-  return [...document.querySelectorAll("#queueTable tr")].map(tr => JSON.parse(tr.dataset.entry));
+  return [...document.querySelectorAll("#queueTable tr")].map((tr) =>
+    JSON.parse(tr.dataset.entry)
+  );
 }
 
 function clearQueuedEntries() {
@@ -247,6 +313,11 @@ function clearQueuedEntries() {
 function fillSelect(sel, items, placeholder) {
   if (!sel) return;
   sel.innerHTML = [`<option value="">${placeholder}</option>`]
-    .concat(items.map(i => `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}</option>`))
+    .concat(
+      items.map(
+        (i) =>
+          `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}</option>`
+      )
+    )
     .join("");
 }
