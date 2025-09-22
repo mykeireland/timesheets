@@ -24,17 +24,19 @@
 
     <div class="table-wrap">
       <table id="pendingTable">
-        <thead>
-          <tr>
-            <th>Employee <button class="sort-btn" onclick="sortBy('employee')"><span id="sort-employee">⇅</span></button></th>
-            <th>Site <button class="sort-btn" onclick="sortBy('site')"><span id="sort-site">⇅</span></button></th>
-            <th>Ticket <button class="sort-btn" onclick="sortBy('ticket')"><span id="sort-ticket">⇅</span></button></th>
-            <th>Date <button class="sort-btn" onclick="sortBy('date')"><span id="sort-date">⇅</span></button></th>
-            <th>Hours <button class="sort-btn" onclick="sortBy('hours')"><span id="sort-hours">⇅</span></button></th>
-            <th>Status <button class="sort-btn" onclick="sortBy('status')"><span id="sort-status">⇅</span></button></th>
-            <th class="col-action">Action</th>
-          </tr>
-        </thead>
+       <thead>
+        <tr>
+          <th data-field="firstName"><button class="sort-btn">Employee <span class="sort-icon">⇅</span></button></th>
+          <th data-field="siteName"><button class="sort-btn">Site <span class="sort-icon">⇅</span></button></th>
+          <th data-field="ticketId"><button class="sort-btn">Ticket <span class="sort-icon">⇅</span></button></th>
+          <th data-field="date"><button class="sort-btn">Date <span class="sort-icon">⇅</span></button></th>
+          <th data-field="hours"><button class="sort-btn">Hours <span class="sort-icon">⇅</span></button></th>
+          <th data-field="status"><button class="sort-btn">Status <span class="sort-icon">⇅</span></button></th>
+          <th class="col-notes">Notes</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
         <tbody></tbody>
       </table>
     </div>
