@@ -310,7 +310,6 @@
   return json || { ok: true };
 }
 
-
   function setSubmitting(isSubmitting) {
     if (!submitBtn) submitBtn = els.form.querySelector('button[type="submit"]');
     if (submitBtn) {
