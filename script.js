@@ -1,7 +1,10 @@
 // === Globals ===
+// === Config & State ===
 const API_BASE = window.API_BASE || "http://localhost:7071/api";
-let ticketList = [];
-let queue = [];
+const state = {
+  queue: [],
+  employeeId: null
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   loadEmployees();
@@ -9,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupFormHandlers();
 });
 
-// === Load Dropdowns ===
+// === Loaders ===
 async function loadEmployees() {
   const res = await fetch(`${API_BASE}/employees`);
   const data = await res.json();
@@ -24,150 +27,151 @@ async function loadEmployees() {
 
 async function loadTickets() {
   const res = await fetch(`${API_BASE}/tickets/open`);
-  ticketList = await res.json();
+  const data = await res.json();
   const select = document.getElementById("entryTicket");
-  ticketList.forEach(ticket => {
+  data.forEach(ticket => {
     const opt = document.createElement("option");
     opt.value = ticket.ticketId;
-    opt.textContent = `${ticket.ticketId} (${ticket.siteName})`;
+    opt.textContent = `${ticket.ticketId} - ${ticket.siteName}`;
     select.appendChild(opt);
   });
 }
 
-// === Time Conversion ===
-function convertTo24Hr(hour, minute, ampm) {
+// === Helpers ===
+function convertTo24Hour(hour, minute, ampm) {
   if (!hour || !minute || !ampm) return null;
-  let hr = parseInt(hour, 10);
-  if (ampm === "PM" && hr < 12) hr += 12;
-  if (ampm === "AM" && hr === 12) hr = 0;
-  return `${hr.toString().padStart(2, "0")}:${minute}`;
+  let h = parseInt(hour, 10);
+  if (ampm === "PM" && h < 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+  return `${h.toString().padStart(2, '0')}:${minute}`;
 }
 
-// === Add Entry to Queue ===
+function clearForm() {
+  document.getElementById("entryDate").value = "";
+  document.getElementById("entryHour").value = "";
+  document.getElementById("entryMinute").value = "";
+  document.getElementById("entryAmPm").value = "";
+  document.getElementById("entryTicket").value = "";
+  document.getElementById("hoursStd").value = "0";
+  document.getElementById("hours15").value = "0";
+  document.getElementById("hours2").value = "0";
+  document.getElementById("entryNotes").value = "";
+}
+
+// === Form Handlers ===
+function setupFormHandlers() {
+  document.getElementById("timesheetForm").addEventListener("submit", handleSubmit);
+  document.getElementById("managerBtn").addEventListener("click", () => {
+    window.location.href = "manager.html";
+  });
+}
+
 function addToQueue() {
+  const employeeId = parseInt(document.getElementById("employeeSelect").value);
   const date = document.getElementById("entryDate").value;
-  const ticketId = document.getElementById("entryTicket").value;
+  const ticketId = parseInt(document.getElementById("entryTicket").value);
   const hour = document.getElementById("entryHour").value;
   const minute = document.getElementById("entryMinute").value;
   const ampm = document.getElementById("entryAmPm").value;
-  const hoursStd = parseFloat(document.getElementById("hoursStd").value) || 0;
-  const hours15 = parseFloat(document.getElementById("hours15").value) || 0;
+  const start = convertTo24Hour(hour, minute, ampm);
+  const hoursStandard = parseFloat(document.getElementById("hoursStd").value) || 0;
+  const hours15x = parseFloat(document.getElementById("hours15").value) || 0;
   const hours2x = parseFloat(document.getElementById("hours2").value) || 0;
   const notes = document.getElementById("entryNotes").value;
-  const start = convertTo24Hr(hour, minute, ampm);
 
-  if (!date || !ticketId || !start) {
-    alert("Please complete all required fields (date, ticket, and start time).");
+  if (!employeeId || !date || !ticketId || !start) {
+    alert("Missing required fields.");
     return;
   }
 
-  const ticketLabel = ticketList.find(t => t.ticketId == ticketId)?.ticketName || ticketId;
+  // Store once per session
+  state.employeeId = employeeId;
 
   const entry = {
+    employeeId,
+    ticketId,
     date,
-    ticketId: parseInt(ticketId),
     start,
-    hoursStandard: hoursStd,
-    hours15x: hours15,
-    hours2x: hours2x,
-    notes,
-    ticketLabel
+    hoursStandard,
+    hours15x,
+    hours2x,
+    notes
   };
 
-  queue.push(entry);
+  state.queue.push(entry);
   renderQueue();
+  clearForm();
 }
 
-// === Render Queue Table ===
 function renderQueue() {
-  const queueTable = document.getElementById("queueTable");
-  queueTable.innerHTML = "";
+  const tbody = document.getElementById("queueTable");
+  tbody.innerHTML = "";
 
-  if (queue.length === 0) {
+  if (state.queue.length === 0) {
     document.getElementById("queuedEntries").style.display = "none";
     return;
   }
 
   document.getElementById("queuedEntries").style.display = "block";
 
-  queue.forEach((entry, i) => {
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
+  state.queue.forEach((entry, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
       <td>${entry.date}</td>
-      <td>${entry.ticketLabel}</td>
+      <td>${entry.ticketId}</td>
       <td>${entry.start}</td>
       <td>${entry.hoursStandard}</td>
       <td>${entry.hours15x}</td>
       <td>${entry.hours2x}</td>
       <td>${entry.notes || ""}</td>
-      <td><button class="btn danger" onclick="removeFromQueue(${i})">X</button></td>
+      <td><button class="btn danger" onclick="removeFromQueue(${i})">Remove</button></td>
     `;
-
-    queueTable.appendChild(row);
+    tbody.appendChild(tr);
   });
 }
 
 function removeFromQueue(index) {
-  queue.splice(index, 1);
+  state.queue.splice(index, 1);
   renderQueue();
 }
 
-// === Setup Event Listeners ===
-function setupFormHandlers() {
-  document.getElementById("timesheetForm").addEventListener("submit", async e => {
-    e.preventDefault();
+// === Submission ===
+async function handleSubmit(e) {
+  e.preventDefault();
+  if (state.queue.length === 0) {
+    alert("Please add at least one entry before submitting.");
+    return;
+  }
 
-    const employeeId = parseInt(document.getElementById("employeeSelect").value);
-    if (!employeeId || queue.length === 0) {
-      alert("Please select an employee and add at least one entry.");
-      return;
-    }
+  console.log("🚀 Submitting entries:", JSON.stringify(state.queue, null, 2));
 
-    const errors = [];
-    for (const [i, entry] of queue.entries()) {
-      const body = {
-        employeeId,
-        ticketId: entry.ticketId,
-        date: entry.date,
-        start: entry.start,
-        hoursStandard: entry.hoursStandard,
-        hours15x: entry.hours15x,
-        hours2x: entry.hours2x,
-        notes: entry.notes
-      };
+  let failures = 0;
 
-      console.log("Submitting queue payload:", JSON.stringify(state.queue, null, 2));
+  for (const entry of state.queue) {
+    try {
+      const res = await fetch(`${API_BASE}/timesheets/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry)
+      });
 
-      try {
-        const res = await fetch(`${API_BASE}/timesheets/submit`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        const result = await res.json();
-        if (!result.ok) {
-          console.error("Submit failed:", result.error);
-          errors.push(`Entry ${i + 1}: ${result.error}`);
-        }
-      } catch (err) {
-        console.error("Submit failed:", err);
-        errors.push(`Entry ${i + 1}: ${err.message}`);
+      const result = await res.json();
+      if (!res.ok || !result.ok) {
+        console.error("❌ Submission failed:", result.error || res.statusText);
+        failures++;
       }
+    } catch (err) {
+      console.error("❌ Network error:", err.message);
+      failures++;
     }
+  }
 
-    if (errors.length > 0) {
-      alert("Some entries failed:\n" + errors.join("\n"));
-    } else {
-      alert("Timesheet submitted successfully!");
-      queue = [];
-      renderQueue();
-      document.getElementById("timesheetForm").reset();
-    }
-  });
-
-  document.getElementById("managerBtn").addEventListener("click", () => {
-    window.location.href = "manager.html";
-  });
+  if (failures > 0) {
+    alert(`⚠️ ${failures} entry(ies) failed to submit.`);
+  } else {
+    alert("✅ Timesheet submitted successfully!");
+    state.queue = [];
+    renderQueue();
+    document.getElementById("timesheetForm").reset();
+  }
 }
