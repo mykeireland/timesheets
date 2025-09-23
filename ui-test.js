@@ -12,7 +12,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Populate selects
   fillSelect("stdHour", hourOptions);
   fillSelect("stdMin", minuteOptions);
   fillSelect("h15Hour", hourOptions);
@@ -50,5 +49,5 @@ document.addEventListener("DOMContentLoaded", () => {
     if (el.tagName === "SELECT") el.addEventListener("change", recalc);
   });
 
-  recalc(); // Initial calculation
+  recalc();
 });
