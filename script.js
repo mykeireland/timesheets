@@ -1,4 +1,3 @@
-// === Globals ===
 // === Config & State ===
 const API_BASE = window.API_BASE || "http://localhost:7071/api";
 const state = {
@@ -40,11 +39,17 @@ async function loadTickets() {
 
 // === Helpers ===
 function convertTo24Hour(hour, minute, ampm) {
-  if (!hour || !minute || !ampm) return null;
+  hour = hour || "00";
+  minute = minute || "00";
+  ampm = ampm || "AM";
+
   let h = parseInt(hour, 10);
   if (ampm === "PM" && h < 12) h += 12;
   if (ampm === "AM" && h === 12) h = 0;
-  return `${h.toString().padStart(2, '0')}:${minute}`;
+
+  const final = `${h.toString().padStart(2, '0')}:${minute}`;
+  console.log("⏱️ Resolved start time:", final);
+  return final;
 }
 
 function clearForm() {
@@ -71,21 +76,20 @@ function addToQueue() {
   const employeeId = parseInt(document.getElementById("employeeSelect").value);
   const date = document.getElementById("entryDate").value;
   const ticketId = parseInt(document.getElementById("entryTicket").value);
-  const hour = document.getElementById("entryHour").value;
-  const minute = document.getElementById("entryMinute").value;
-  const ampm = document.getElementById("entryAmPm").value;
+  const hour = document.getElementById("entryHour")?.value;
+  const minute = document.getElementById("entryMinute")?.value;
+  const ampm = document.getElementById("entryAmPm")?.value;
   const start = convertTo24Hour(hour, minute, ampm);
   const hoursStandard = parseFloat(document.getElementById("hoursStd").value) || 0;
   const hours15x = parseFloat(document.getElementById("hours15").value) || 0;
   const hours2x = parseFloat(document.getElementById("hours2").value) || 0;
   const notes = document.getElementById("entryNotes").value;
 
-  if (!employeeId || !date || !ticketId || !start) {
+  if (!employeeId || !date || !ticketId) {
     alert("Missing required fields.");
     return;
   }
 
-  // Store once per session
   state.employeeId = employeeId;
 
   const entry = {
@@ -145,7 +149,6 @@ async function handleSubmit(e) {
   }
 
   console.log("🚀 Submitting entries:", JSON.stringify(state.queue, null, 2));
-
   let failures = 0;
 
   for (const entry of state.queue) {
