@@ -1,26 +1,54 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const stdInput = document.getElementById("hoursStd");
-  const h15Input = document.getElementById("hours15");
-  const h2Input = document.getElementById("hours2");
+  const hourOptions = [...Array(13).keys()]; // 0-12
+  const minuteOptions = [0, 15, 30, 45];
 
-  const workedOut = document.getElementById("workedHours");
-  const totalOut = document.getElementById("totalHours");
+  function fillSelect(id, options) {
+    const el = document.getElementById(id);
+    options.forEach(val => {
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = val.toString().padStart(2, '0');
+      el.appendChild(opt);
+    });
+  }
 
-  const recalc = () => {
-    const s = parseFloat(stdInput.value) || 0;
-    const h15 = parseFloat(h15Input.value) || 0;
-    const h2 = parseFloat(h2Input.value) || 0;
+  // Populate selects
+  fillSelect("stdHour", hourOptions);
+  fillSelect("stdMin", minuteOptions);
+  fillSelect("h15Hour", hourOptions);
+  fillSelect("h15Min", minuteOptions);
+  fillSelect("h2Hour", hourOptions);
+  fillSelect("h2Min", minuteOptions);
 
-    const worked = s + h15 + h2;
-    const total = s + (h15 * 1.5) + (h2 * 2);
-
-    workedOut.textContent = worked.toFixed(2);
-    totalOut.textContent = total.toFixed(2);
+  const els = {
+    stdHour: document.getElementById("stdHour"),
+    stdMin: document.getElementById("stdMin"),
+    h15Hour: document.getElementById("h15Hour"),
+    h15Min: document.getElementById("h15Min"),
+    h2Hour: document.getElementById("h2Hour"),
+    h2Min: document.getElementById("h2Min"),
+    workedOut: document.getElementById("workedHours"),
+    totalOut: document.getElementById("totalHours"),
   };
 
-  stdInput.addEventListener("input", recalc);
-  h15Input.addEventListener("input", recalc);
-  h2Input.addEventListener("input", recalc);
+  const recalc = () => {
+    const h = (hr, min) => parseInt(hr.value || 0) + (parseInt(min.value || 0) / 60);
 
-  recalc(); // initial
+    const std = h(els.stdHour, els.stdMin);
+    const h15 = h(els.h15Hour, els.h15Min);
+    const h2 = h(els.h2Hour, els.h2Min);
+
+    const worked = std + h15 + h2;
+    const total = std + (h15 * 1.5) + (h2 * 2);
+
+    els.workedOut.textContent = worked.toFixed(2);
+    els.totalOut.textContent = total.toFixed(2);
+  };
+
+  // Attach event listeners
+  Object.values(els).forEach(el => {
+    if (el.tagName === "SELECT") el.addEventListener("change", recalc);
+  });
+
+  recalc(); // Initial calculation
 });
