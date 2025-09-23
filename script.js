@@ -27,6 +27,8 @@
     const minute = document.getElementById("entryMinute").value;
     const ampm = document.getElementById("entryAmPm").value;
 
+    console.log("Time picker values:", { hour, minute, ampm });
+    
     if (!hour || !minute || !ampm) return null;
 
     let h = parseInt(hour, 10);
