@@ -38,27 +38,50 @@
    * @typedef {Object} QueueEntry
    * @property {number} employeeId
    * @property {string} employeeName
-   * @property {string} date // yyyy-mm-dd
+   * @property {string} date
    * @property {number} ticketId
    * @property {string} ticketLabel
-   * @property {string} start // HH:mm
+   * @property {string} start
    * @property {number} hoursStd
    * @property {number} hours15
    * @property {number} hours2
    * @property {string} notes
    */
 
-  // ---------- Fetch helpers ----------
+  // ---------- Helpers ----------
   async function fetchJSON(url, options = {}) {
     const res = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
     const text = await res.text();
     let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { /* ignore */ }
+    try { data = text ? JSON.parse(text) : null; } catch { /* keep null */ }
     if (!res.ok) {
       const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
       throw new Error(msg);
     }
     return data;
+  }
+
+  function fillSelectWithError(sel, message) {
+    sel.innerHTML = "";
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = message;
+    opt.disabled = true;
+    opt.selected = true;
+    sel.appendChild(opt);
+  }
+
+  function getEmployeeNameById(id) {
+    const found = state.employees.find((e) => e.id === id);
+    return found ? found.name : `Employee ${id}`;
+  }
+
+  function getTicketLabelById(id) {
+    const found = state.tickets.find((t) => t.ticketId === id);
+    if (!found) return `Ticket ${id}`;
+    const left = found.cwTicketId ? `#${found.cwTicketId}` : `Ticket ${id}`;
+    const right = [found.ticketName, found.siteName].filter(Boolean).join(" — ");
+    return right ? `${left} · ${right}` : left;
   }
 
   // ---------- Data loading ----------
@@ -122,21 +145,12 @@
     }
   }
 
-  function fillSelectWithError(sel, message) {
-    sel.innerHTML = "";
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = message;
-    opt.disabled = true;
-    opt.selected = true;
-    sel.appendChild(opt);
-  }
-
-  // ---------- Time picker helper ----------
+  // ---------- Time picker ----------
   function getSelectedTime() {
     const hour = document.getElementById("entryHour").value;
     const minute = document.getElementById("entryMinute").value;
     const ampm = document.getElementById("entryAmPm").value;
+
     if (!hour || !minute || !ampm) return null;
 
     let h = parseInt(hour, 10);
@@ -149,41 +163,22 @@
   // ---------- Validation ----------
   function validateEntryRow() {
     const employeeId = els.employeeSelect.value.trim();
-    if (!employeeId) {
-      alert("Please select an employee.");
-      els.employeeSelect.focus();
-      return null;
-    }
+    if (!employeeId) { alert("Please select an employee."); els.employeeSelect.focus(); return null; }
 
     const date = els.entryDate.value.trim();
-    if (!date) {
-      alert("Please select a date.");
-      els.entryDate.focus();
-      return null;
-    }
+    if (!date) { alert("Please select a date."); els.entryDate.focus(); return null; }
 
     const ticketId = els.entryTicket.value.trim();
-    if (!ticketId) {
-      alert("Please select a ticket.");
-      els.entryTicket.focus();
-      return null;
-    }
+    if (!ticketId) { alert("Please select a ticket."); els.entryTicket.focus(); return null; }
 
     const start = getSelectedTime();
-    if (!start) {
-      alert("Please select a start time (hours, minutes, AM/PM).");
-      return null;
-    }
+    if (!start) { alert("Please select a start time (hours, minutes, AM/PM)."); return null; }
 
     const hoursStd = asNumber(els.hoursStd.value);
     const hours15 = asNumber(els.hours15.value);
     const hours2 = asNumber(els.hours2.value);
     const total = hoursStd + hours15 + hours2;
-    if (total <= 0) {
-      alert("Please enter at least one hour (Std / 1.5x / 2x).");
-      (hoursStd ? els.hours15 : els.hoursStd).focus();
-      return null;
-    }
+    if (total <= 0) { alert("Please enter at least one hour."); return null; }
 
     return {
       employeeId: parseInt(employeeId, 10),
@@ -199,30 +194,13 @@
     };
   }
 
-  function getEmployeeNameById(id) {
-    const found = state.employees.find((e) => e.id === id);
-    return found ? found.name : `Employee ${id}`;
-  }
-
-  function getTicketLabelById(id) {
-    const found = state.tickets.find((t) => t.ticketId === id);
-    if (!found) return `Ticket ${id}`;
-    const left = found.cwTicketId ? `#${found.cwTicketId}` : `Ticket ${id}`;
-    const right = [found.ticketName, found.siteName].filter(Boolean).join(" — ");
-    return right ? `${left} · ${right}` : left;
-  }
-
-  // ---------- Queue operations ----------
+  // ---------- Queue ----------
   function addToQueue() {
     const entry = validateEntryRow();
     if (!entry) return;
 
     if (state.queue.length > 0 && state.queue[0].employeeId !== entry.employeeId) {
-      const proceed = confirm(
-        "Your queue contains entries for a different employee.\n" +
-        "Submitting mixed employees is not supported.\n\n" +
-        "Clear queue and add this entry?"
-      );
+      const proceed = confirm("Queue has entries for another employee. Clear queue?");
       if (!proceed) return;
       state.queue = [];
     }
@@ -230,42 +208,40 @@
     state.queue.push(entry);
     renderQueue();
 
-    // Reset entry fields (not employee)
+    // Reset inputs (keep employee)
     els.entryDate.value = "";
     els.entryTicket.selectedIndex = 0;
     els.hoursStd.value = "0";
     els.hours15.value = "0";
     els.hours2.value = "0";
     els.entryNotes.value = "";
-    els.entryDate.focus();
-
-    // Reset time picker
     document.getElementById("entryHour").selectedIndex = 0;
     document.getElementById("entryMinute").selectedIndex = 0;
     document.getElementById("entryAmPm").selectedIndex = 0;
+    els.entryDate.focus();
   }
+  window.addToQueue = addToQueue;
 
   function renderQueue() {
     const q = state.queue;
     els.queueTable.innerHTML = "";
-    if (q.length === 0) {
-      els.queuedWrap.style.display = "none";
-      return;
-    }
+    if (q.length === 0) { els.queuedWrap.style.display = "none"; return; }
     els.queuedWrap.style.display = "block";
-    const rows = q.map((e, idx) => `
-      <tr data-idx="${idx}">
-        <td>${e.date}</td>
-        <td title="${escapeHtml(e.ticketLabel)}">${escapeHtml(shorten(e.ticketLabel, 64))}</td>
-        <td>${e.start}</td>
-        <td>${e.hoursStd}</td>
-        <td>${e.hours15}</td>
-        <td>${e.hours2}</td>
-        <td>${escapeHtml(e.notes || "")}</td>
-        <td><button type="button" class="btn danger" data-remove="${idx}">Remove</button></td>
-      </tr>
-    `).join("");
-    els.queueTable.insertAdjacentHTML("beforeend", rows);
+
+    els.queueTable.insertAdjacentHTML(
+      "beforeend",
+      q.map((e, idx) => `
+        <tr data-idx="${idx}">
+          <td>${e.date}</td>
+          <td title="${escapeHtml(e.ticketLabel)}">${escapeHtml(shorten(e.ticketLabel, 64))}</td>
+          <td>${e.start}</td>
+          <td>${e.hoursStd}</td>
+          <td>${e.hours15}</td>
+          <td>${e.hours2}</td>
+          <td>${escapeHtml(e.notes || "")}</td>
+          <td><button type="button" class="btn danger" data-remove="${idx}">Remove</button></td>
+        </tr>`).join("")
+    );
   }
 
   function removeFromQueueByIndex(idx) {
@@ -274,18 +250,10 @@
     renderQueue();
   }
 
-  // ---------- Submit flow ----------
+  // ---------- Submit ----------
   async function handleSubmit(e) {
     e.preventDefault();
-    if (state.queue.length === 0) {
-      alert("Please add at least one entry before submitting.");
-      return;
-    }
-    const empId = state.queue[0].employeeId;
-    if (!state.queue.every((x) => x.employeeId === empId)) {
-      alert("All queued entries must belong to the same employee.");
-      return;
-    }
+    if (state.queue.length === 0) { alert("Please add at least one entry."); return; }
     setSubmitting(true);
     try {
       for (const entry of state.queue) {
@@ -296,28 +264,31 @@
       renderQueue();
     } catch (err) {
       console.error("Submit failed:", err);
-      alert("Failed to submit timesheet: " + (err && err.message ? err.message : String(err)));
+      alert("Failed to submit: " + (err?.message || String(err)));
     } finally {
       setSubmitting(false);
     }
   }
 
   async function submitSingleEntry(entry) {
-      const payload = {
+    const payload = {
       EmployeeId: entry.employeeId,
       TicketId: entry.ticketId,
       Date: entry.date,
-      Start: entry.start,            // <-- IMPORTANT
+      Start: entry.start,   // <-- now included
       HoursStandard: entry.hoursStd,
       Hours15x: entry.hours15,
       Hours2x: entry.hours2,
-      Notes: entry.notes || null
+      Notes: entry.notes || null,
     };
+
+    console.log("Submitting payload:", payload);
 
     const res = await fetchJSON(`${API_BASE}/timesheets/submit`, {
       method: "POST",
       body: JSON.stringify(payload),
     });
+
     if (res && res.ok === false) {
       throw new Error(res.error || "Server rejected the entry.");
     }
@@ -334,20 +305,13 @@
     if (addBtn instanceof HTMLButtonElement) addBtn.disabled = isSubmitting;
   }
 
-  // ---------- Helpers ----------
+  // ---------- Misc ----------
   function escapeHtml(s) {
-    return (s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+    return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
   function shorten(s, max) {
     return s && s.length > max ? s.slice(0, max - 1) + "…" : s;
   }
-
-  // ---------- Global hooks ----------
-  window.addToQueue = addToQueue;
 
   document.addEventListener("click", (ev) => {
     const btn = ev.target;
@@ -358,55 +322,11 @@
   });
 
   // ---------- Init ----------
-  function attachEmployeeChangeGuard() {
-    state.lastEmployeeIdSelected = els.employeeSelect.value || null;
-    els.employeeSelect.addEventListener("change", () => {
-      if (state.queue.length > 0 && state.lastEmployeeIdSelected && els.employeeSelect.value !== state.lastEmployeeIdSelected) {
-        const proceed = confirm(
-          "Changing the employee will clear the current queue.\nDo you want to continue?"
-        );
-        if (!proceed) {
-          els.employeeSelect.value = state.lastEmployeeIdSelected;
-          return;
-        }
-        state.queue = [];
-        renderQueue();
-      }
-      state.lastEmployeeIdSelected = els.employeeSelect.value || null;
-    });
-  }
-
-  function wireManagerButton() {
-    if (els.managerBtn) {
-      els.managerBtn.addEventListener("click", () => {
-        window.location.href = "manager.html";
-      });
-    }
-  }
-
   async function init() {
-    wireManagerButton();
-    attachEmployeeChangeGuard();
     els.form.addEventListener("submit", handleSubmit);
-
-    // Reset handler for "Clear Form" button
-    els.form.addEventListener("reset", () => {
-      els.entryTicket.selectedIndex = 0;
-      document.getElementById("entryHour").selectedIndex = 0;
-      document.getElementById("entryMinute").selectedIndex = 0;
-      document.getElementById("entryAmPm").selectedIndex = 0;
-      els.hoursStd.value = "0";
-      els.hours15.value = "0";
-      els.hours2.value = "0";
-      els.entryNotes.value = "";
-    });
-
+    if (els.managerBtn) els.managerBtn.addEventListener("click", () => { window.location.href = "manager.html"; });
     await Promise.all([loadEmployees(), loadTickets()]);
   }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init, { once: true });
-  } else {
-    init();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
+  else init();
 })();
