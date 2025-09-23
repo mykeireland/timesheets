@@ -30,8 +30,8 @@ document.addEventListener("DOMContentLoaded", () => {
     totalOut: document.getElementById("totalHours"),
   };
 
- const recalc = () => {
-  const h = (hr, min) => parseInt(hr.value || 0) + (parseInt(min.value || 0) / 60);
+const recalc = () => {
+  const h = (hr, min) => parseInt(hr.value || 0) * 60 + parseInt(min.value || 0);
 
   const std = h(els.stdHour, els.stdMin);
   const h15 = h(els.h15Hour, els.h15Min);
@@ -40,16 +40,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const worked = std + h15 + h2;
   const total = std + (h15 * 1.5) + (h2 * 2);
 
-  // Convert decimal hours to "H:MM" string
-  const toTimeStr = (val) => {
-    const hrs = Math.floor(val);
-    const mins = Math.round((val - hrs) * 60);
-    return `${hrs}:${mins.toString().padStart(2, "0")}`;
+  // Convert minutes to H:MM string
+  const toTimeStr = (mins) => {
+    const hours = Math.floor(mins / 60);
+    const remainingMins = Math.round(mins % 60);
+    return `${hours}:${remainingMins.toString().padStart(2, "0")}`;
   };
 
   els.workedOut.textContent = toTimeStr(worked);
   els.totalOut.textContent = toTimeStr(total);
 };
+
 
   // Attach event listeners
   Object.values(els).forEach(el => {
