@@ -113,6 +113,7 @@
 
   // ----- Submit -----
   async function submitSingleEntry(entry) {
+    console.log("Entry before submit:", entry);
     const payload = {
       EmployeeId: entry.employeeId,
       TicketId: entry.ticketId,
