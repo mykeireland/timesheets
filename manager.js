@@ -1,6 +1,3 @@
-// Manager view: fetches pending timesheets, renders them with Approve/Reject,
-// supports filtering + sorting.
-
 (function () {
   "use strict";
 
@@ -14,10 +11,9 @@
   const state = {
     timesheets: [],
     sortField: null,
-    sortDir: 1, // 1 = asc, -1 = desc
+    sortDir: 1,
   };
 
-  // -------- Fetch & render --------
   async function loadPending() {
     try {
       const res = await fetch(`${API_BASE}/timesheets/pending`);
@@ -34,7 +30,6 @@
   function renderTable() {
     let rows = [...state.timesheets];
 
-    // Apply filter
     const q = els.filterInput.value.trim().toLowerCase();
     if (q) {
       rows = rows.filter((r) =>
@@ -44,7 +39,6 @@
       );
     }
 
-    // Apply sort
     if (state.sortField) {
       rows.sort((a, b) => {
         const va = (a[state.sortField] ?? "").toString().toLowerCase();
@@ -55,7 +49,6 @@
       });
     }
 
-    // Render
     if (rows.length === 0) {
       els.tableBody.innerHTML = `<tr><td colspan="8">No pending timesheets</td></tr>`;
       return;
@@ -81,7 +74,6 @@
       .join("");
   }
 
-  // -------- Actions --------
   async function approve(entryId) {
     try {
       const res = await fetch(`${API_BASE}/timesheets/approve/${entryId}`, { method: "POST" });
@@ -104,7 +96,6 @@
     }
   }
 
-  // -------- Events --------
   els.filterInput.addEventListener("input", renderTable);
 
   document.addEventListener("click", (ev) => {
@@ -119,7 +110,7 @@
       const th = t.closest("th");
       const field = th.getAttribute("data-field");
       if (state.sortField === field) {
-        state.sortDir *= -1; // toggle
+        state.sortDir *= -1;
       } else {
         state.sortField = field;
         state.sortDir = 1;
@@ -137,15 +128,13 @@
     }
   }
 
-  // -------- Helpers --------
   function escapeHtml(s) {
-    return (s || "")
+    return String(s || "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
   }
 
-  // -------- Init --------
   loadPending();
 })();
