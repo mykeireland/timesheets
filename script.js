@@ -303,15 +303,17 @@
   }
 
   async function submitSingleEntry(entry) {
-    const payload = {
+      const payload = {
       EmployeeId: entry.employeeId,
       TicketId: entry.ticketId,
       Date: entry.date,
+      Start: entry.start,            // <-- IMPORTANT
       HoursStandard: entry.hoursStd,
       Hours15x: entry.hours15,
       Hours2x: entry.hours2,
-      Notes: entry.notes || null,
+      Notes: entry.notes || null
     };
+
     const res = await fetchJSON(`${API_BASE}/timesheets/submit`, {
       method: "POST",
       body: JSON.stringify(payload),
