@@ -1,163 +1,171 @@
-(function () {
-  "use strict";
+// === Globals ===
+const API_BASE = window.API_BASE || "http://localhost:7071/api";
+let ticketList = [];
+let queue = [];
 
-  const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
+document.addEventListener("DOMContentLoaded", () => {
+  loadEmployees();
+  loadTickets();
+  setupFormHandlers();
+});
 
-  const els = {
-    form: document.getElementById("timesheetForm"),
-    employeeSelect: document.getElementById("employeeSelect"),
-    entryDate: document.getElementById("entryDate"),
-    entryTicket: document.getElementById("entryTicket"),
-    hoursStd: document.getElementById("hoursStd"),
-    hours15: document.getElementById("hours15"),
-    hours2: document.getElementById("hours2"),
-    entryNotes: document.getElementById("entryNotes"),
-    queuedWrap: document.getElementById("queuedEntries"),
-    queueTable: document.getElementById("queueTable"),
-    managerBtn: document.getElementById("managerBtn"),
+// === Load Dropdowns ===
+async function loadEmployees() {
+  const res = await fetch(`${API_BASE}/employees`);
+  const data = await res.json();
+  const select = document.getElementById("employeeSelect");
+  data.forEach(emp => {
+    const opt = document.createElement("option");
+    opt.value = emp.id;
+    opt.textContent = emp.name;
+    select.appendChild(opt);
+  });
+}
+
+async function loadTickets() {
+  const res = await fetch(`${API_BASE}/tickets/open`);
+  ticketList = await res.json();
+  const select = document.getElementById("entryTicket");
+  ticketList.forEach(ticket => {
+    const opt = document.createElement("option");
+    opt.value = ticket.ticketId;
+    opt.textContent = `${ticket.ticketId} (${ticket.siteName})`;
+    select.appendChild(opt);
+  });
+}
+
+// === Time Conversion ===
+function convertTo24Hr(hour, minute, ampm) {
+  if (!hour || !minute || !ampm) return null;
+  let hr = parseInt(hour, 10);
+  if (ampm === "PM" && hr < 12) hr += 12;
+  if (ampm === "AM" && hr === 12) hr = 0;
+  return `${hr.toString().padStart(2, "0")}:${minute}`;
+}
+
+// === Add Entry to Queue ===
+function addToQueue() {
+  const date = document.getElementById("entryDate").value;
+  const ticketId = document.getElementById("entryTicket").value;
+  const hour = document.getElementById("entryHour").value;
+  const minute = document.getElementById("entryMinute").value;
+  const ampm = document.getElementById("entryAmPm").value;
+  const hoursStd = parseFloat(document.getElementById("hoursStd").value) || 0;
+  const hours15 = parseFloat(document.getElementById("hours15").value) || 0;
+  const hours2x = parseFloat(document.getElementById("hours2").value) || 0;
+  const notes = document.getElementById("entryNotes").value;
+  const start = convertTo24Hr(hour, minute, ampm);
+
+  if (!date || !ticketId || !start) {
+    alert("Please complete all required fields (date, ticket, and start time).");
+    return;
+  }
+
+  const ticketLabel = ticketList.find(t => t.ticketId == ticketId)?.ticketName || ticketId;
+
+  const entry = {
+    date,
+    ticketId: parseInt(ticketId),
+    start,
+    hoursStandard: hoursStd,
+    hours15x: hours15,
+    hours2x: hours2x,
+    notes,
+    ticketLabel
   };
 
-  const state = { employees: [], tickets: [], queue: [] };
+  queue.push(entry);
+  renderQueue();
+}
 
-  // ----- Helpers -----
-  const asNumber = (v) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+// === Render Queue Table ===
+function renderQueue() {
+  const queueTable = document.getElementById("queueTable");
+  queueTable.innerHTML = "";
 
-  function getSelectedTime() {
-    const hour = document.getElementById("entryHour").value;
-    const minute = document.getElementById("entryMinute").value;
-    const ampm = document.getElementById("entryAmPm").value;
-
-    console.log("Time picker values:", { hour, minute, ampm });
-    
-    if (!hour || !minute || !ampm) return null;
-
-    let h = parseInt(hour, 10);
-    if (ampm === "PM" && h < 12) h += 12;
-    if (ampm === "AM" && h === 12) h = 0;
-
-    return `${String(h).padStart(2, "0")}:${minute}`;
+  if (queue.length === 0) {
+    document.getElementById("queuedEntries").style.display = "none";
+    return;
   }
 
-  // ----- Queue & Validation -----
-  function validateEntryRow() {
-    const employeeId = els.employeeSelect.value;
-    if (!employeeId) { alert("Select employee"); return null; }
+  document.getElementById("queuedEntries").style.display = "block";
 
-    const date = els.entryDate.value;
-    if (!date) { alert("Select date"); return null; }
+  queue.forEach((entry, i) => {
+    const row = document.createElement("tr");
 
-    const ticketId = els.entryTicket.value;
-    if (!ticketId) { alert("Select ticket"); return null; }
+    row.innerHTML = `
+      <td>${entry.date}</td>
+      <td>${entry.ticketLabel}</td>
+      <td>${entry.start}</td>
+      <td>${entry.hoursStandard}</td>
+      <td>${entry.hours15x}</td>
+      <td>${entry.hours2x}</td>
+      <td>${entry.notes || ""}</td>
+      <td><button class="btn danger" onclick="removeFromQueue(${i})">X</button></td>
+    `;
 
-    const start = getSelectedTime();
-    if (!start) { alert("Select start time"); return null; }
+    queueTable.appendChild(row);
+  });
+}
 
-    const hoursStd = asNumber(els.hoursStd.value);
-    const hours15 = asNumber(els.hours15.value);
-    const hours2 = asNumber(els.hours2.value);
-    if (hoursStd + hours15 + hours2 <= 0) { alert("Enter some hours"); return null; }
+function removeFromQueue(index) {
+  queue.splice(index, 1);
+  renderQueue();
+}
 
-    return {
-      employeeId: parseInt(employeeId, 10),
-      date,
-      ticketId: parseInt(ticketId, 10),
-      start,
-      hoursStd, hours15, hours2,
-      notes: els.entryNotes.value.trim(),
-    };
-  }
+// === Setup Event Listeners ===
+function setupFormHandlers() {
+  document.getElementById("timesheetForm").addEventListener("submit", async e => {
+    e.preventDefault();
 
-  window.addToQueue = function () {
-    const entry = validateEntryRow();
-    if (!entry) return;
+    const employeeId = parseInt(document.getElementById("employeeSelect").value);
+    if (!employeeId || queue.length === 0) {
+      alert("Please select an employee and add at least one entry.");
+      return;
+    }
 
-    state.queue.push(entry);
-    renderQueue();
+    const errors = [];
+    for (const [i, entry] of queue.entries()) {
+      const body = {
+        employeeId,
+        ticketId: entry.ticketId,
+        date: entry.date,
+        start: entry.start,
+        hoursStandard: entry.hoursStandard,
+        hours15x: entry.hours15x,
+        hours2x: entry.hours2x,
+        notes: entry.notes
+      };
 
-    // reset form fields (but keep employee)
-    els.entryDate.value = "";
-    els.entryTicket.selectedIndex = 0;
-    document.getElementById("entryHour").selectedIndex = 0;
-    document.getElementById("entryMinute").selectedIndex = 0;
-    document.getElementById("entryAmPm").selectedIndex = 0;
-    els.hoursStd.value = "0";
-    els.hours15.value = "0";
-    els.hours2.value = "0";
-    els.entryNotes.value = "";
-  };
+      try {
+        const res = await fetch(`${API_BASE}/timesheets/submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
 
-  function renderQueue() {
-    els.queueTable.innerHTML = "";
-    if (state.queue.length === 0) { els.queuedWrap.style.display = "none"; return; }
-    els.queuedWrap.style.display = "block";
+        const result = await res.json();
+        if (!result.ok) {
+          console.error("Submit failed:", result.error);
+          errors.push(`Entry ${i + 1}: ${result.error}`);
+        }
+      } catch (err) {
+        console.error("Submit failed:", err);
+        errors.push(`Entry ${i + 1}: ${err.message}`);
+      }
+    }
 
-    els.queueTable.innerHTML = state.queue.map((e, idx) => `
-      <tr>
-        <td>${e.date}</td>
-        <td>${e.ticketId}</td>
-        <td>${e.start}</td>
-        <td>${e.hoursStd}</td>
-        <td>${e.hours15}</td>
-        <td>${e.hours2}</td>
-        <td>${e.notes}</td>
-        <td><button type="button" data-remove="${idx}" class="btn danger">Remove</button></td>
-      </tr>
-    `).join("");
-  }
-
-  document.addEventListener("click", (ev) => {
-    if (ev.target.dataset.remove) {
-      const idx = parseInt(ev.target.dataset.remove, 10);
-      state.queue.splice(idx, 1);
+    if (errors.length > 0) {
+      alert("Some entries failed:\n" + errors.join("\n"));
+    } else {
+      alert("Timesheet submitted successfully!");
+      queue = [];
       renderQueue();
+      document.getElementById("timesheetForm").reset();
     }
   });
 
-  // ----- Submit -----
-  async function submitSingleEntry(entry) {
-    console.log("Entry before submit:", entry);
-    const payload = {
-      EmployeeId: entry.employeeId,
-      TicketId: entry.ticketId,
-      Date: entry.date,
-      Start: entry.start,     // ✅ ensures backend gets it
-      HoursStandard: entry.hoursStd,
-      Hours15x: entry.hours15,
-      Hours2x: entry.hours2,
-      Notes: entry.notes || null,
-    };
-
-    console.log("Submitting payload:", payload);
-
-    const res = await fetch(`${API_BASE}/timesheets/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json();
-    if (!res.ok || json.ok === false) throw new Error(json.error || "Submit failed");
-    return json;
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (state.queue.length === 0) { alert("Add entries first"); return; }
-
-    try {
-      for (const entry of state.queue) await submitSingleEntry(entry);
-      alert("Timesheet submitted successfully!");
-      state.queue = [];
-      renderQueue();
-    } catch (err) {
-      console.error("Submit failed:", err);
-      alert("Submit failed: " + err.message);
-    }
-  }
-
-  els.form.addEventListener("submit", handleSubmit);
-
-  // ----- Init -----
-  if (els.managerBtn) {
-    els.managerBtn.addEventListener("click", () => { window.location.href = "manager.html"; });
-  }
-})();
+  document.getElementById("managerBtn").addEventListener("click", () => {
+    window.location.href = "manager.html";
+  });
+}
