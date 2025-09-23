@@ -32,7 +32,7 @@ async function loadTickets() {
   data.forEach(ticket => {
     const opt = document.createElement("option");
     opt.value = ticket.ticketId;
-    opt.textContent = ticket.ticketId; // ✅ restored as instructed
+    opt.textContent = `${ticket.ticketId} - ${ticket.siteName} - ${ticket.description}`;
     select.appendChild(opt);
   });
 }
