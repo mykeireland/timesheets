@@ -32,7 +32,7 @@ async function loadTickets() {
   data.forEach(ticket => {
     const opt = document.createElement("option");
     opt.value = ticket.ticketId;
-    opt.textContent = `${ticket.ticketId} - ${ticket.siteName}`;
+    opt.textContent = ticket.ticketId; // ✅ restored as instructed
     select.appendChild(opt);
   });
 }
@@ -153,6 +153,8 @@ async function handleSubmit(e) {
 
   for (const entry of state.queue) {
     try {
+      console.log("📤 Payload being submitted:", JSON.stringify(entry, null, 2));
+
       const res = await fetch(`${API_BASE}/timesheets/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -160,6 +162,8 @@ async function handleSubmit(e) {
       });
 
       const result = await res.json();
+      console.log("📥 API response:", result);
+
       if (!res.ok || !result.ok) {
         console.error("❌ Submission failed:", result.error || res.statusText);
         failures++;
