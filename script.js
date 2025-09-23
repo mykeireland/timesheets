@@ -270,30 +270,46 @@
     }
   }
 
-  async function submitSingleEntry(entry) {
-    const payload = {
-      EmployeeId: entry.employeeId,
-      TicketId: entry.ticketId,
-      Date: entry.date,
-      Start: entry.start,   // <-- now included
-      HoursStandard: entry.hoursStd,
-      Hours15x: entry.hours15,
-      Hours2x: entry.hours2,
-      Notes: entry.notes || null,
-    };
-
-    console.log("Submitting payload:", payload);
-
-    const res = await fetchJSON(`${API_BASE}/timesheets/submit`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    if (res && res.ok === false) {
-      throw new Error(res.error || "Server rejected the entry.");
-    }
-    return res;
+ async function submitSingleEntry(entry) {
+  // Guard so we stop if start is missing at the source
+  if (!entry || !entry.start) {
+    console.warn("DEBUG: entry missing start:", entry);
+    alert("Debug: This entry has no start time. We'll fix that next.");
+    throw new Error("entry.start is null/undefined");
   }
+
+  const payload = {
+    EmployeeId: entry.employeeId,
+    TicketId: entry.ticketId,
+    Date: entry.date,
+    Start: entry.start,          // <-- IMPORTANT
+    HoursStandard: entry.hoursStd,
+    Hours15x: entry.hours15,
+    Hours2x: entry.hours2,
+    Notes: entry.notes || null,
+  };
+
+  // Minimal visibility so we know exactly what goes over the wire
+  console.log("Submitting payload →", payload);
+
+  const res = await fetch(`${window.API_BASE.replace(/\/+$/,'')}/timesheets/submit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  // Try to parse JSON response for clearer errors
+  let json = null;
+  try { json = await res.json(); } catch (_) {}
+
+  if (!res.ok || (json && json.ok === false)) {
+    const msg = (json && (json.error || json.message)) || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return json || { ok: true };
+}
+
 
   function setSubmitting(isSubmitting) {
     if (!submitBtn) submitBtn = els.form.querySelector('button[type="submit"]');
