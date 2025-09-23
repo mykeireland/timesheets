@@ -40,17 +40,19 @@ const recalc = () => {
   const worked = std + h15 + h2;
   const total = std + (h15 * 1.5) + (h2 * 2);
 
-  // Convert minutes to H:MM string
+  // Convert minutes to H:MM
   const toTimeStr = (mins) => {
     const hours = Math.floor(mins / 60);
     const remainingMins = Math.round(mins % 60);
     return `${hours}:${remainingMins.toString().padStart(2, "0")}`;
   };
 
-  els.workedOut.textContent = toTimeStr(worked);
-  els.totalOut.textContent = toTimeStr(total);
-};
+  // Convert minutes to decimal hours
+  const toDecimal = (mins) => (mins / 60).toFixed(2);
 
+  els.workedOut.textContent = `${toTimeStr(worked)} (${toDecimal(worked)} hrs)`;
+  els.totalOut.textContent = `${toTimeStr(total)} (${toDecimal(total)} hrs)`;
+};
 
   // Attach event listeners
   Object.values(els).forEach(el => {
