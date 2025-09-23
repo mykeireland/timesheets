@@ -1,151 +1,27 @@
-// Timesheet entry + queue flow with clean separation of validations.
-// - "Add": validates entry row (employee, date, ticket, start, hours>0), pushes to queue
-// - "Submit": validates ONLY queue length (>0), posts each entry to API
-
 (function () {
   "use strict";
-
-  // ---------- Utilities ----------
-  const byId = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
-  const asNumber = (v) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0);
 
   const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
 
   const els = {
-    form: /** @type {HTMLFormElement} */ (byId("timesheetForm")),
-    employeeSelect: /** @type {HTMLSelectElement} */ (byId("employeeSelect")),
-    entryDate: /** @type {HTMLInputElement} */ (byId("entryDate")),
-    entryTicket: /** @type {HTMLSelectElement} */ (byId("entryTicket")),
-    hoursStd: /** @type {HTMLInputElement} */ (byId("hoursStd")),
-    hours15: /** @type {HTMLInputElement} */ (byId("hours15")),
-    hours2: /** @type {HTMLInputElement} */ (byId("hours2")),
-    entryNotes: /** @type {HTMLInputElement} */ (byId("entryNotes")),
-    queuedWrap: byId("queuedEntries"),
-    queueTable: /** @type {HTMLTableSectionElement} */ (byId("queueTable")),
-    managerBtn: /** @type {HTMLButtonElement} */ (byId("managerBtn")),
+    form: document.getElementById("timesheetForm"),
+    employeeSelect: document.getElementById("employeeSelect"),
+    entryDate: document.getElementById("entryDate"),
+    entryTicket: document.getElementById("entryTicket"),
+    hoursStd: document.getElementById("hoursStd"),
+    hours15: document.getElementById("hours15"),
+    hours2: document.getElementById("hours2"),
+    entryNotes: document.getElementById("entryNotes"),
+    queuedWrap: document.getElementById("queuedEntries"),
+    queueTable: document.getElementById("queueTable"),
+    managerBtn: document.getElementById("managerBtn"),
   };
 
-  let submitBtn /** @type {HTMLButtonElement | null} */ = null;
+  const state = { employees: [], tickets: [], queue: [] };
 
-  const state = {
-    employees: /** @type {{id:number, name:string}[]} */ ([]),
-    tickets: /** @type {{ticketId:number, cwTicketId?:string, ticketName?:string, siteName?:string}[]} */ ([]),
-    queue: /** @type {QueueEntry[]} */ ([]),
-    lastEmployeeIdSelected: null,
-  };
+  // ----- Helpers -----
+  const asNumber = (v) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0);
 
-  /**
-   * @typedef {Object} QueueEntry
-   * @property {number} employeeId
-   * @property {string} employeeName
-   * @property {string} date
-   * @property {number} ticketId
-   * @property {string} ticketLabel
-   * @property {string} start
-   * @property {number} hoursStd
-   * @property {number} hours15
-   * @property {number} hours2
-   * @property {string} notes
-   */
-
-  // ---------- Helpers ----------
-  async function fetchJSON(url, options = {}) {
-    const res = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
-    const text = await res.text();
-    let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { /* keep null */ }
-    if (!res.ok) {
-      const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
-      throw new Error(msg);
-    }
-    return data;
-  }
-
-  function fillSelectWithError(sel, message) {
-    sel.innerHTML = "";
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = message;
-    opt.disabled = true;
-    opt.selected = true;
-    sel.appendChild(opt);
-  }
-
-  function getEmployeeNameById(id) {
-    const found = state.employees.find((e) => e.id === id);
-    return found ? found.name : `Employee ${id}`;
-  }
-
-  function getTicketLabelById(id) {
-    const found = state.tickets.find((t) => t.ticketId === id);
-    if (!found) return `Ticket ${id}`;
-    const left = found.cwTicketId ? `#${found.cwTicketId}` : `Ticket ${id}`;
-    const right = [found.ticketName, found.siteName].filter(Boolean).join(" — ");
-    return right ? `${left} · ${right}` : left;
-  }
-
-  // ---------- Data loading ----------
-  async function loadEmployees() {
-    try {
-      const data = await fetchJSON(`${API_BASE}/employees`);
-      state.employees = Array.isArray(data) ? data : [];
-      populateEmployeeSelect();
-    } catch (err) {
-      console.error("Employees load failed:", err);
-      fillSelectWithError(els.employeeSelect, "Failed to load employees");
-    }
-  }
-
-  async function loadTickets() {
-    try {
-      const data = await fetchJSON(`${API_BASE}/tickets/open`);
-      state.tickets = Array.isArray(data) ? data : [];
-      populateTicketSelect();
-    } catch (err) {
-      console.error("Tickets load failed:", err);
-      fillSelectWithError(els.entryTicket, "Failed to load tickets");
-    }
-  }
-
-  function populateEmployeeSelect() {
-    const sel = els.employeeSelect;
-    sel.innerHTML = "";
-    const opt0 = document.createElement("option");
-    opt0.value = "";
-    opt0.textContent = "Select employee…";
-    opt0.disabled = true;
-    opt0.selected = true;
-    sel.appendChild(opt0);
-
-    for (const e of state.employees) {
-      const opt = document.createElement("option");
-      opt.value = String(e.id);
-      opt.textContent = e.name;
-      sel.appendChild(opt);
-    }
-  }
-
-  function populateTicketSelect() {
-    const sel = els.entryTicket;
-    sel.innerHTML = "";
-    const opt0 = document.createElement("option");
-    opt0.value = "";
-    opt0.textContent = "Select ticket…";
-    opt0.disabled = true;
-    opt0.selected = true;
-    sel.appendChild(opt0);
-
-    for (const t of state.tickets) {
-      const opt = document.createElement("option");
-      opt.value = String(t.ticketId);
-      const left = t.cwTicketId ? `#${t.cwTicketId}` : `Ticket ${t.ticketId}`;
-      const right = [t.ticketName, t.siteName].filter(Boolean).join(" — ");
-      opt.textContent = right ? `${left} · ${right}` : left;
-      sel.appendChild(opt);
-    }
-  }
-
-  // ---------- Time picker ----------
   function getSelectedTime() {
     const hour = document.getElementById("entryHour").value;
     const minute = document.getElementById("entryMinute").value;
@@ -160,188 +36,125 @@
     return `${String(h).padStart(2, "0")}:${minute}`;
   }
 
-  // ---------- Validation ----------
+  // ----- Queue & Validation -----
   function validateEntryRow() {
-    const employeeId = els.employeeSelect.value.trim();
-    if (!employeeId) { alert("Please select an employee."); els.employeeSelect.focus(); return null; }
+    const employeeId = els.employeeSelect.value;
+    if (!employeeId) { alert("Select employee"); return null; }
 
-    const date = els.entryDate.value.trim();
-    if (!date) { alert("Please select a date."); els.entryDate.focus(); return null; }
+    const date = els.entryDate.value;
+    if (!date) { alert("Select date"); return null; }
 
-    const ticketId = els.entryTicket.value.trim();
-    if (!ticketId) { alert("Please select a ticket."); els.entryTicket.focus(); return null; }
+    const ticketId = els.entryTicket.value;
+    if (!ticketId) { alert("Select ticket"); return null; }
 
     const start = getSelectedTime();
-    if (!start) { alert("Please select a start time (hours, minutes, AM/PM)."); return null; }
+    if (!start) { alert("Select start time"); return null; }
 
     const hoursStd = asNumber(els.hoursStd.value);
     const hours15 = asNumber(els.hours15.value);
     const hours2 = asNumber(els.hours2.value);
-    const total = hoursStd + hours15 + hours2;
-    if (total <= 0) { alert("Please enter at least one hour."); return null; }
+    if (hoursStd + hours15 + hours2 <= 0) { alert("Enter some hours"); return null; }
 
     return {
       employeeId: parseInt(employeeId, 10),
-      employeeName: getEmployeeNameById(parseInt(employeeId, 10)),
       date,
       ticketId: parseInt(ticketId, 10),
-      ticketLabel: getTicketLabelById(parseInt(ticketId, 10)),
       start,
-      hoursStd,
-      hours15,
-      hours2,
-      notes: (els.entryNotes.value || "").trim(),
+      hoursStd, hours15, hours2,
+      notes: els.entryNotes.value.trim(),
     };
   }
 
-  // ---------- Queue ----------
-  function addToQueue() {
+  window.addToQueue = function () {
     const entry = validateEntryRow();
     if (!entry) return;
-
-    if (state.queue.length > 0 && state.queue[0].employeeId !== entry.employeeId) {
-      const proceed = confirm("Queue has entries for another employee. Clear queue?");
-      if (!proceed) return;
-      state.queue = [];
-    }
 
     state.queue.push(entry);
     renderQueue();
 
-    // Reset inputs (keep employee)
+    // reset form fields (but keep employee)
     els.entryDate.value = "";
     els.entryTicket.selectedIndex = 0;
+    document.getElementById("entryHour").selectedIndex = 0;
+    document.getElementById("entryMinute").selectedIndex = 0;
+    document.getElementById("entryAmPm").selectedIndex = 0;
     els.hoursStd.value = "0";
     els.hours15.value = "0";
     els.hours2.value = "0";
     els.entryNotes.value = "";
-    document.getElementById("entryHour").selectedIndex = 0;
-    document.getElementById("entryMinute").selectedIndex = 0;
-    document.getElementById("entryAmPm").selectedIndex = 0;
-    els.entryDate.focus();
-  }
-  window.addToQueue = addToQueue;
+  };
 
   function renderQueue() {
-    const q = state.queue;
     els.queueTable.innerHTML = "";
-    if (q.length === 0) { els.queuedWrap.style.display = "none"; return; }
+    if (state.queue.length === 0) { els.queuedWrap.style.display = "none"; return; }
     els.queuedWrap.style.display = "block";
 
-    els.queueTable.insertAdjacentHTML(
-      "beforeend",
-      q.map((e, idx) => `
-        <tr data-idx="${idx}">
-          <td>${e.date}</td>
-          <td title="${escapeHtml(e.ticketLabel)}">${escapeHtml(shorten(e.ticketLabel, 64))}</td>
-          <td>${e.start}</td>
-          <td>${e.hoursStd}</td>
-          <td>${e.hours15}</td>
-          <td>${e.hours2}</td>
-          <td>${escapeHtml(e.notes || "")}</td>
-          <td><button type="button" class="btn danger" data-remove="${idx}">Remove</button></td>
-        </tr>`).join("")
-    );
+    els.queueTable.innerHTML = state.queue.map((e, idx) => `
+      <tr>
+        <td>${e.date}</td>
+        <td>${e.ticketId}</td>
+        <td>${e.start}</td>
+        <td>${e.hoursStd}</td>
+        <td>${e.hours15}</td>
+        <td>${e.hours2}</td>
+        <td>${e.notes}</td>
+        <td><button type="button" data-remove="${idx}" class="btn danger">Remove</button></td>
+      </tr>
+    `).join("");
   }
 
-  function removeFromQueueByIndex(idx) {
-    if (idx < 0 || idx >= state.queue.length) return;
-    state.queue.splice(idx, 1);
-    renderQueue();
+  document.addEventListener("click", (ev) => {
+    if (ev.target.dataset.remove) {
+      const idx = parseInt(ev.target.dataset.remove, 10);
+      state.queue.splice(idx, 1);
+      renderQueue();
+    }
+  });
+
+  // ----- Submit -----
+  async function submitSingleEntry(entry) {
+    const payload = {
+      EmployeeId: entry.employeeId,
+      TicketId: entry.ticketId,
+      Date: entry.date,
+      Start: entry.start,     // ✅ ensures backend gets it
+      HoursStandard: entry.hoursStd,
+      Hours15x: entry.hours15,
+      Hours2x: entry.hours2,
+      Notes: entry.notes || null,
+    };
+
+    console.log("Submitting payload:", payload);
+
+    const res = await fetch(`${API_BASE}/timesheets/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!res.ok || json.ok === false) throw new Error(json.error || "Submit failed");
+    return json;
   }
 
-  // ---------- Submit ----------
   async function handleSubmit(e) {
     e.preventDefault();
-    if (state.queue.length === 0) { alert("Please add at least one entry."); return; }
-    setSubmitting(true);
+    if (state.queue.length === 0) { alert("Add entries first"); return; }
+
     try {
-      for (const entry of state.queue) {
-        await submitSingleEntry(entry);
-      }
+      for (const entry of state.queue) await submitSingleEntry(entry);
       alert("Timesheet submitted successfully!");
       state.queue = [];
       renderQueue();
     } catch (err) {
       console.error("Submit failed:", err);
-      alert("Failed to submit: " + (err?.message || String(err)));
-    } finally {
-      setSubmitting(false);
+      alert("Submit failed: " + err.message);
     }
   }
 
- async function submitSingleEntry(entry) {
-  // Guard so we stop if start is missing at the source
-  if (!entry || !entry.start) {
-    console.warn("DEBUG: entry missing start:", entry);
-    alert("Debug: This entry has no start time. We'll fix that next.");
-    throw new Error("entry.start is null/undefined");
+  els.form.addEventListener("submit", handleSubmit);
+
+  // ----- Init -----
+  if (els.managerBtn) {
+    els.managerBtn.addEventListener("click", () => { window.location.href = "manager.html"; });
   }
-
-  const payload = {
-    EmployeeId: entry.employeeId,
-    TicketId: entry.ticketId,
-    Date: entry.date,
-    Start: entry.start,          // <-- IMPORTANT
-    HoursStandard: entry.hoursStd,
-    Hours15x: entry.hours15,
-    Hours2x: entry.hours2,
-    Notes: entry.notes || null,
-  };
-
-  // Minimal visibility so we know exactly what goes over the wire
-  console.log("Submitting payload →", payload);
-
-  const res = await fetch(`${window.API_BASE.replace(/\/+$/,'')}/timesheets/submit`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  // Try to parse JSON response for clearer errors
-  let json = null;
-  try { json = await res.json(); } catch (_) {}
-
-  if (!res.ok || (json && json.ok === false)) {
-    const msg = (json && (json.error || json.message)) || `HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-
-  return json || { ok: true };
-}
-
-  function setSubmitting(isSubmitting) {
-    if (!submitBtn) submitBtn = els.form.querySelector('button[type="submit"]');
-    if (submitBtn) {
-      submitBtn.disabled = isSubmitting;
-      submitBtn.textContent = isSubmitting ? "Submitting…" : "Submit";
-    }
-    const addBtn = document.querySelector('button.btn.light[onclick="addToQueue()"]');
-    if (addBtn instanceof HTMLButtonElement) addBtn.disabled = isSubmitting;
-  }
-
-  // ---------- Misc ----------
-  function escapeHtml(s) {
-    return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
-  function shorten(s, max) {
-    return s && s.length > max ? s.slice(0, max - 1) + "…" : s;
-  }
-
-  document.addEventListener("click", (ev) => {
-    const btn = ev.target;
-    if (btn && btn instanceof HTMLElement && btn.hasAttribute("data-remove")) {
-      const idx = parseInt(btn.getAttribute("data-remove") || "-1", 10);
-      removeFromQueueByIndex(idx);
-    }
-  });
-
-  // ---------- Init ----------
-  async function init() {
-    els.form.addEventListener("submit", handleSubmit);
-    if (els.managerBtn) els.managerBtn.addEventListener("click", () => { window.location.href = "manager.html"; });
-    await Promise.all([loadEmployees(), loadTickets()]);
-  }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
-  else init();
 })();
