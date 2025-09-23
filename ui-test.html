@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UI Test – Timesheet Hours</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css"> <!-- assuming shared stylesheet -->
+  <style>
+    body { padding: 2rem; font-family: sans-serif; }
+    .form-row { margin-bottom: 1rem; }
+    .form-row label { display: inline-block; width: 150px; }
+    .output { margin-top: 2rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Timesheet UI Test</h1>
+
+  <div class="form-row">
+    <label for="hoursStd">Standard Hours:</label>
+    <input type="number" id="hoursStd" min="0" step="0.25" value="0">
+  </div>
+  <div class="form-row">
+    <label for="hours15">1.5x Hours:</label>
+    <input type="number" id="hours15" min="0" step="0.25" value="0">
+  </div>
+  <div class="form-row">
+    <label for="hours2">2x Hours:</label>
+    <input type="number" id="hours2" min="0" step="0.25" value="0">
+  </div>
+
+  <div class="output">
+    <p>🕒 Worked Hours: <span id="workedHours">0.00</span></p>
+    <p>💰 Total Hours (multiplied): <span id="totalHours">0.00</span></p>
+  </div>
+
+  <script src="ui-test.js"></script>
+</body>
+</html>
