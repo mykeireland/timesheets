@@ -137,6 +137,8 @@ function setupFormHandlers() {
         notes: entry.notes
       };
 
+      console.log("Submitting queue payload:", JSON.stringify(state.queue, null, 2));
+
       try {
         const res = await fetch(`${API_BASE}/timesheets/submit`, {
           method: "POST",
