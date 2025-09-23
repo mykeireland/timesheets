@@ -5,6 +5,7 @@ const state = {
   queue: [],
   employeeId: null
 };
+console.log("🔥 script.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
   loadEmployees();
