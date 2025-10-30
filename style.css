@@ -29,8 +29,8 @@ header {
   box-sizing: content-box;
   padding: 3px 26px 3px 8px;
   font-family: inherit;
-  font-size: 0.7rem;      /* 👈 slightly smaller for table balance */
-  font-weight: normal;    /* 👈 no boldness */
+  font-size: 0.5rem;      /* 👈 slightly smaller for table balance */
+  font-weight: light;    /* 👈 no boldness */
   line-height: 1.3;
   border-radius: 6px;
   border: 1.5px solid #c497c7;
@@ -45,8 +45,8 @@ header {
 
 #entryTicket option {
   white-space: nowrap;
-  font-size: 0.7rem;
-  font-weight: normal;
+  font-size: 0.5rem;
+  font-weight: light;
 }
 
 
