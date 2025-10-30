@@ -22,6 +22,20 @@ header {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+/* Compact select; width is set dynamically via JS */
+#entryTicket {
+  display: inline-block;
+  width: auto;                 /* JS will set exact px width */
+  max-width: 100%;
+  box-sizing: content-box;     /* measure text only; we’ll add padding/border via JS */
+  padding: 4px 28px 4px 10px;  /* extra right padding for the native arrow */
+  font: inherit;               /* match table font */
+  transition: width 0.18s ease;
+}
+
+/* Avoid multi-line option measuring weirdness */
+#entryTicket option { white-space: nowrap; }
+
 label { font-weight: bold; margin-right: 10px; }
 
 .form-row { margin-bottom: 15px; }
