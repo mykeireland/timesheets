@@ -125,3 +125,113 @@ th { background: #f9f9f9; }
 .btn.secondary { background: #6c757d; color: #fff; }
 .btn.danger { background: #dc3545; color: #fff; }
 .btn.light { background: #e0e0e0; color: #000; }
+
+/* --- STAFF TABLE STYLING FIXES --- */
+#staffTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Ensures even column scaling */
+}
+
+#staffTable th,
+#staffTable td {
+  padding: 8px 10px;
+  text-align: left;
+  border: 1px solid #ddd;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#staffTable th {
+  background: #f8f9fa;
+  font-weight: 700;
+}
+
+#staffTable td input[type="text"],
+#staffTable td input[type="email"],
+#staffTable td input[type="number"],
+#staffTable td select {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+#staffTable td input[type="checkbox"] {
+  transform: scale(1.2);
+}
+
+#staffTable .new-row {
+  background-color: #fff8e6;
+}
+
+/* --- Make columns auto-fit nicely --- */
+#staffTable th:nth-child(1), /* ID */
+#staffTable td:nth-child(1) {
+  width: 5%;
+  text-align: center;
+}
+
+#staffTable th:nth-child(2), /* First */
+#staffTable th:nth-child(3), /* Last */
+#staffTable td:nth-child(2),
+#staffTable td:nth-child(3) {
+  width: 15%;
+}
+
+#staffTable th:nth-child(4), /* Email */
+#staffTable td:nth-child(4) {
+  width: 20%;
+}
+
+#staffTable th:nth-child(5), /* Type */
+#staffTable td:nth-child(5) {
+  width: 10%;
+  text-align: center;
+}
+
+#staffTable th:nth-child(6), /* Active */
+#staffTable td:nth-child(6) {
+  width: 7%;
+  text-align: center;
+}
+
+#staffTable th:nth-child(7), /* Mgr ID */
+#staffTable th:nth-child(8), /* CW ID */
+#staffTable td:nth-child(7),
+#staffTable td:nth-child(8) {
+  width: 8%;
+  text-align: center;
+}
+
+#staffTable th:nth-child(9), /* Actions */
+#staffTable td:nth-child(9) {
+  width: 12%;
+  text-align: center;
+}
+
+/* Buttons inside table */
+#staffTable .btn.small {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  margin: 2px;
+}
+
+/* Align the toolbar cleanly */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-start;
+  margin-bottom: 15px;
+}
+
+.toolbar input {
+  flex: 1;
+  max-width: 400px;
+}
+
