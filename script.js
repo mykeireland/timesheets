@@ -127,9 +127,15 @@ function setupFormHandlers() {
 }
 
 function addToQueue() {
-  const employeeId = parseInt(document.getElementById("employeeSelect").value);
+  const employeeSelect = document.getElementById("employeeSelect");
+  const employeeId = parseInt(employeeSelect.value);
+  const employeeName = employeeSelect.options[employeeSelect.selectedIndex]?.text || "";
+
   const date = document.getElementById("entryDate").value;
-  const ticketId = parseInt(document.getElementById("entryTicket").value);
+  const ticketSelect = document.getElementById("entryTicket");
+  const ticketId = parseInt(ticketSelect.value);
+  const ticketLabel = ticketSelect.options[ticketSelect.selectedIndex]?.text || "";
+
   const hoursStandard = parseFloat(document.getElementById("hoursStd").value) || 0;
   const hours15x = parseFloat(document.getElementById("hours15").value) || 0;
   const hours2x = parseFloat(document.getElementById("hours2").value) || 0;
@@ -140,9 +146,18 @@ function addToQueue() {
     return;
   }
 
-  state.employeeId = employeeId;
+  const entry = {
+    employeeId,
+    employeeName,
+    ticketId,
+    ticketLabel,
+    date,
+    hoursStandard,
+    hours15x,
+    hours2x,
+    notes
+  };
 
-  const entry = { employeeId, ticketId, date, hoursStandard, hours15x, hours2x, notes };
   state.queue.push(entry);
   renderQueue();
   clearForm();
@@ -150,20 +165,21 @@ function addToQueue() {
 
 function renderQueue() {
   const tbody = document.getElementById("queueTable");
-  if (!tbody) return;
   tbody.innerHTML = "";
 
   if (state.queue.length === 0) {
     document.getElementById("queuedEntries").style.display = "none";
     return;
   }
+
   document.getElementById("queuedEntries").style.display = "block";
 
   state.queue.forEach((entry, i) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${entry.date}</td>
-      <td>${entry.ticketId}</td>
+      <td>${entry.employeeName || ""}</td>
+      <td>${entry.ticketLabel || entry.ticketId}</td>
       <td>${entry.hoursStandard}</td>
       <td>${entry.hours15x}</td>
       <td>${entry.hours2x}</td>
