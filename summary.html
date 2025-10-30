@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Timesheet Summary Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Timesheet Summary</h1>
+  </header>
+
+  <div class="container">
+    <h2>✅ Approved Entries</h2>
+    <div class="table-wrap">
+      <table id="approvedTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Standard (1x)</th>
+            <th>1.5x</th>
+            <th>2x</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h2>🕗 Unapproved Entries</h2>
+    <div class="table-wrap">
+      <table id="unapprovedTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Standard (1x)</th>
+            <th>1.5x</th>
+            <th>2x</th>
+            <th>Total</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="summary.js"></script>
+</body>
+</html>
