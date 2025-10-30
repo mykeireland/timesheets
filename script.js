@@ -12,29 +12,86 @@ document.addEventListener("DOMContentLoaded", () => {
   setupFormHandlers();
 });
 
+// === Small helper to normalize array responses ===
+// Accepts either a plain array or an object wrapper (e.g. {tickets:[...]}, {data:[...]})
+function unwrapArray(payload, ...arrayKeysInOrderOfPreference) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === "object") {
+    for (const k of arrayKeysInOrderOfPreference) {
+      if (Array.isArray(payload[k])) return payload[k];
+    }
+  }
+  return []; // safest fallback
+}
+
 // === Loaders ===
 async function loadEmployees() {
-  const res = await fetch(`${API_BASE}/employees`);
-  const data = await res.json();
-  const select = document.getElementById("employeeSelect");
-  data.forEach(emp => {
-    const opt = document.createElement("option");
-    opt.value = emp.id;
-    opt.textContent = emp.name;
-    select.appendChild(opt);
-  });
+  try {
+    console.log("👤 Loading employees...");
+    const res = await fetch(`${API_BASE}/employees`);
+    if (!res.ok) throw new Error(`GET /employees -> ${res.status}`);
+    const data = await res.json();
+
+    // Handles: [ ... ] OR { employees:[ ... ] } OR { data:[ ... ] }
+    const employees = unwrapArray(data, "employees", "data");
+
+    const select = document.getElementById("employeeSelect");
+    select.innerHTML = ""; // reset to avoid dupes
+    employees.forEach(emp => {
+      const id = emp.id ?? emp.employeeId ?? emp.EmployeeId ?? null;
+      const name = emp.name ?? emp.fullName ?? emp.DisplayName ?? "Unnamed";
+      if (id == null) return; // skip malformed rows
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+    console.log(`✅ Loaded ${employees.length} employees.`);
+  } catch (err) {
+    console.error("❌ Failed to load employees:", err.message);
+    alert("Could not load employees. Please refresh or try again later.");
+  }
 }
 
 async function loadTickets() {
-  const res = await fetch(`${API_BASE}/tickets/open`);
-  const data = await res.json();
-  const select = document.getElementById("entryTicket");
-  data.forEach(ticket => {
-    const opt = document.createElement("option");
-    opt.value = ticket.ticketId;
-    opt.textContent = `${ticket.siteName} - ${ticket.cwTicketId}`;
-    select.appendChild(opt);
-  });
+  try {
+    console.log("🎫 Loading tickets...");
+    const res = await fetch(`${API_BASE}/tickets/open`);
+    if (!res.ok) throw new Error(`GET /tickets/open -> ${res.status}`);
+    const data = await res.json();
+
+    // Handles: [ ... ] OR { tickets:[ ... ] } OR { data:[ ... ] }
+    const tickets = unwrapArray(data, "tickets", "data");
+
+    const select = document.getElementById("entryTicket");
+    select.innerHTML = "<option value=''>Select Ticket</option>"; // reset
+
+    tickets.forEach(ticket => {
+      // Support a few possible shapes just in case
+      const ticketId = ticket.ticketId ?? ticket.id ?? ticket.TicketId ?? ticket.ID ?? null;
+      const cwTicketId = ticket.cwTicketId ?? ticket.CwTicketId ?? ticket.cw_id ?? ticket.ID ?? "";
+      const siteName = ticket.siteName ?? ticket["Site Name"] ?? ticket.site ?? "";
+      const summary = ticket.summary ?? ticket.Summary ?? "";
+
+      if (ticketId == null) return; // skip malformed rows
+
+      const opt = document.createElement("option");
+      opt.value = ticketId;
+
+      // Prefer "Site - CWID"; fall back to summary if needed
+      let label = "";
+      if (siteName && cwTicketId) label = `${siteName} - ${cwTicketId}`;
+      else if (summary) label = summary;
+      else label = cwTicketId || `Ticket ${ticketId}`;
+
+      opt.textContent = label;
+      select.appendChild(opt);
+    });
+    console.log(`✅ Loaded ${tickets.length} tickets.`);
+  } catch (err) {
+    console.error("❌ Failed to load tickets:", err.message);
+    alert("Could not load tickets. Please refresh or try again later.");
+  }
 }
 
 // === Helpers ===
