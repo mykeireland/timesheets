@@ -70,7 +70,6 @@ async function loadTickets() {
 
     tickets.forEach(ticket => {
       // Be flexible with field names and shapes
-      const ticketId   = ticket.ticketId ?? ticket.id ?? ticket.TicketId ?? ticket.ID ?? null;
       const cwTicketId = toFlatString(ticket.cwTicketId ?? ticket.CwTicketId ?? ticket.ID ?? ticket.cw_id);
       const summary    = toFlatString(ticket.summary ?? ticket.Summary);
       const company    = toFlatString(ticket.companyName ?? ticket.CompanyName);
