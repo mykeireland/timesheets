@@ -1,18 +1,32 @@
 "use strict";
 
+/**
+ * staff.js — Manage Casual Staff
+ * Requires:
+ *  - <table id="staffTable"><tbody>…</tbody></table>
+ *  - <button id="addBtn">…</button>
+ *  - <input id="staffFilter">
+ *  - window.API_BASE configured in the page
+ */
+
 const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
+
+// DOM elements
 const els = {
   tableBody: null,
   addBtn: null,
   staffFilter: null,
 };
+
+// state
 let employees = [];
 let filterText = "";
 
-
+// ---------- Init ----------
 document.addEventListener("DOMContentLoaded", () => {
   els.tableBody = document.querySelector("#staffTable tbody");
   els.addBtn = document.getElementById("addBtn");
+  els.staffFilter = document.getElementById("staffFilter");
 
   if (!els.tableBody) {
     console.error("❌ #staffTable tbody not found.");
@@ -23,21 +37,29 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // wire events
   els.addBtn.addEventListener("click", onAddClick);
+  if (els.staffFilter) {
+    els.staffFilter.addEventListener("input", () => {
+      filterText = els.staffFilter.value.trim().toLowerCase();
+      renderTable();
+    });
+  }
+
   loadEmployees();
 });
 
-// ===================== Load & Render =====================
-
+// ---------- Load & Render ----------
 async function loadEmployees() {
   els.tableBody.innerHTML = `<tr><td colspan="9">Loading…</td></tr>`;
   try {
     const res = await fetch(`${API_BASE}/employees`);
     const data = await res.json();
 
-    // Accept both array or wrapped payloads
+    // Accept both array or { results: [...] }
     const raw = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
-    // Normalize just in case
+
+    // Normalize
     employees = raw.map(e => ({
       employee_id: e.employee_id ?? e.id,
       first_name: e.first_name ?? "",
@@ -51,8 +73,11 @@ async function loadEmployees() {
       updated_utc: e.updated_utc
     }));
 
-    // Show active first
-    employees.sort((a, b) => (b.active === a.active) ? cmp((a.last_name||"") + (a.first_name||""), (b.last_name||"") + (b.first_name||"")) : (b.active - a.active));
+    // Active first, then by name
+    employees.sort((a, b) => {
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      return cmp((a.last_name || "") + (a.first_name || ""), (b.last_name || "") + (b.first_name || ""));
+    });
 
     renderTable();
   } catch (err) {
@@ -62,11 +87,26 @@ async function loadEmployees() {
 }
 
 function renderTable() {
-  if (!employees.length) {
+  let rows = employees;
+
+  if (filterText) {
+    rows = rows.filter(e => {
+      const hay = [
+        e.first_name, e.last_name, e.email, e.type,
+        e.manager_employee_id, e.cw_member_id
+      ]
+        .map(x => (x ?? "").toString().toLowerCase())
+        .join(" ");
+      return hay.includes(filterText);
+    });
+  }
+
+  if (!rows.length) {
     els.tableBody.innerHTML = `<tr><td colspan="9">No employees found.</td></tr>`;
     return;
   }
-  els.tableBody.innerHTML = employees.map(rowHtml).join("");
+
+  els.tableBody.innerHTML = rows.map(rowHtml).join("");
   wireRowButtons();
 }
 
@@ -101,8 +141,7 @@ function wireRowButtons() {
   });
 }
 
-// ===================== Add New Employee =====================
-
+// ---------- Add New Employee ----------
 function onAddClick() {
   // Prevent multiple new rows
   if (els.tableBody.querySelector(".new-row")) return;
@@ -179,16 +218,16 @@ async function saveNewRow(tr) {
   }
 }
 
-// ===================== Edit / Save Existing =====================
-
+// ---------- Edit / Save Existing ----------
 function onEditClick(btn) {
   const tr = btn.closest("tr");
   tr.classList.add("editing");
-  [...tr.cells].slice(1, 5).forEach(td => td.contentEditable = "true"); // first,last,email,type
+  // make first,last,email,type editable
+  for (let i = 1; i <= 4; i++) tr.cells[i].contentEditable = "true";
   tr.querySelector('input[type="checkbox"]').disabled = false;
-  tr.querySelectorAll(".edit")[0].style.display = "none";
-  tr.querySelectorAll(".save")[0].style.display = "inline-block";
-  // manager & cw columns editable (optional)
+  tr.querySelector(".edit").style.display = "none";
+  tr.querySelector(".save").style.display = "inline-block";
+  // optional: manager & cw columns editable
   tr.cells[6].contentEditable = "true";
   tr.cells[7].contentEditable = "true";
 }
@@ -227,11 +266,12 @@ async function onSaveClick(btn) {
     }
 
     alert("✅ Employee updated");
+    // lock row again
     tr.classList.remove("editing");
-    [...tr.cells].slice(1, 5).forEach(td => td.contentEditable = "false");
+    for (let i = 1; i <= 4; i++) tr.cells[i].contentEditable = "false";
     tr.querySelector('input[type="checkbox"]').disabled = true;
-    tr.querySelectorAll(".save")[0].style.display = "none";
-    tr.querySelectorAll(".edit")[0].style.display = "inline-block";
+    tr.querySelector(".save").style.display = "none";
+    tr.querySelector(".edit").style.display = "inline-block";
     tr.cells[6].contentEditable = "false";
     tr.cells[7].contentEditable = "false";
 
@@ -242,8 +282,7 @@ async function onSaveClick(btn) {
   }
 }
 
-// ===================== Helpers =====================
-
+// ---------- Helpers ----------
 function toNullableInt(v) {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
