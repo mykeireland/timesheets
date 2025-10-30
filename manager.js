@@ -15,19 +15,61 @@
   };
 
   async function loadPending() {
-    try {
-      const res = await fetch(`${API_BASE}/timesheets/pending`);
-      const data = await res.json();
-     if (!data.ok || !Array.isArray(data.results)) {
-  throw new Error("Unexpected response format");
-}
-state.timesheets = data.results;
-      renderTable();
-    } catch (err) {
-      console.error("Failed to load pending timesheets:", err);
-      els.tableBody.innerHTML = `<tr><td colspan="8">Error loading timesheets</td></tr>`;
-    }
+  try {
+    const url = `${API_BASE}/timesheets/pending`;
+    console.log("🔎 GET", url);
+    const res = await fetch(url);
+    const raw = await res.json();
+    console.log("📥 raw response:", raw);
+
+    // Accept either array or wrapped object
+    const items = Array.isArray(raw) ? raw
+                 : Array.isArray(raw.results) ? raw.results
+                 : Array.isArray(raw.data) ? raw.data
+                 : [];
+
+    if (!Array.isArray(items)) throw new Error("Unexpected response format (no array)");
+
+    // Normalize to what renderTable expects:
+    // { entryId, firstName, lastName, siteName, ticketId, date, hours, status, notes }
+    state.timesheets = items.map((r) => {
+      // derive first/last from employeeName if needed
+      const fullName = r.employeeName ?? r.name ?? "";
+      let first = r.firstName ?? "";
+      let last = r.lastName ?? "";
+      if ((!first || !last) && fullName) {
+        const parts = String(fullName).trim().split(/\s+/);
+        first = first || parts[0] || "";
+        last = last || parts.slice(1).join(" ");
+      }
+
+      // compute hours if only split fields exist
+      const hours =
+        r.hours ??
+        (Number(r.hoursStandard ?? r.hours_standard ?? 0) +
+         Number(r.hours15x ?? r.hours_15x ?? 0) +
+         Number(r.hours2x ?? r.hours_2x ?? 0));
+
+      return {
+        entryId: r.entryId ?? r.entry_id ?? r.id,
+        firstName: first,
+        lastName: last,
+        siteName: r.siteName ?? r.companyName ?? r.company ?? "",
+        ticketId: r.ticketId ?? r.cw_ticket_id ?? r.cwTicketId ?? r.cw_id ?? "",
+        date: r.date ?? r.Date ?? "",
+        hours,
+        status: r.status ?? "",
+        notes: r.notes ?? r.notes_internal ?? r.notesInternal ?? ""
+      };
+    });
+
+    console.log("✅ normalized rows:", state.timesheets.length);
+    renderTable();
+  } catch (err) {
+    console.error("Failed to load pending timesheets:", err);
+    els.tableBody.innerHTML = `<tr><td colspan="8">Error loading timesheets</td></tr>`;
   }
+}
 
   function renderTable() {
     let rows = [...state.timesheets];
