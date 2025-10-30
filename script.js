@@ -88,6 +88,35 @@ async function loadTickets() {
   }
 }
 
+function adjustTicketSelectWidth() {
+  const select = document.getElementById("entryTicket");
+  if (!select) return;
+
+  // Create a hidden span to measure the selected option's width
+  const span = document.createElement("span");
+  span.style.visibility = "hidden";
+  span.style.position = "absolute";
+  span.style.whiteSpace = "nowrap";
+  span.style.font = window.getComputedStyle(select).font;
+  span.textContent = select.options[select.selectedIndex]?.text || "Select Ticket";
+  document.body.appendChild(span);
+
+  // Add a small buffer (20px for the arrow icon)
+  select.style.width = `${span.offsetWidth + 20}px`;
+
+  document.body.removeChild(span);
+}
+
+// Adjust width when selection changes
+document.addEventListener("change", (e) => {
+  if (e.target.id === "entryTicket") adjustTicketSelectWidth();
+});
+
+// Also adjust after tickets load
+document.addEventListener("DOMContentLoaded", () => {
+  adjustTicketSelectWidth();
+});
+
 // === Helpers ===
 
 function toFlatString(x) {
