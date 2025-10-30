@@ -26,9 +26,17 @@
 
   <div class="container">
     <div class="form-row" style="justify-content: space-between;">
-      <button type="button" class="btn" onclick="window.location.href='manager.html'">← Back to Approvals</button>
-      <button type="button" id="addBtn" class="btn danger">➕ Add Employee</button>
+       <div class="toolbar">
+          <input id="staffFilter" class="search-input" type="text"
+                 placeholder="Filter by name / email / type" />
+        
+          <button type="button" class="btn"
+                  onclick="window.location.href='manager.html'">🗂 Approvals</button>
+        
+          <button type="button" class="btn"
+                  onclick="window.location.href='index.html'">🏠 Home</button>
     </div>
+  </div>
 
     <div class="table-wrap">
       <table id="staffTable">
