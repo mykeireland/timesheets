@@ -126,11 +126,11 @@ th { background: #f9f9f9; }
 .btn.danger { background: #dc3545; color: #fff; }
 .btn.light { background: #e0e0e0; color: #000; }
 
-/* --- STAFF TABLE STYLING FIXES --- */
+/* --- STAFF TABLE LAYOUT FIX --- */
 #staffTable {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* Ensures even column scaling */
+  table-layout: auto; /* allow natural resizing */
 }
 
 #staffTable th,
@@ -139,9 +139,6 @@ th { background: #f9f9f9; }
   text-align: left;
   border: 1px solid #ddd;
   vertical-align: middle;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 #staffTable th {
@@ -149,6 +146,7 @@ th { background: #f9f9f9; }
   font-weight: 700;
 }
 
+/* Inputs and dropdowns inside table cells */
 #staffTable td input[type="text"],
 #staffTable td input[type="email"],
 #staffTable td input[type="number"],
@@ -156,82 +154,84 @@ th { background: #f9f9f9; }
   width: 100%;
   box-sizing: border-box;
   font-size: 0.95rem;
-  padding: 6px 8px;
-  border-radius: 4px;
+  padding: 5px 6px;
   border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 #staffTable td input[type="checkbox"] {
-  transform: scale(1.2);
+  transform: scale(1.1);
 }
 
 #staffTable .new-row {
   background-color: #fff8e6;
 }
 
-/* --- Make columns auto-fit nicely --- */
-#staffTable th:nth-child(1), /* ID */
+/* Column widths - fluid but balanced */
+#staffTable th:nth-child(1),
 #staffTable td:nth-child(1) {
-  width: 5%;
+  width: 50px; /* ID */
   text-align: center;
 }
 
-#staffTable th:nth-child(2), /* First */
-#staffTable th:nth-child(3), /* Last */
+#staffTable th:nth-child(2),
+#staffTable th:nth-child(3),
 #staffTable td:nth-child(2),
 #staffTable td:nth-child(3) {
-  width: 15%;
+  width: 130px; /* First, Last */
 }
 
-#staffTable th:nth-child(4), /* Email */
+#staffTable th:nth-child(4),
 #staffTable td:nth-child(4) {
-  width: 20%;
+  width: 200px; /* Email */
 }
 
-#staffTable th:nth-child(5), /* Type */
+#staffTable th:nth-child(5),
 #staffTable td:nth-child(5) {
-  width: 10%;
+  width: 100px; /* Type */
   text-align: center;
 }
 
-#staffTable th:nth-child(6), /* Active */
+#staffTable th:nth-child(6),
 #staffTable td:nth-child(6) {
-  width: 7%;
+  width: 80px; /* Active */
   text-align: center;
 }
 
-#staffTable th:nth-child(7), /* Mgr ID */
-#staffTable th:nth-child(8), /* CW ID */
+#staffTable th:nth-child(7),
+#staffTable th:nth-child(8),
 #staffTable td:nth-child(7),
 #staffTable td:nth-child(8) {
-  width: 8%;
+  width: 90px; /* Mgr ID, CW ID */
   text-align: center;
 }
 
-#staffTable th:nth-child(9), /* Actions */
+#staffTable th:nth-child(9),
 #staffTable td:nth-child(9) {
-  width: 12%;
+  width: 140px; /* Actions */
   text-align: center;
 }
 
-/* Buttons inside table */
-#staffTable .btn.small {
+/* Make sure both Save and Cancel fit nicely */
+#staffTable td .btn.small {
   padding: 4px 8px;
   font-size: 0.85rem;
   margin: 2px;
+  min-width: 70px;
 }
 
-/* Align the toolbar cleanly */
+/* --- Toolbar layout --- */
 .toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
   justify-content: flex-start;
   margin-bottom: 15px;
+  flex-wrap: wrap;
 }
 
 .toolbar input {
   flex: 1;
+  min-width: 260px;
   max-width: 400px;
 }
-
