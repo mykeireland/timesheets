@@ -1,1 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Casual Staff</title>
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    // dev local: "http://localhost:7071/api"
+    // dev cloud: "https://<func-timesheetsNET-api-dev>.azurewebsites.net/api"
+    window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
+  </script>
+</head>
+
+<body>
+  <header class="header">
+    <h1>Manage Casual Staff</h1>
+  </header>
+
+  <div class="container">
+    <div class="form-row" style="justify-content: space-between;">
+      <button type="button" class="btn" onclick="window.location.href='manager.html'">← Back to Approvals</button>
+      <button type="button" class="btn danger" onclick="addEmployee()">➕ Add Employee</button>
+    </div>
+
+    <div class="table-wrap">
+      <table id="employeeTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Type</th>
+            <th>Active</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="staff.js"></script>
+</body>
+</html>
 
