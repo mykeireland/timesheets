@@ -53,6 +53,8 @@ async function loadEmployees() {
   }
 }
 
+// === Loaders ===
+
 async function loadTickets() {
   try {
     console.log("🎫 Loading tickets...");
@@ -61,32 +63,26 @@ async function loadTickets() {
     const data = await res.json();
 
     // Handles: [ ... ] OR { tickets:[ ... ] } OR { data:[ ... ] }
-    const tickets = unwrapArray(data, "tickets", "data");
+    const tickets = Array.isArray(data) ? data : (data.tickets || data.data || []);
 
     const select = document.getElementById("entryTicket");
-    select.innerHTML = "<option value=''>Select Ticket</option>"; // reset
+    select.innerHTML = "<option value=''>Select Ticket</option>";
 
     tickets.forEach(ticket => {
-      // Support a few possible shapes just in case
-      const ticketId = ticket.ticketId ?? ticket.id ?? ticket.TicketId ?? ticket.ID ?? null;
-      const cwTicketId = ticket.cwTicketId ?? ticket.CwTicketId ?? ticket.cw_id ?? ticket.ID ?? "";
-      const siteName = ticket.siteName ?? ticket["Site Name"] ?? ticket.site ?? "";
-      const summary = ticket.summary ?? ticket.Summary ?? "";
+      // Be flexible with field names and shapes
+      const ticketId   = ticket.ticketId ?? ticket.id ?? ticket.TicketId ?? ticket.ID ?? null;
+      const cwTicketId = toFlatString(ticket.cwTicketId ?? ticket.CwTicketId ?? ticket.ID ?? ticket.cw_id);
+      const summary    = toFlatString(ticket.summary ?? ticket.Summary);
+      const company    = toFlatString(ticket.companyName ?? ticket.CompanyName);
 
       if (ticketId == null) return; // skip malformed rows
 
       const opt = document.createElement("option");
       opt.value = ticketId;
-
-      // Prefer "Site - CWID"; fall back to summary if needed
-      let label = "";
-      if (siteName && cwTicketId) label = `${siteName} - ${cwTicketId}`;
-      else if (summary) label = summary;
-      else label = cwTicketId || `Ticket ${ticketId}`;
-
-      opt.textContent = label;
+      opt.textContent = `${cwTicketId} • ${summary} • ${company}`.replace(/\s+•\s+$/,"");
       select.appendChild(opt);
     });
+
     console.log(`✅ Loaded ${tickets.length} tickets.`);
   } catch (err) {
     console.error("❌ Failed to load tickets:", err.message);
@@ -95,6 +91,19 @@ async function loadTickets() {
 }
 
 // === Helpers ===
+
+function toFlatString(x) {
+  if (x == null) return "";
+  if (typeof x !== "object") return String(x);
+  // common shapes: { value: "..." }, { id: "..." }, { $numberLong: "..." }
+  const candidates = ["value", "id", "$numberLong", "NumberLong"];
+  for (const k of candidates) if (k in x && typeof x[k] !== "object") return String(x[k]);
+  // otherwise pick the first non-object property if available
+  for (const k in x) if (Object.prototype.hasOwnProperty.call(x, k) && typeof x[k] !== "object") return String(x[k]);
+  // last resort
+  try { return JSON.stringify(x); } catch { return String(x); }
+}
+
 function convertTo24Hour(hour, minute, ampm) {
   hour = hour || "00";
   minute = minute || "00";
