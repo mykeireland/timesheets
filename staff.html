@@ -7,9 +7,16 @@
   <link rel="stylesheet" href="style.css" />
   <script>
     // dev local: "http://localhost:7071/api"
-    // dev cloud: "https://<func-timesheetsNET-api-dev>.azurewebsites.net/api"
+    // dev cloud:
     window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
   </script>
+  <style>
+    /* small UX touches */
+    .new-row { background: #fff8e7; transition: background .4s ease; }
+    .editing td[contenteditable="true"] { outline: 2px dashed #b48; background: #faf5fb; }
+    .small { padding: 6px 10px; font-size: 0.9rem; }
+    .muted { opacity:.55 }
+  </style>
 </head>
 
 <body>
@@ -20,28 +27,29 @@
   <div class="container">
     <div class="form-row" style="justify-content: space-between;">
       <button type="button" class="btn" onclick="window.location.href='manager.html'">← Back to Approvals</button>
-      <button type="button" class="btn danger" onclick="addEmployee()">➕ Add Employee</button>
+      <button type="button" id="addBtn" class="btn danger">➕ Add Employee</button>
     </div>
 
     <div class="table-wrap">
-      <table id="employeeTable">
+      <table id="staffTable">
         <thead>
           <tr>
             <th>ID</th>
-            <th>First Name</th>
-            <th>Last Name</th>
+            <th>First</th>
+            <th>Last</th>
             <th>Email</th>
             <th>Type</th>
             <th>Active</th>
+            <th class="muted">Mgr ID</th>
+            <th class="muted">CW ID</th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody><!-- populated by staff.js --></tbody>
       </table>
     </div>
   </div>
 
-  <script src="staff.js"></script>
+  <script src="staff.js" defer></script>
 </body>
 </html>
-
