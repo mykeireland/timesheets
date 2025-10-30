@@ -6,8 +6,6 @@
   <title>Insight Casual Timesheet Submission</title>
   <link rel="stylesheet" href="style.css" />
   <script>
-    // dev local: "http://localhost:7071/api"
-    // dev cloud: "https://<func-timesheetsNET-api-dev>.azurewebsites.net/api"
     window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
   </script>
 </head>
@@ -18,7 +16,8 @@
 
   <div class="container">
     <form id="timesheetForm" novalidate>
-      <div class="form-row">
+      <!-- Employee selector -->
+      <div class="form-row" style="display:flex; flex-wrap:wrap;">
         <label for="employeeSelect">Employee:</label>
         <select id="employeeSelect"></select>
       </div>
@@ -27,50 +26,54 @@
       <p><b>Hours (1.5x)</b> = First 2 hours of OT (Mon–Sat)</p>
       <p><b>Hours (2x)</b> = OT after 2 hours (Mon–Sat), or all Sunday</p>
 
-      <!-- Entry Form -->
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Ticket</th>
-            <th>Hours (Std / 1.5x / 2x)</th>
-            <th>Notes</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><input type="date" id="entryDate" /></td>
-            <td><select id="entryTicket"></select></td>
-            <td>
-              <input type="number" id="hoursStd" step="0.25" min="0" value="0" style="width:50px;" />
-              <input type="number" id="hours15" step="0.25" min="0" value="0" style="width:50px;" />
-              <input type="number" id="hours2" step="0.25" min="0" value="0" style="width:50px;" />
-            </td>
-            <td><input type="text" id="entryNotes" placeholder="Notes (optional)" style="width:auto;" /></td>
-            <td><button type="button" class="btn light" onclick="addToQueue()">Add</button></td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Queue -->
-      <div id="queuedEntries" style="margin-top:20px; display:none;">
-        <h3>Queued Entries</h3>
+      <!-- Entry Table -->
+      <div class="table-responsive">
         <table>
           <thead>
             <tr>
               <th>Date</th>
-              <th>Employee</th>
               <th>Ticket</th>
-              <th>Std</th>
-              <th>1.5x</th>
-              <th>2x</th>
+              <th>Hours (Std / 1.5x / 2x)</th>
               <th>Notes</th>
               <th>Action</th>
             </tr>
           </thead>
-          <tbody id="queueTable"></tbody>
+          <tbody>
+            <tr>
+              <td><input type="date" id="entryDate" /></td>
+              <td><select id="entryTicket"></select></td>
+              <td>
+                <input type="number" id="hoursStd" step="0.25" min="0" value="0" style="width:50px;" />
+                <input type="number" id="hours15" step="0.25" min="0" value="0" style="width:50px;" />
+                <input type="number" id="hours2" step="0.25" min="0" value="0" style="width:50px;" />
+              </td>
+              <td><input type="text" id="entryNotes" placeholder="Notes (optional)" style="width:auto;" /></td>
+              <td><button type="button" class="btn light" onclick="addToQueue()">Add</button></td>
+            </tr>
+          </tbody>
         </table>
+      </div>
+
+      <!-- Queue -->
+      <div id="queuedEntries" style="margin-top:20px; display:none;">
+        <h3>Queued Entries</h3>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Employee</th>
+                <th>Ticket</th>
+                <th>Std</th>
+                <th>1.5x</th>
+                <th>2x</th>
+                <th>Notes</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="queueTable"></tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Buttons -->
