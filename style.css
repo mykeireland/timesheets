@@ -22,19 +22,33 @@ header {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* Compact select; width is set dynamically via JS */
 #entryTicket {
   display: inline-block;
-  width: auto;                 /* JS will set exact px width */
+  width: auto;
   max-width: 100%;
-  box-sizing: content-box;     /* measure text only; we’ll add padding/border via JS */
-  padding: 4px 28px 4px 10px;  /* extra right padding for the native arrow */
-  font: inherit;               /* match table font */
-  transition: width 0.18s ease;
+  box-sizing: content-box;
+  padding: 3px 26px 3px 8px;
+  font-family: inherit;
+  font-size: 0.9rem;      /* 👈 slightly smaller for table balance */
+  font-weight: normal;    /* 👈 no boldness */
+  line-height: 1.3;
+  border-radius: 6px;
+  border: 1.5px solid #c497c7;
+  color: #000;
+  background-color: #f9f9f9;
+  transition: width 0.2s ease, background-color 0.2s;
 }
 
-/* Avoid multi-line option measuring weirdness */
-#entryTicket option { white-space: nowrap; }
+#entryTicket:hover {
+  background-color: #fff;
+}
+
+#entryTicket option {
+  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: normal;
+}
+
 
 label { font-weight: bold; margin-right: 10px; }
 
