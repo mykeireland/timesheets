@@ -10,15 +10,14 @@ document.addEventListener("DOMContentLoaded", () => {
   loadEmployees();
   loadTickets();
   setupFormHandlers();
-  // initial width for compact placeholder
   adjustTicketSelectWidth();
 });
 
-// === Generic helpers ===
-function unwrapArray(payload, ...arrayKeysInOrderOfPreference) {
+// === Helpers ===
+function unwrapArray(payload, ...arrayKeys) {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === "object") {
-    for (const k of arrayKeysInOrderOfPreference) {
+    for (const k of arrayKeys) {
       if (Array.isArray(payload[k])) return payload[k];
     }
   }
@@ -32,7 +31,6 @@ function flattenValue(v) {
     for (const key of ["value", "id", "number", "$numberLong"]) {
       if (v[key] != null && typeof v[key] !== "object") return String(v[key]);
     }
-    // last resort: readable JSON, but avoid "{}"
     try {
       const s = JSON.stringify(v);
       return s === "{}" ? "" : s;
@@ -41,7 +39,6 @@ function flattenValue(v) {
   return "";
 }
 
-// --- measure text using the select's font ---
 function measureTextWidth(text, refEl) {
   const span = document.createElement("span");
   span.style.visibility = "hidden";
@@ -69,7 +66,7 @@ function adjustTicketSelectWidth() {
   const cs = window.getComputedStyle(select);
   const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const border = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
-  const arrow = 24;   // native arrow width (tweak to 28 if you want extra room)
+  const arrow = 24;
   const buffer = 10;
 
   const currentText = select.options[select.selectedIndex]?.text || "Select Ticket";
@@ -84,35 +81,30 @@ function adjustTicketSelectWidth() {
 // === Loaders ===
 async function loadEmployees() {
   try {
-    console.log("👤 Loading employees...");
     const res = await fetch(`${API_BASE}/employees`);
     if (!res.ok) throw new Error(`GET /employees -> ${res.status}`);
     const data = await res.json();
 
     const employees = unwrapArray(data, "employees", "data");
     const select = document.getElementById("employeeSelect");
-    select.innerHTML = ""; // reset
+    select.innerHTML = "";
 
     employees.forEach(emp => {
-      const id = emp.id ?? emp.employeeId ?? emp.EmployeeId ?? null;
-      const name = emp.name ?? emp.fullName ?? emp.DisplayName ?? "Unnamed";
+      const id = emp.id ?? emp.employeeId ?? null;
+      const name = emp.name ?? emp.fullName ?? "Unnamed";
       if (id == null) return;
       const opt = document.createElement("option");
       opt.value = id;
       opt.textContent = name;
       select.appendChild(opt);
     });
-
-    console.log(`✅ Loaded ${employees.length} employees.`);
   } catch (err) {
-    console.error("❌ Failed to load employees:", err.message);
-    alert("Could not load employees. Please refresh or try again later.");
+    console.error("❌ Load employees failed:", err);
   }
 }
 
 async function loadTickets() {
   try {
-    console.log("🎫 Loading tickets...");
     const res = await fetch(`${API_BASE}/tickets/open`);
     if (!res.ok) throw new Error(`GET /tickets/open -> ${res.status}`);
     const data = await res.json();
@@ -122,16 +114,13 @@ async function loadTickets() {
     select.innerHTML = "<option value=''>Select Ticket</option>";
 
     tickets.forEach(ticket => {
-      // DB key for value (used by submit)
-      const ticketId   = ticket.ticketId ?? ticket.id ?? ticket.TicketId ?? ticket.ID ?? null;
-      // Display wants: CW Ticket ID • Summary • Company
-      const cwTicketId = flattenValue(ticket.cwTicketId ?? ticket.CwTicketId ?? ticket.ID ?? ticket.cw_id);
-      const summary    = flattenValue(ticket.summary ?? ticket.Summary);
-      const company    = flattenValue(ticket.companyName ?? ticket.CompanyName);
-
+      const ticketId   = ticket.ticketId ?? ticket.id ?? null;
+      const cwTicketId = flattenValue(ticket.cwTicketId ?? ticket.ID);
+      const summary    = flattenValue(ticket.summary);
+      const company    = flattenValue(ticket.companyName);
       if (ticketId == null) return;
 
-      const parts = [cwTicketId, summary, company].filter(Boolean);
+      const parts = [summary, company].filter(Boolean);
       const label = parts.join(" • ");
 
       const opt = document.createElement("option");
@@ -140,45 +129,10 @@ async function loadTickets() {
       select.appendChild(opt);
     });
 
-    console.log(`✅ Loaded ${tickets.length} tickets.`);
-    // set compact width initially
-    select.selectedIndex = 0;
     adjustTicketSelectWidth();
   } catch (err) {
-    console.error("❌ Failed to load tickets:", err.message);
-    alert("Could not load tickets. Please refresh or try again later.");
+    console.error("❌ Load tickets failed:", err);
   }
-}
-
-// === Helpers ===
-function convertTo24Hour(hour, minute, ampm) {
-  hour = hour || "00";
-  minute = minute || "00";
-  ampm = ampm || "AM";
-
-  let h = parseInt(hour, 10);
-  if (ampm === "PM" && h < 12) h += 12;
-  if (ampm === "AM" && h === 12) h = 0;
-
-  const final = `${h.toString().padStart(2, '0')}:${minute || "00"}`;
-  console.log("⏱️ Resolved start time:", final);
-  return final;
-}
-
-function clearForm() {
-  document.getElementById("entryDate").value = "";
-  document.getElementById("entryHour").value = "";
-  document.getElementById("entryMinute").value = "";
-  document.getElementById("entryAmPm").value = "";
-  const ticketSel = document.getElementById("entryTicket");
-  ticketSel.value = "";
-  document.getElementById("hoursStd").value = "0";
-  document.getElementById("hours15").value = "0";
-  document.getElementById("hours2").value = "0";
-  document.getElementById("entryNotes").value = "";
-
-  // restore compact width after clearing
-  adjustTicketSelectWidth();
 }
 
 // === Form Handlers ===
@@ -188,21 +142,16 @@ function setupFormHandlers() {
     window.location.href = "manager.html";
   });
 
-  // resize select width on change + window resize
   document.addEventListener("change", (e) => {
     if (e.target && e.target.id === "entryTicket") adjustTicketSelectWidth();
   });
-  window.addEventListener("resize", () => adjustTicketSelectWidth());
+  window.addEventListener("resize", adjustTicketSelectWidth);
 }
 
 function addToQueue() {
   const employeeId = parseInt(document.getElementById("employeeSelect").value);
   const date = document.getElementById("entryDate").value;
   const ticketId = parseInt(document.getElementById("entryTicket").value);
-  const hour = document.getElementById("entryHour")?.value;
-  const minute = document.getElementById("entryMinute")?.value;
-  const ampm = document.getElementById("entryAmPm")?.value;
-  const start = convertTo24Hour(hour, minute, ampm);
   const hoursStandard = parseFloat(document.getElementById("hoursStd").value) || 0;
   const hours15x = parseFloat(document.getElementById("hours15").value) || 0;
   const hours2x = parseFloat(document.getElementById("hours2").value) || 0;
@@ -219,7 +168,6 @@ function addToQueue() {
     employeeId,
     ticketId,
     date,
-    start,
     hoursStandard,
     hours15x,
     hours2x,
@@ -247,7 +195,6 @@ function renderQueue() {
     tr.innerHTML = `
       <td>${entry.date}</td>
       <td>${entry.ticketId}</td>
-      <td>${entry.start}</td>
       <td>${entry.hoursStandard}</td>
       <td>${entry.hours15x}</td>
       <td>${entry.hours2x}</td>
@@ -263,6 +210,16 @@ function removeFromQueue(index) {
   renderQueue();
 }
 
+function clearForm() {
+  document.getElementById("entryDate").value = "";
+  document.getElementById("entryTicket").value = "";
+  document.getElementById("hoursStd").value = "0";
+  document.getElementById("hours15").value = "0";
+  document.getElementById("hours2").value = "0";
+  document.getElementById("entryNotes").value = "";
+  adjustTicketSelectWidth();
+}
+
 // === Submission ===
 async function handleSubmit(e) {
   e.preventDefault();
@@ -271,39 +228,22 @@ async function handleSubmit(e) {
     return;
   }
 
-  console.log("🚀 Submitting entries:", JSON.stringify(state.queue, null, 2));
   let failures = 0;
-
   for (const entry of state.queue) {
     try {
-      console.log("📤 Payload being submitted:", JSON.stringify(entry, null, 2));
-
       const res = await fetch(`${API_BASE}/timesheets/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(entry)
       });
-
       const result = await res.json();
-      console.log("📥 API response:", result);
-
-      if (!res.ok || !result.ok) {
-        console.error("❌ Submission failed:", result.error || res.statusText);
-        failures++;
-      }
-    } catch (err) {
-      console.error("❌ Network error:", err.message);
+      if (!res.ok || !result.ok) failures++;
+    } catch {
       failures++;
     }
   }
 
-  if (failures > 0) {
-    alert(`⚠️ ${failures} entry(ies) failed to submit.`);
-  } else {
+  if (failures > 0) alert(`⚠️ ${failures} entry(ies) failed to submit.`);
+  else {
     alert("✅ Timesheet submitted successfully!");
-    state.queue = [];
-    renderQueue();
-    document.getElementById("timesheetForm").reset();
-    adjustTicketSelectWidth(); // keep compact after submit
-  }
-}
+    state.queue
