@@ -4,8 +4,11 @@ const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/
 const els = {
   tableBody: null,
   addBtn: null,
+  staffFilter: null,
 };
 let employees = [];
+let filterText = "";
+
 
 document.addEventListener("DOMContentLoaded", () => {
   els.tableBody = document.querySelector("#staffTable tbody");
