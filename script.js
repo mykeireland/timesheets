@@ -67,17 +67,20 @@ async function loadTickets() {
     select.innerHTML = "<option value=''>Select Ticket</option>";
 
     tickets.forEach(ticket => {
-      // Be flexible with field names and shapes
+      // Convert fields safely to plain text
       const ticketId   = ticket.ticketId ?? ticket.id ?? ticket.TicketId ?? ticket.ID ?? null;
-      const cwTicketId = toFlatString(ticket.cwTicketId ?? ticket.CwTicketId ?? ticket.ID ?? ticket.cw_id);
-      const summary    = toFlatString(ticket.summary ?? ticket.Summary);
-      const company    = toFlatString(ticket.companyName ?? ticket.CompanyName);
+      const cwTicketId = flattenValue(ticket.cwTicketId ?? ticket.CwTicketId ?? ticket.id);
+      const summary    = flattenValue(ticket.summary ?? ticket.Summary);
+      const company    = flattenValue(ticket.companyName ?? ticket.CompanyName);
 
-      if (ticketId == null) return; // skip malformed rows
+      if (ticketId == null) return;
 
       const opt = document.createElement("option");
       opt.value = ticketId;
-      opt.textContent = `${cwTicketId} • ${summary} • ${company}`.replace(/\s+•\s+$/,"");
+
+      // Build readable label with only non-empty fields
+      const parts = [cwTicketId, summary, company].filter(p => p && p !== "{}");
+      opt.textContent = parts.join(" • ");
       select.appendChild(opt);
     });
 
@@ -88,6 +91,18 @@ async function loadTickets() {
   }
 }
 
+// --- helper: flatten any weird object into a string ---
+function flattenValue(v) {
+  if (v == null) return "";
+  if (typeof v === "string" || typeof v === "number") return String(v);
+  if (typeof v === "object") {
+    for (const key of ["value", "id", "number", "$numberLong"]) {
+      if (v[key]) return String(v[key]);
+    }
+    try { return JSON.stringify(v); } catch { return ""; }
+  }
+  return "";
+}
 function adjustTicketSelectWidth() {
   const select = document.getElementById("entryTicket");
   if (!select) return;
