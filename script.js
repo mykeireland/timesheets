@@ -61,26 +61,39 @@ function adjustTicketSelectWidth() {
 
 // === Loaders ===
 async function loadEmployees() {
+  const select = document.getElementById("employeeSelect");
+  select.innerHTML = "";
+
   try {
     const res = await fetch(`${API_BASE}/employees`);
-    if (!res.ok) throw new Error(`GET /employees -> ${res.status}`);
     const data = await res.json();
-    const employees = unwrapArray(data, "employees", "data");
-    const select = document.getElementById("employeeSelect");
-    if (!select) { console.warn("#employeeSelect not found"); return; }
-    select.innerHTML = "";
-    employees.forEach(emp => {
-      const id = emp.id ?? emp.employeeId ?? emp.EmployeeId ?? null;
-      const name = emp.name ?? emp.fullName ?? emp.DisplayName ?? "Unnamed";
-      if (id == null) return;
+
+    // Normalize result (handle both old and new API shapes)
+    const employees = Array.isArray(data)
+      ? data.map(e => ({
+          id: e.id || e.employee_id,
+          name: e.name || `${e.first_name || ""} ${e.last_name || ""}`.trim(),
+          active: e.active !== undefined ? e.active : true,
+          type: e.type || "Unknown"
+        }))
+      : [];
+
+    // Optionally: only show active or casuals
+    const filtered = employees.filter(e => e.active && e.type.toLowerCase().includes("casual"));
+
+    filtered.forEach(emp => {
       const opt = document.createElement("option");
-      opt.value = id;
-      opt.textContent = name;
+      opt.value = emp.id;
+      opt.textContent = emp.name || "(No Name)";
       select.appendChild(opt);
     });
+
+    console.log(`✅ Loaded ${filtered.length} employees`);
   } catch (err) {
-    console.error("❌ Load employees failed:", err);
-    alert("Could not load employees.");
+    console.error("❌ Failed to load employees:", err);
+    const opt = document.createElement("option");
+    opt.textContent = "⚠️ Error loading employees";
+    select.appendChild(opt);
   }
 }
 
