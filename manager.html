@@ -19,10 +19,17 @@
   <div class="container">
       <div class="form-row" style="justify-content: space-between;">
       <input id="filterInput" type="text" placeholder="Filter by name / site / status" style="flex:1; min-width: 260px;">
-        <div>
-          <button type="button" class="btn" onclick="window.location.href='index.html'">← Back to Entry</button>
-          <button type="button" class="btn danger" onclick="window.location.href='staff.html'">👤 Manage Casual Staff</button>
+        <div class="toolbar">
+          <input id="filterInput" class="search-input" type="text"
+                 placeholder="Filter by name / site / status" />
+        
+          <button type="button" class="btn danger"
+                  onclick="window.location.href='staff.html'">👤 Manage Casual Staff</button>
+        
+          <button type="button" class="btn"
+                  onclick="window.location.href='index.html'">🏠 Home</button>
         </div>
+
       </div>
   </div>
 
