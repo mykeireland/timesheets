@@ -1,12 +1,12 @@
 "use strict";
 
 /**
- * staff.js — Manage Casual Staff
- * Requires:
+ * staff.js — Manage Casual Staff (diagnostic build)
+ * UI requirements:
  *  - <table id="staffTable"><tbody>…</tbody></table>
  *  - <button id="addBtn">…</button>
  *  - <input id="staffFilter">
- *  - window.API_BASE configured in the page
+ *  - window.API_BASE configured via <script> on the page
  */
 
 const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
@@ -16,11 +16,59 @@ const els = {
   tableBody: null,
   addBtn: null,
   staffFilter: null,
+  debug: null, // inline debug slot
 };
 
 // state
 let employees = [];
 let filterText = "";
+
+// ---------- Utilities ----------
+function toNullableInt(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  if (s === "") return null;
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+function cmp(a, b) {
+  const aa = String(a ?? "").toLowerCase();
+  const bb = String(b ?? "").toLowerCase();
+  return aa < bb ? -1 : aa > bb ? 1 : 0;
+}
+
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function setTableMessage(msg) {
+  els.tableBody.innerHTML = `<tr><td colspan="9">${escapeHtml(msg)}</td></tr>`;
+}
+
+function ensureDebugDiv() {
+  if (els.debug) return;
+  const container = document.querySelector(".container") || document.body;
+  const d = document.createElement("pre");
+  d.id = "staff-debug";
+  d.style.cssText = "margin:12px 0;padding:10px;background:#f9fbff;border:1px dashed #bcd;color:#334;white-space:pre-wrap;display:none;";
+  container.prepend(d);
+  els.debug = d;
+}
+
+function debugShow(title, obj) {
+  ensureDebugDiv();
+  els.debug.style.display = "block";
+  const text = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+  els.debug.textContent = `[${title}]\n${text}`;
+  console.groupCollapsed(`🧪 Staff Debug: ${title}`);
+  console.log(obj);
+  console.groupEnd();
+}
 
 // ---------- Init ----------
 document.addEventListener("DOMContentLoaded", () => {
@@ -34,6 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   if (!els.addBtn) {
     console.error("❌ #addBtn not found.");
+    setTableMessage("UI error: Add button not found (#addBtn).");
     return;
   }
 
@@ -46,18 +95,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Display API base for sanity
+  debugShow("API_BASE", API_BASE);
+
   loadEmployees();
 });
 
 // ---------- Load & Render ----------
 async function loadEmployees() {
-  els.tableBody.innerHTML = `<tr><td colspan="9">Loading…</td></tr>`;
-  try {
-    const res = await fetch(`${API_BASE}/employees`);
-    const data = await res.json();
+  setTableMessage("Loading…");
 
-    // Accept both array or { results: [...] }
-    const raw = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
+  try {
+    // Fetch as text first so we can show raw body if not JSON
+    const resp = await fetch(`${API_BASE}/employees`, { cache: "no-store" });
+    const rawText = await resp.text();
+
+    debugShow("Raw /employees response", { status: resp.status, body: rawText });
+
+    if (!resp.ok) {
+      setTableMessage(`API error (${resp.status}). See debug above.`);
+      return;
+    }
+
+    // Try to parse JSON
+    let data;
+    try {
+      data = rawText ? JSON.parse(rawText) : null;
+    } catch (e) {
+      setTableMessage("Response is not valid JSON. See debug above.");
+      return;
+    }
+
+    // Accept array or { results: [...] }
+    const raw = Array.isArray(data) ? data : (Array.isArray(data?.results) ? data.results : null);
+    if (!raw) {
+      setTableMessage("Unexpected JSON shape from /employees. See debug above.");
+      return;
+    }
 
     // Normalize
     employees = raw.map(e => ({
@@ -66,12 +140,18 @@ async function loadEmployees() {
       last_name: e.last_name ?? "",
       email: e.email ?? "",
       type: e.type ?? "",
-      active: !!e.active,
+      active: e.active === undefined ? true : !!e.active,
       manager_employee_id: toNullableInt(e.manager_employee_id),
       cw_member_id: toNullableInt(e.cw_member_id),
       created_utc: e.created_utc,
       updated_utc: e.updated_utc
     }));
+
+    // If normalization produced no IDs, show warning
+    if (!employees.length) {
+      setTableMessage("No employees returned.");
+      return;
+    }
 
     // Active first, then by name
     employees.sort((a, b) => {
@@ -82,7 +162,8 @@ async function loadEmployees() {
     renderTable();
   } catch (err) {
     console.error("❌ Failed to load employees:", err);
-    els.tableBody.innerHTML = `<tr><td colspan="9">Error loading employees.</td></tr>`;
+    debugShow("Load error", String(err));
+    setTableMessage("Network error loading employees. See debug above.");
   }
 }
 
@@ -94,15 +175,13 @@ function renderTable() {
       const hay = [
         e.first_name, e.last_name, e.email, e.type,
         e.manager_employee_id, e.cw_member_id
-      ]
-        .map(x => (x ?? "").toString().toLowerCase())
-        .join(" ");
+      ].map(x => (x ?? "").toString().toLowerCase()).join(" ");
       return hay.includes(filterText);
     });
   }
 
   if (!rows.length) {
-    els.tableBody.innerHTML = `<tr><td colspan="9">No employees found.</td></tr>`;
+    setTableMessage("No employees match your filter.");
     return;
   }
 
@@ -114,7 +193,7 @@ function rowHtml(emp) {
   const muted = emp.active ? "" : ` class="muted"`;
   return `
     <tr data-id="${emp.employee_id}"${muted}>
-      <td>${emp.employee_id}</td>
+      <td>${emp.employee_id ?? ""}</td>
       <td contenteditable="false">${escapeHtml(emp.first_name)}</td>
       <td contenteditable="false">${escapeHtml(emp.last_name)}</td>
       <td contenteditable="false">${escapeHtml(emp.email)}</td>
@@ -201,11 +280,14 @@ async function saveNewRow(tr) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    const result = await res.json();
+    const rawText = await res.text();
+    debugShow("Add /employees/add response", { status: res.status, body: rawText });
 
-    if (!res.ok || !result.ok) {
-      console.error("Add failed:", result);
-      alert("❌ Error adding employee: " + (result.error || res.statusText));
+    let result = null;
+    try { result = rawText ? JSON.parse(rawText) : null; } catch {}
+
+    if (!res.ok || !result?.ok) {
+      alert("❌ Error adding employee. See debug above.");
       return;
     }
 
@@ -214,6 +296,7 @@ async function saveNewRow(tr) {
     loadEmployees();
   } catch (err) {
     console.error("Network error:", err);
+    debugShow("Add error", String(err));
     alert("❌ Network error adding employee.");
   }
 }
@@ -222,14 +305,12 @@ async function saveNewRow(tr) {
 function onEditClick(btn) {
   const tr = btn.closest("tr");
   tr.classList.add("editing");
-  // make first,last,email,type editable
-  for (let i = 1; i <= 4; i++) tr.cells[i].contentEditable = "true";
+  for (let i = 1; i <= 4; i++) tr.cells[i].contentEditable = "true"; // first,last,email,type
   tr.querySelector('input[type="checkbox"]').disabled = false;
   tr.querySelector(".edit").style.display = "none";
   tr.querySelector(".save").style.display = "inline-block";
-  // optional: manager & cw columns editable
-  tr.cells[6].contentEditable = "true";
-  tr.cells[7].contentEditable = "true";
+  tr.cells[6].contentEditable = "true"; // manager id
+  tr.cells[7].contentEditable = "true"; // cw id
 }
 
 async function onSaveClick(btn) {
@@ -257,16 +338,18 @@ async function onSaveClick(btn) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    const result = await res.json();
+    const rawText = await res.text();
+    debugShow("Update /employees/{id} response", { status: res.status, body: rawText });
 
-    if (!res.ok || !result.ok) {
-      console.error("Update failed:", result);
-      alert("❌ Error updating employee: " + (result.error || res.statusText));
+    let result = null;
+    try { result = rawText ? JSON.parse(rawText) : null; } catch {}
+
+    if (!res.ok || !result?.ok) {
+      alert("❌ Error updating employee. See debug above.");
       return;
     }
 
     alert("✅ Employee updated");
-    // lock row again
     tr.classList.remove("editing");
     for (let i = 1; i <= 4; i++) tr.cells[i].contentEditable = "false";
     tr.querySelector('input[type="checkbox"]').disabled = true;
@@ -278,28 +361,7 @@ async function onSaveClick(btn) {
     loadEmployees();
   } catch (err) {
     console.error("Network error:", err);
+    debugShow("Update error", String(err));
     alert("❌ Network error updating employee.");
   }
-}
-
-// ---------- Helpers ----------
-function toNullableInt(v) {
-  if (v === null || v === undefined) return null;
-  const s = String(v).trim();
-  if (s === "") return null;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) ? n : null;
-}
-
-function cmp(a, b) {
-  const aa = String(a).toLowerCase(), bb = String(b).toLowerCase();
-  return aa < bb ? -1 : aa > bb ? 1 : 0;
-}
-
-function escapeHtml(s) {
-  return String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
