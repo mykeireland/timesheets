@@ -1,25 +1,20 @@
 // === Config & State ===
 const API_BASE = window.API_BASE || "http://localhost:7071/api";
-const state = {
-  queue: [],
-  employeeId: null
-};
+const state = { queue: [], employeeId: null };
 console.log("🔥 script.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
   loadEmployees();
   loadTickets();
   setupFormHandlers();
-  adjustTicketSelectWidth();
+  adjustTicketSelectWidth(); // compact “Select Ticket” width on load
 });
 
 // === Helpers ===
 function unwrapArray(payload, ...arrayKeys) {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === "object") {
-    for (const k of arrayKeys) {
-      if (Array.isArray(payload[k])) return payload[k];
-    }
+    for (const k of arrayKeys) if (Array.isArray(payload[k])) return payload[k];
   }
   return [];
 }
@@ -28,13 +23,9 @@ function flattenValue(v) {
   if (v == null) return "";
   if (typeof v === "string" || typeof v === "number") return String(v);
   if (typeof v === "object") {
-    for (const key of ["value", "id", "number", "$numberLong"]) {
+    for (const key of ["value", "id", "number", "$numberLong"])
       if (v[key] != null && typeof v[key] !== "object") return String(v[key]);
-    }
-    try {
-      const s = JSON.stringify(v);
-      return s === "{}" ? "" : s;
-    } catch { return ""; }
+    try { const s = JSON.stringify(v); return s === "{}" ? "" : s; } catch { return ""; }
   }
   return "";
 }
@@ -44,14 +35,9 @@ function measureTextWidth(text, refEl) {
   span.style.visibility = "hidden";
   span.style.position = "absolute";
   span.style.whiteSpace = "nowrap";
-
   const cs = window.getComputedStyle(refEl);
-  const font = [
-    cs.fontStyle, cs.fontVariant, cs.fontWeight,
-    cs.fontSize, "/", cs.lineHeight, cs.fontFamily
-  ].join(" ");
+  const font = [cs.fontStyle, cs.fontVariant, cs.fontWeight, cs.fontSize, "/", cs.lineHeight, cs.fontFamily].join(" ");
   span.style.font = font;
-
   span.textContent = text || "";
   document.body.appendChild(span);
   const w = span.offsetWidth;
@@ -62,19 +48,14 @@ function measureTextWidth(text, refEl) {
 function adjustTicketSelectWidth() {
   const select = document.getElementById("entryTicket");
   if (!select) return;
-
   const cs = window.getComputedStyle(select);
   const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const border = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
-  const arrow = 24;
-  const buffer = 10;
-
+  const arrow = 24, buffer = 10; // tweak arrow to 28 if needed on Safari
   const currentText = select.options[select.selectedIndex]?.text || "Select Ticket";
   const minText = "Select Ticket";
-
   const currentW = measureTextWidth(currentText, select) + pad + border + arrow + buffer;
   const minW = measureTextWidth(minText, select) + pad + border + arrow + buffer;
-
   select.style.width = Math.max(currentW, minW) + "px";
 }
 
@@ -84,14 +65,13 @@ async function loadEmployees() {
     const res = await fetch(`${API_BASE}/employees`);
     if (!res.ok) throw new Error(`GET /employees -> ${res.status}`);
     const data = await res.json();
-
     const employees = unwrapArray(data, "employees", "data");
     const select = document.getElementById("employeeSelect");
+    if (!select) { console.warn("#employeeSelect not found"); return; }
     select.innerHTML = "";
-
     employees.forEach(emp => {
-      const id = emp.id ?? emp.employeeId ?? null;
-      const name = emp.name ?? emp.fullName ?? "Unnamed";
+      const id = emp.id ?? emp.employeeId ?? emp.EmployeeId ?? null;
+      const name = emp.name ?? emp.fullName ?? emp.DisplayName ?? "Unnamed";
       if (id == null) return;
       const opt = document.createElement("option");
       opt.value = id;
@@ -100,6 +80,7 @@ async function loadEmployees() {
     });
   } catch (err) {
     console.error("❌ Load employees failed:", err);
+    alert("Could not load employees.");
   }
 }
 
@@ -108,30 +89,28 @@ async function loadTickets() {
     const res = await fetch(`${API_BASE}/tickets/open`);
     if (!res.ok) throw new Error(`GET /tickets/open -> ${res.status}`);
     const data = await res.json();
-
     const tickets = unwrapArray(data, "tickets", "data");
     const select = document.getElementById("entryTicket");
+    if (!select) { console.warn("#entryTicket not found"); return; }
     select.innerHTML = "<option value=''>Select Ticket</option>";
-
     tickets.forEach(ticket => {
-      const ticketId   = ticket.ticketId ?? ticket.id ?? null;
-      const cwTicketId = flattenValue(ticket.cwTicketId ?? ticket.ID);
-      const summary    = flattenValue(ticket.summary);
-      const company    = flattenValue(ticket.companyName);
+      const ticketId   = ticket.ticketId ?? ticket.id ?? ticket.TicketId ?? ticket.ID ?? null;
+      const summary    = flattenValue(ticket.summary ?? ticket.Summary);
+      const company    = flattenValue(ticket.companyName ?? ticket.CompanyName);
       if (ticketId == null) return;
-
       const parts = [summary, company].filter(Boolean);
-      const label = parts.join(" • ");
-
+      const label = parts.join(" • ") || `Ticket ${ticketId}`;
       const opt = document.createElement("option");
       opt.value = String(ticketId);
       opt.textContent = label;
       select.appendChild(opt);
     });
-
+    // compact by default
+    select.selectedIndex = 0;
     adjustTicketSelectWidth();
   } catch (err) {
     console.error("❌ Load tickets failed:", err);
+    alert("Could not load tickets.");
   }
 }
 
@@ -141,7 +120,6 @@ function setupFormHandlers() {
   document.getElementById("managerBtn").addEventListener("click", () => {
     window.location.href = "manager.html";
   });
-
   document.addEventListener("change", (e) => {
     if (e.target && e.target.id === "entryTicket") adjustTicketSelectWidth();
   });
@@ -164,16 +142,7 @@ function addToQueue() {
 
   state.employeeId = employeeId;
 
-  const entry = {
-    employeeId,
-    ticketId,
-    date,
-    hoursStandard,
-    hours15x,
-    hours2x,
-    notes
-  };
-
+  const entry = { employeeId, ticketId, date, hoursStandard, hours15x, hours2x, notes };
   state.queue.push(entry);
   renderQueue();
   clearForm();
@@ -181,13 +150,13 @@ function addToQueue() {
 
 function renderQueue() {
   const tbody = document.getElementById("queueTable");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   if (state.queue.length === 0) {
     document.getElementById("queuedEntries").style.display = "none";
     return;
   }
-
   document.getElementById("queuedEntries").style.display = "block";
 
   state.queue.forEach((entry, i) => {
@@ -223,27 +192,25 @@ function clearForm() {
 // === Submission ===
 async function handleSubmit(e) {
   e.preventDefault();
-  if (state.queue.length === 0) {
-    alert("Please add at least one entry before submitting.");
-    return;
-  }
+  if (state.queue.length === 0) return alert("Please add at least one entry before submitting.");
 
   let failures = 0;
   for (const entry of state.queue) {
     try {
       const res = await fetch(`${API_BASE}/timesheets/submit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entry)
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entry)
       });
-      const result = await res.json();
+      const result = await res.json().catch(() => ({ ok: false, error: "Invalid JSON" }));
       if (!res.ok || !result.ok) failures++;
-    } catch {
-      failures++;
-    }
+    } catch { failures++; }
   }
 
   if (failures > 0) alert(`⚠️ ${failures} entry(ies) failed to submit.`);
   else {
     alert("✅ Timesheet submitted successfully!");
-    state.queue
+    state.queue = [];
+    renderQueue();
+    document.getElementById("timesheetForm").reset();
+    adjustTicketSelectWidth();
+  }
+}
