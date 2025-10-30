@@ -18,8 +18,10 @@
     try {
       const res = await fetch(`${API_BASE}/timesheets/pending`);
       const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("Unexpected response");
-      state.timesheets = data;
+     if (!data.ok || !Array.isArray(data.results)) {
+  throw new Error("Unexpected response format");
+}
+state.timesheets = data.results;
       renderTable();
     } catch (err) {
       console.error("Failed to load pending timesheets:", err);
