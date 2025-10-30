@@ -48,7 +48,35 @@ header {
   font-size: 0.7rem;
   font-weight: light;
 }
+/* Top toolbar layout (shared) */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;     /* even spacing across */
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
 
+.search-input {
+  flex: 1 1 360px;                    /* roomy on wide screens, shrinks nicely */
+  min-width: 240px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d0d0d7;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+@media (max-width: 640px) {
+  .toolbar { gap: 10px; }
+  .search-input { flex-basis: 100%; } /* stack on small screens */
+}
+
+/* Keep button sizes visually consistent */
+.btn { height: 40px; }
+.btn.danger { background: #d63b43; color: #fff; }
+.btn.danger:hover { filter: brightness(0.95); }
 
 label { font-weight: bold; margin-right: 10px; }
 
