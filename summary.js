@@ -1,5 +1,8 @@
 "use strict";
 
+let sortOrderApproved = 1;
+let sortOrderUnapproved = 1;
+
 const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
 
 document.getElementById("filterInput").addEventListener("input", (e) => {
@@ -14,6 +17,26 @@ document.getElementById("filterInput").addEventListener("input", (e) => {
     row.style.display = name.includes(keyword) ? "" : "none";
   });
 });
+document.getElementById("sortNameApproved").addEventListener("click", () => {
+  sortOrderApproved *= -1;
+  window.allRows.approved.sort((a, b) => {
+    const aLast = a.name.split(" ").pop().toLowerCase();
+    const bLast = b.name.split(" ").pop().toLowerCase();
+    return sortOrderApproved * aLast.localeCompare(bLast);
+  });
+  applyFilters();
+});
+
+document.getElementById("sortNameUnapproved").addEventListener("click", () => {
+  sortOrderUnapproved *= -1;
+  window.allRows.unapproved.sort((a, b) => {
+    const aLast = a.name.split(" ").pop().toLowerCase();
+    const bLast = b.name.split(" ").pop().toLowerCase();
+    return sortOrderUnapproved * aLast.localeCompare(bLast);
+  });
+  applyFilters();
+});
+
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
