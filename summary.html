@@ -13,14 +13,15 @@
   <header>
     <h1>Timesheet Summary</h1>
   </header>
-
   <div class="container">
+    <div class="form-actions">
+      <button class="btn secondary" onclick="window.location.href='manager.html'">⬅️ Back to Approvals</button>
+    </div>
+    <input type="text" id="filterInput" class="search-input" placeholder="🔎 Filter by name..." />
+  </div>
+
     <h2>✅ Approved Entries</h2>
     <div class="table-wrap">
-      <div class="form-actions">
-        <button class="btn secondary" onclick="window.location.href='manager.html'">⬅️ Back to Approvals</button>
-      </div>
-      <input type="text" id="filterInput" class="search-input" placeholder="🔎 Filter by name..." />
       <table id="approvedTable">
         <thead>
           <tr>
