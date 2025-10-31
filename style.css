@@ -276,3 +276,12 @@ th { background: #f9f9f9; }
     white-space: nowrap;
   }
 }
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  text-decoration: underline;
+}
+
