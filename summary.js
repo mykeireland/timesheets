@@ -2,6 +2,19 @@
 
 const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
 
+document.getElementById("filterInput").addEventListener("input", (e) => {
+  const keyword = e.target.value.toLowerCase().trim();
+
+  const rows = document.querySelectorAll("table tbody tr");
+  rows.forEach(row => {
+    const nameCell = row.querySelector("td");
+    if (!nameCell) return;
+
+    const name = nameCell.textContent.toLowerCase();
+    row.style.display = name.includes(keyword) ? "" : "none";
+  });
+});
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await fetch(`${API_BASE}/timesheets/summary`);
