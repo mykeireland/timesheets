@@ -13,44 +13,51 @@
   <header>
     <h1>Timesheet Summary</h1>
   </header>
+
   <div class="container">
-    <div class="form-actions">
-      <button class="btn secondary" onclick="window.location.href='manager.html'">⬅️ Back to Approvals</button>
-    </div>
-    <input type="text" id="filterInput" class="search-input" placeholder="🔎 Filter by name..." />
-  </div>
+    <div class="card" style="margin-bottom: 2rem;">
+      <div class="form-actions">
+        <button class="btn secondary" onclick="window.location.href='manager.html'">⬅️ Back to Approvals</button>
+      </div>
 
-    <h2>✅ Approved Entries</h2>
-    <div class="table-wrap">
-      <table id="approvedTable">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Standard (1x)</th>
-            <th>1.5x</th>
-            <th>2x</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <input type="text" id="filterInput" class="search-input" placeholder="🔎 Filter by name..." />
     </div>
 
-    <h2>🕗 Unapproved Entries</h2>
-    <div class="table-wrap">
-      <table id="unapprovedTable">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Standard (1x)</th>
-            <th>1.5x</th>
-            <th>2x</th>
-            <th>Total</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <div class="card">
+      <h2>✅ Approved Entries</h2>
+      <div class="table-responsive">
+        <table class="table" id="approvedTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Standard (1x)</th>
+              <th>1.5x</th>
+              <th>2x</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🕗 Unapproved Entries</h2>
+      <div class="table-responsive">
+        <table class="table" id="unapprovedTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Standard (1x)</th>
+              <th>1.5x</th>
+              <th>2x</th>
+              <th>Total</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
