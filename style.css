@@ -285,3 +285,21 @@ th { background: #f9f9f9; }
   text-decoration: underline;
 }
 
+/* === STATUS BADGES (pastel style) === */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  text-transform: capitalize;
+  min-width: 80px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.status-submitted { background-color: #6ea8fe; } /* pastel blue */
+.status-approved  { background-color: #7bd88f; } /* pastel green */
+.status-rejected  { background-color: #f28b82; } /* pastel red */
+.status-draft     { background-color: #b0b0b0; } /* neutral gray */
