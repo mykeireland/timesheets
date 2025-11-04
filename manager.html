@@ -1,56 +1,31 @@
+<!-- ===================== MANAGER.HTML ===================== -->
 <!DOCTYPE html>
 <html lang="en">
-  <script>
-  // dev local: "http://localhost:7071/api"
-  // dev cloud: "https://<func-timesheetsNET-api-dev>.azurewebsites.net/api"
-  window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
-</script>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manager Timesheet Approvals</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css"> <!-- ✅ use the shared stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+  <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
 </head>
 <body>
-  <header class="header">
-    <h1>Pending Timesheets for Approval</h1>
-  </header>
-
-  <div class="container">
-        <div class="toolbar">
-          <input id="filterInput" class="search-input" type="text"
-                 placeholder="Filter by name / site / status" />      
-            <button type="button" class="btn danger"
-                    onclick="window.location.href='staff.html'">👤 Manage Casual Staff</button>
-            <button type="button" class="btn dark"
-                    onclick="window.location.href='summary.html'">📊 View Summary</button>
-            <button type="button" class="btn light"
-                    onclick="window.location.href='index.html'">🏠 Home</button>
-        </div>
-
+  <header><h1>Pending Timesheets for Approval</h1></header>
+  <div class="container wide">
+    <div class="toolbar">
+      <input id="filterInput" class="search-input" type="text" placeholder="Filter by name / site / status" />
+      <div>
+        <button type="button" class="btn danger" onclick="window.location.href='staff.html'">👤 Manage Casual Staff</button>
+        <button type="button" class="btn secondary" onclick="window.location.href='summary.html'">📊 View Summary</button>
+        <button type="button" class="btn light" onclick="window.location.href='index.html'">🏠 Home</button>
       </div>
-  </div>
-
-    <div class="table-wrap">
+    </div>
+    <div class="table-responsive">
       <table id="pendingTable">
-       <thead>
-        <tr>
-          <th data-field="firstName"><button class="sort-btn">Employee <span class="sort-icon">⇅</span></button></th>
-          <th data-field="siteName"><button class="sort-btn">Site <span class="sort-icon">⇅</span></button></th>
-          <th data-field="ticketId"><button class="sort-btn">Ticket <span class="sort-icon">⇅</span></button></th>
-          <th data-field="date"><button class="sort-btn">Date <span class="sort-icon">⇅</span></button></th>
-          <th data-field="hours"><button class="sort-btn">Hours <span class="sort-icon">⇅</span></button></th>
-          <th data-field="status"><button class="sort-btn">Status <span class="sort-icon">⇅</span></button></th>
-          <th class="col-notes">Notes</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-
+        <thead><tr><th>Employee</th><th>Site</th><th>Ticket</th><th>Date</th><th>Hours</th><th>Status</th><th>Notes</th><th>Action</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
-
   <script src="manager.js"></script>
 </body>
 </html>
