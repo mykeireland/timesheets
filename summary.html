@@ -9,22 +9,6 @@
   <script>
     window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
   </script>
-  <style>
-    .hours-group {
-      display: inline-block;
-      background: #f9fafc;
-      font-family: monospace;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      color: #333;
-    }
-    h2 {
-      text-align: center;
-      margin-top: 1rem;
-      margin-bottom: 0.8rem;
-    }
-  </style>
 </head>
 
 <body>
@@ -39,7 +23,6 @@
       </div>
     </div>
 
-    <!-- APPROVED ENTRIES -->
     <div class="table-responsive">
       <h2>✅ Approved Time Entries</h2>
       <table id="approvedTable">
@@ -57,7 +40,6 @@
       </table>
     </div>
 
-    <!-- UNAPPROVED / REJECTED ENTRIES -->
     <div class="table-responsive" style="margin-top: 2rem;">
       <h2>🕗 Unapproved / Rejected Time Entries</h2>
       <table id="unapprovedTable">
@@ -97,8 +79,7 @@
           <td>${entry.cwTicketId || "—"}</td>
           <td>${entry.date}</td>
           <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
-          <td>${entry.notes || "—"}</td>
-        `;
+          <td>${entry.notes || "—"}</td>`;
         approvedTable.appendChild(tr);
       }
 
@@ -111,8 +92,7 @@
           <td>${entry.date}</td>
           <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
           <td><span class="status-badge status-${entry.status.toLowerCase()}">${entry.status}</span></td>
-          <td>${entry.notes || "—"}</td>
-        `;
+          <td>${entry.notes || "—"}</td>`;
         unapprovedTable.appendChild(tr);
       }
     }
