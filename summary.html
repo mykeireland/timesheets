@@ -1,68 +1,32 @@
+<!-- ===================== SUMMARY.HTML ===================== -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Timesheet Summary</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timesheet Summary</title>
   <link rel="stylesheet" href="style.css" />
-  <script>
-    window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
-  </script>
+  <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
 </head>
 <body>
-  <header>
-    <h1>Timesheet Summary</h1>
-  </header>
-
+  <header><h1>Timesheet Summary</h1></header>
   <div class="container">
-    <div class="card" style="margin-bottom: 2rem;">
-      <div class="form-row" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;">
-        <input type="text" id="filterInput" class="search-input" placeholder="Filter by name..." />
-        <div class="form-actions">
-          <button class="btn secondary" onclick="window.location.href='manager.html'">⬅ Back to Approvals</button>
-          <button class="btn" onclick="window.location.href='index.html'">🏠 Home</button>
-        </div>
+    <div class="toolbar">
+      <input id="filterInput" class="search-input" type="text" placeholder="Filter by name..." />
+      <div>
+        <button class="btn secondary" onclick="window.location.href='manager.html'">⬅ Back to Approvals</button>
+        <button class="btn light" onclick="window.location.href='index.html'">🏠 Home</button>
       </div>
     </div>
-
-    <div class="card">
+    <div class="table-responsive">
       <h2>✅ Approved Entries</h2>
-      <div class="table-responsive">
-        <table class="table" id="approvedTable">
-          <thead>
-            <tr>
-              <th><button class="sort-btn" onclick="sortBySurname('approved')">Name ↑↓</button></th>
-              <th>Standard (1x)</th>
-              <th>1.5x</th>
-              <th>2x</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <table id="approvedTable"><thead><tr><th>Name</th><th>Standard (1x)</th><th>1.5x</th><th>2x</th><th>Total</th></tr></thead><tbody></tbody></table>
     </div>
-
-    <div class="card">
+    <div class="table-responsive">
       <h2>🕗 Unapproved Entries</h2>
-      <div class="table-responsive">
-        <table class="table" id="unapprovedTable">
-          <thead>
-            <tr>
-              <th><button class="sort-btn" onclick="sortBySurname('unapproved')">Name ↑↓</button></th>
-              <th>Standard (1x)</th>
-              <th>1.5x</th>
-              <th>2x</th>
-              <th>Total</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <table id="unapprovedTable"><thead><tr><th>Name</th><th>Standard (1x)</th><th>1.5x</th><th>2x</th><th>Total</th><th>Status</th></tr></thead><tbody></tbody></table>
     </div>
   </div>
-
   <script src="summary.js"></script>
 </body>
 </html>
