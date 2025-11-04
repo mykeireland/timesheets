@@ -6,10 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manager Timesheet Approvals</title>
   <link rel="stylesheet" href="style.css" />
-  <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
+  <script>
+    // dev local: "http://localhost:7071/api"
+    window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
+  </script>
 </head>
 <body>
   <header><h1>Pending Timesheets for Approval</h1></header>
+
   <div class="container wide">
     <div class="toolbar">
       <input id="filterInput" class="search-input" type="text" placeholder="Filter by name / site / status" />
@@ -19,13 +23,65 @@
         <button type="button" class="btn light" onclick="window.location.href='index.html'">🏠 Home</button>
       </div>
     </div>
+
     <div class="table-responsive">
       <table id="pendingTable">
-        <thead><tr><th>Employee</th><th>Site</th><th>Ticket</th><th>Date</th><th>Hours</th><th>Status</th><th>Notes</th><th>Action</th></tr></thead>
-        <tbody></tbody>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Site</th>
+            <th>Ticket</th>
+            <th>Date</th>
+            <th>Hours</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody><!-- Populated dynamically by manager.js --></tbody>
       </table>
     </div>
   </div>
-  <script src="manager.js"></script>
+
+  <script>
+    // Inject pastel status badges dynamically
+    async function loadPendingTimesheets() {
+      const res = await fetch(`${window.API_BASE}/timesheets/pending`);
+      const data = await res.json();
+      const tbody = document.querySelector("#pendingTable tbody");
+      tbody.innerHTML = "";
+
+      if (!data.ok || !data.results) return;
+
+      for (const entry of data.results) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${entry.firstName} ${entry.lastName}</td>
+          <td>${entry.siteName || "—"}</td>
+          <td>${entry.cwTicketId || ""}</td>
+          <td>${entry.date}</td>
+          <td>${entry.hours}</td>
+          <td><span class="status-badge status-${entry.status.toLowerCase()}">${entry.status}</span></td>
+          <td>${entry.notes || ""}</td>
+          <td>
+            <button class="btn primary" onclick="approve(${entry.entryId})">Approve</button>
+            <button class="btn danger" onclick="reject(${entry.entryId})">Reject</button>
+          </td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function approve(id) {
+      await fetch(`${window.API_BASE}/timesheets/approve/${id}`, { method: "POST" });
+      loadPendingTimesheets();
+    }
+
+    async function reject(id) {
+      await fetch(`${window.API_BASE}/timesheets/reject/${id}`, { method: "POST" });
+      loadPendingTimesheets();
+    }
+
+    window.addEventListener("DOMContentLoaded", loadPendingTimesheets);
+  </script>
 </body>
 </html>
