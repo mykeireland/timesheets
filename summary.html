@@ -9,7 +9,24 @@
   <script>
     window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
   </script>
+  <style>
+    .hours-group {
+      display: inline-block;
+      background: #f9fafc;
+      font-family: monospace;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+    h2 {
+      text-align: center;
+      margin-top: 1rem;
+      margin-bottom: 0.8rem;
+    }
+  </style>
 </head>
+
 <body>
   <header><h1>Timesheet Summary</h1></header>
 
@@ -22,36 +39,40 @@
       </div>
     </div>
 
+    <!-- APPROVED ENTRIES -->
     <div class="table-responsive">
-      <h2>✅ Approved Entries</h2>
+      <h2>✅ Approved Time Entries</h2>
       <table id="approvedTable">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Standard (1x)</th>
-            <th>1.5x</th>
-            <th>2x</th>
-            <th>Total</th>
+            <th>Employee</th>
+            <th>Ticket Summary</th>
+            <th>CW ID</th>
+            <th>Date</th>
+            <th>Hours (Std / 1.5x / 2x)</th>
+            <th>Notes</th>
           </tr>
         </thead>
-        <tbody><!-- Populated by summary.js --></tbody>
+        <tbody></tbody>
       </table>
     </div>
 
-    <div class="table-responsive">
-      <h2>🕗 Unapproved / Submitted / Rejected Entries</h2>
+    <!-- UNAPPROVED / REJECTED ENTRIES -->
+    <div class="table-responsive" style="margin-top: 2rem;">
+      <h2>🕗 Unapproved / Rejected Time Entries</h2>
       <table id="unapprovedTable">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Standard (1x)</th>
-            <th>1.5x</th>
-            <th>2x</th>
-            <th>Total</th>
+            <th>Employee</th>
+            <th>Ticket Summary</th>
+            <th>CW ID</th>
+            <th>Date</th>
+            <th>Hours (Std / 1.5x / 2x)</th>
             <th>Status</th>
+            <th>Notes</th>
           </tr>
         </thead>
-        <tbody><!-- Populated by summary.js --></tbody>
+        <tbody></tbody>
       </table>
     </div>
   </div>
@@ -68,27 +89,31 @@
 
       if (!data.ok) return;
 
-      for (const row of data.approved || []) {
-        approvedTable.innerHTML += `
-          <tr>
-            <td>${row.name}</td>
-            <td>${row.standard}</td>
-            <td>${row.hours_15x}</td>
-            <td>${row.hours_2x}</td>
-            <td>${row.total}</td>
-          </tr>`;
+      for (const entry of data.approved || []) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${entry.name}</td>
+          <td>${entry.summary || "—"}</td>
+          <td>${entry.cwTicketId || "—"}</td>
+          <td>${entry.date}</td>
+          <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
+          <td>${entry.notes || "—"}</td>
+        `;
+        approvedTable.appendChild(tr);
       }
 
-      for (const row of data.unapproved || []) {
-        unapprovedTable.innerHTML += `
-          <tr>
-            <td>${row.name}</td>
-            <td>${row.standard}</td>
-            <td>${row.hours_15x}</td>
-            <td>${row.hours_2x}</td>
-            <td>${row.total}</td>
-            <td><span class="status-badge status-${row.status.toLowerCase()}">${row.status}</span></td>
-          </tr>`;
+      for (const entry of data.unapproved || []) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${entry.name}</td>
+          <td>${entry.summary || "—"}</td>
+          <td>${entry.cwTicketId || "—"}</td>
+          <td>${entry.date}</td>
+          <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
+          <td><span class="status-badge status-${entry.status.toLowerCase()}">${entry.status}</span></td>
+          <td>${entry.notes || "—"}</td>
+        `;
+        unapprovedTable.appendChild(tr);
       }
     }
 
