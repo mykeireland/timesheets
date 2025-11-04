@@ -6,10 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Timesheet Summary</title>
   <link rel="stylesheet" href="style.css" />
-  <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
+  <script>
+    window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
+  </script>
 </head>
 <body>
   <header><h1>Timesheet Summary</h1></header>
+
   <div class="container">
     <div class="toolbar">
       <input id="filterInput" class="search-input" type="text" placeholder="Filter by name..." />
@@ -18,15 +21,78 @@
         <button class="btn light" onclick="window.location.href='index.html'">🏠 Home</button>
       </div>
     </div>
+
     <div class="table-responsive">
       <h2>✅ Approved Entries</h2>
-      <table id="approvedTable"><thead><tr><th>Name</th><th>Standard (1x)</th><th>1.5x</th><th>2x</th><th>Total</th></tr></thead><tbody></tbody></table>
+      <table id="approvedTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Standard (1x)</th>
+            <th>1.5x</th>
+            <th>2x</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody><!-- Populated by summary.js --></tbody>
+      </table>
     </div>
+
     <div class="table-responsive">
-      <h2>🕗 Unapproved Entries</h2>
-      <table id="unapprovedTable"><thead><tr><th>Name</th><th>Standard (1x)</th><th>1.5x</th><th>2x</th><th>Total</th><th>Status</th></tr></thead><tbody></tbody></table>
+      <h2>🕗 Unapproved / Submitted / Rejected Entries</h2>
+      <table id="unapprovedTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Standard (1x)</th>
+            <th>1.5x</th>
+            <th>2x</th>
+            <th>Total</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody><!-- Populated by summary.js --></tbody>
+      </table>
     </div>
   </div>
-  <script src="summary.js"></script>
+
+  <script>
+    async function loadSummary() {
+      const res = await fetch(`${window.API_BASE}/timesheets/summary`);
+      const data = await res.json();
+
+      const approvedTable = document.querySelector("#approvedTable tbody");
+      const unapprovedTable = document.querySelector("#unapprovedTable tbody");
+      approvedTable.innerHTML = "";
+      unapprovedTable.innerHTML = "";
+
+      if (!data.ok) return;
+
+      for (const row of data.approved || []) {
+        approvedTable.innerHTML += `
+          <tr>
+            <td>${row.name}</td>
+            <td>${row.standard}</td>
+            <td>${row.hours_15x}</td>
+            <td>${row.hours_2x}</td>
+            <td>${row.total}</td>
+          </tr>`;
+      }
+
+      for (const row of data.unapproved || []) {
+        unapprovedTable.innerHTML += `
+          <tr>
+            <td>${row.name}</td>
+            <td>${row.standard}</td>
+            <td>${row.hours_15x}</td>
+            <td>${row.hours_2x}</td>
+            <td>${row.total}</td>
+            <td><span class="status-badge status-${row.status.toLowerCase()}">${row.status}</span></td>
+          </tr>`;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", loadSummary);
+  </script>
 </body>
 </html>
