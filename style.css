@@ -1,4 +1,4 @@
-/* ========== Base Layout ========== */
+/* ===================== UNIFIED STYLE SHEET (PASTEL STATUS ENHANCED) ===================== */
 body {
   font-family: Calibri, sans-serif;
   background-color: #f5f7fa;
@@ -11,6 +11,7 @@ header {
   color: #fff;
   padding: 20px;
   text-align: center;
+  border-bottom: 4px solid #a02a22;
 }
 
 .container {
@@ -21,45 +22,45 @@ header {
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+.container.wide { max-width: 1300px; }
 
-#entryTicket {
-  display: inline-block;
-  width: auto;
-  max-width: 100%;
-  box-sizing: content-box;
-  padding: 3px 26px 3px 8px;
-  font-family: inherit;
-  font-size: 0.7rem;      /* 👈 slightly smaller for table balance */
-  font-weight: light;    /* 👈 no boldness */
-  line-height: 1.3;
+.table-responsive {
+  overflow-x: auto;
+  width: 100%;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
-  border: 1.5px solid #c497c7;
-  color: #000;
-  background-color: #f9f9f9;
-  transition: width 0.2s ease, background-color 0.2s;
+  background: #fff;
+  margin-top: 15px;
 }
 
-#entryTicket:hover {
-  background-color: #fff;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
 }
 
-#entryTicket option {
-  white-space: nowrap;
-  font-size: 0.7rem;
-  font-weight: light;
+th, td {
+  border: 1px solid #e0e0e0;
+  padding: 8px 10px;
+  text-align: center;
 }
-/* Top toolbar layout (shared) */
+
+th {
+  background: #f9f9f9;
+  font-weight: 600;
+}
+
+/* Toolbar */
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;     /* even spacing across */
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
-
 .search-input {
-  flex: 1 1 360px;                    /* roomy on wide screens, shrinks nicely */
+  flex: 1 1 360px;
   min-width: 240px;
   height: 40px;
   padding: 0 12px;
@@ -68,22 +69,25 @@ header {
   font-size: 16px;
 }
 
-@media (max-width: 640px) {
-  .toolbar { gap: 10px; }
-  .search-input { flex-basis: 100%; } /* stack on small screens */
+/* Buttons */
+.btn {
+  padding: 6px 12px;
+  margin: 4px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 15px;
+  height: 40px;
 }
-
-/* Keep button sizes visually consistent */
-.btn { height: 40px; }
-.btn.danger { background: #d63b43; color: #fff; }
-.btn.danger:hover { filter: brightness(0.95); }
-
-label { font-weight: bold; margin-right: 10px; }
+.btn:hover { opacity: 0.9; }
+.btn.primary { background: #007bff; color: #fff; }
+.btn.secondary { background: #6c757d; color: #fff; }
+.btn.danger { background: #dc3545; color: #fff; }
+.btn.light { background: #e0e0e0; color: #000; }
 
 .form-row { margin-bottom: 15px; }
 .form-actions { margin-top: 15px; }
 
-/* ========== Inputs ========== */
 select,
 input[type="date"],
 input[type="number"],
@@ -91,198 +95,6 @@ input[type="text"] {
   padding: 6px;
   border-radius: 4px;
   border: 1px solid #ccc;
-}
-
-.time-picker select { margin: 0 2px; }
-
-/* ========== Tables ========== */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
-
-th, td {
-  border: 1px solid #e0e0e0;
-  padding: 8px;
-  text-align: center;
-}
-
-th { background: #f9f9f9; }
-
-/* ========== Buttons ========== */
-.btn {
-  padding: 6px 12px;
-  margin: 4px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn:hover { opacity: 0.9; }
-
-.btn.primary { background: #007bff; color: #fff; }
-.btn.secondary { background: #6c757d; color: #fff; }
-.btn.danger { background: #dc3545; color: #fff; }
-.btn.light { background: #e0e0e0; color: #000; }
-
-/* --- STAFF TABLE LAYOUT FIX --- */
-#staffTable {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: auto; /* allow natural resizing */
-}
-
-#staffTable th,
-#staffTable td {
-  padding: 8px 10px;
-  text-align: left;
-  border: 1px solid #ddd;
-  vertical-align: middle;
-}
-
-#staffTable th {
-  background: #f8f9fa;
-  font-weight: 700;
-}
-
-/* Inputs and dropdowns inside table cells */
-#staffTable td input[type="text"],
-#staffTable td input[type="email"],
-#staffTable td input[type="number"],
-#staffTable td select {
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 0.95rem;
-  padding: 5px 6px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-#staffTable td input[type="checkbox"] {
-  transform: scale(1.1);
-}
-
-#staffTable .new-row {
-  background-color: #fff8e6;
-}
-
-/* Column widths - fluid but balanced */
-#staffTable th:nth-child(1),
-#staffTable td:nth-child(1) {
-  width: 50px; /* ID */
-  text-align: center;
-}
-
-#staffTable th:nth-child(2),
-#staffTable th:nth-child(3),
-#staffTable td:nth-child(2),
-#staffTable td:nth-child(3) {
-  width: 130px; /* First, Last */
-}
-
-#staffTable th:nth-child(4),
-#staffTable td:nth-child(4) {
-  width: 200px; /* Email */
-}
-
-#staffTable th:nth-child(5),
-#staffTable td:nth-child(5) {
-  width: 100px; /* Type */
-  text-align: center;
-}
-
-#staffTable th:nth-child(6),
-#staffTable td:nth-child(6) {
-  width: 80px; /* Active */
-  text-align: center;
-}
-
-#staffTable th:nth-child(7),
-#staffTable th:nth-child(8),
-#staffTable td:nth-child(7),
-#staffTable td:nth-child(8) {
-  width: 90px; /* Mgr ID, CW ID */
-  text-align: center;
-}
-
-#staffTable th:nth-child(9),
-#staffTable td:nth-child(9) {
-  width: 140px; /* Actions */
-  text-align: center;
-}
-
-/* Make sure both Save and Cancel fit nicely */
-#staffTable td .btn.small {
-  padding: 4px 8px;
-  font-size: 0.85rem;
-  margin: 2px;
-  min-width: 70px;
-}
-
-/* --- Toolbar layout --- */
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  justify-content: flex-start;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-}
-
-.toolbar input {
-  flex: 1;
-  min-width: 260px;
-  max-width: 400px;
-}
-
-/* ===== Mobile Enhancements ===== */
-
-@media (max-width: 640px) {
-  .form-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .form-row label,
-  .form-row select {
-    width: 100%;
-    margin-bottom: 8px;
-  }
-
-  .form-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .form-actions .btn {
-    width: 100%;
-  }
-
-  .table-responsive {
-    overflow-x: auto;
-    width: 100%;
-  }
-
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  table th,
-  table td {
-    white-space: nowrap;
-  }
-}
-.sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.sortable:hover {
-  text-decoration: underline;
 }
 
 /* === STATUS BADGES (pastel style) === */
@@ -298,8 +110,22 @@ th { background: #f9f9f9; }
   text-align: center;
   letter-spacing: 0.3px;
 }
+.status-submitted { background-color: #6ea8fe; }
+.status-approved  { background-color: #7bd88f; }
+.status-rejected  { background-color: #f28b82; }
+.status-draft     { background-color: #b0b0b0; }
 
-.status-submitted { background-color: #6ea8fe; } /* pastel blue */
-.status-approved  { background-color: #7bd88f; } /* pastel green */
-.status-rejected  { background-color: #f28b82; } /* pastel red */
-.status-draft     { background-color: #b0b0b0; } /* neutral gray */
+/* Mobile tweaks */
+@media (max-width: 640px) {
+  .toolbar { gap: 10px; }
+  .search-input { flex-basis: 100%; }
+  .container, .container.wide { padding: 16px; margin: 10px; }
+  .table-responsive { overflow-x: auto; }
+}
+
+/* Sortable table headers */
+.sort-btn { border: none; background: transparent; cursor: pointer; font-weight: 600; }
+.sort-btn:hover { text-decoration: underline; }
+
+/* Muted text */
+.muted { opacity: 0.55; }
