@@ -1,3 +1,4 @@
+<!-- ===================== STAFF.HTML ===================== -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,62 +6,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manage Casual Staff</title>
   <link rel="stylesheet" href="style.css" />
-  <script>
-    // dev local: "http://localhost:7071/api"
-    // dev cloud:
-    window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
-  </script>
-  <style>
-    /* small UX touches */
-    .new-row { background: #fff8e7; transition: background .4s ease; }
-    .editing td[contenteditable="true"] { outline: 2px dashed #b48; background: #faf5fb; }
-    .small { padding: 6px 10px; font-size: 0.9rem; }
-    .muted { opacity:.55 }
-  </style>
+  <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
 </head>
-
 <body>
-  <header class="header">
-    <h1>Manage Casual Staff</h1>
-  </header>
-
-  <div class="container">
-    <div class="form-row" style="justify-content: space-between;">
-         <div class="toolbar">
-            <input id="staffFilter" class="search-input" type="text"
-                   placeholder="Filter by name / email / type" />
-          
-            <button id="addBtn" type="button" class="btn danger">➕ Add Employee</button>
-          
-            <button type="button" class="btn"
-                    onclick="window.location.href='manager.html'">🗂 Manage Approvals</button>
-          
-            <button type="button" class="btn"
-                    onclick="window.location.href='index.html'">🏠 Home</button>
-          </div>
+  <header><h1>Manage Casual Staff</h1></header>
+  <div class="container wide">
+    <div class="toolbar">
+      <input id="staffFilter" class="search-input" type="text" placeholder="Filter by name / email / type" />
+      <div>
+        <button id="addBtn" type="button" class="btn danger">➕ Add Employee</button>
+        <button type="button" class="btn secondary" onclick="window.location.href='manager.html'">🗂 Manage Approvals</button>
+        <button type="button" class="btn light" onclick="window.location.href='index.html'">🏠 Home</button>
+      </div>
     </div>
- </div>
-
-    <div class="table-wrap">
+    <div class="table-responsive">
       <table id="staffTable">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>First</th>
-            <th>Last</th>
-            <th>Email</th>
-            <th>Type</th>
-            <th>Active</th>
-            <th class="muted">Mgr ID</th>
-            <th class="muted">CW ID</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody><!-- populated by staff.js --></tbody>
+        <thead><tr><th>ID</th><th>First</th><th>Last</th><th>Email</th><th>Type</th><th>Active</th><th class="muted">Mgr ID</th><th class="muted">CW ID</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
       </table>
     </div>
   </div>
-
-  <script src="staff.js" defer></script>
+  <script src="staff.js"></script>
 </body>
 </html>
