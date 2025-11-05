@@ -1,19 +1,18 @@
 <!-- ===================== MANAGER.HTML ===================== -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manager Timesheet Approvals</title>
-  <link rel="stylesheet" href="style.css" />
-  <script>
-    window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
-  </script>
-</head>
-
+<html lang="en">
+  <header>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <div class="header-content">
+        <img src="InsightSystems_PrimaryLogo_Rev.png" alt="Insight Systems Logo" class="header-logo" />
+          <h1>Time Approvals</h1>
+            <link rel="stylesheet" href="style.css" />
+      </div>
+    <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
+  </header>
 <body>
-  <header><h1>Pending Timesheets for Approval</h1></header>
-
   <div class="container wide">
     <div class="toolbar">
       <input id="filterInput" class="search-input" type="text"
