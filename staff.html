@@ -46,32 +46,50 @@
 
   <script>
     async function loadStaff() {
-      const res = await fetch(`${window.API_BASE}/employees`);
-      const data = await res.json();
-      const tbody = document.querySelector("#staffTable tbody");
-      tbody.innerHTML = "";
+      try {
+        const res = await fetch(`${window.API_BASE}/employees`);
+        const data = await res.json();
+        const tbody = document.querySelector("#staffTable tbody");
+        tbody.innerHTML = "";
 
-      if (!data.ok || !Array.isArray(data.results)) return;
+        if (!data.ok || !Array.isArray(data.results)) {
+          tbody.innerHTML = `<tr><td colspan="9">No staff records found.</td></tr>`;
+          return;
+        }
 
-      for (const emp of data.results) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${emp.employeeId}</td>
-          <td>${emp.firstName}</td>
-          <td>${emp.lastName}</td>
-          <td>${emp.email}</td>
-          <td>${emp.employmentType || "—"}</td>
-          <td><input type="checkbox" ${emp.active ? "checked" : ""} disabled /></td>
-          <td class="muted">${emp.managerId || "—"}</td>
-          <td class="muted">${emp.cwId || "—"}</td>
-          <td>
-            <button class="btn action primary" onclick="editEmployee(${emp.employeeId})">Edit</button>
-            <button class="btn action secondary" onclick="toggleActive(${emp.employeeId}, ${emp.active ? 0 : 1})">
-              ${emp.active ? "Deactivate" : "Activate"}
-            </button>
-            <button class="btn action danger" onclick="deleteEmployee(${emp.employeeId})">Delete</button>
-          </td>`;
-        tbody.appendChild(tr);
+        for (const emp of data.results) {
+          const id = emp.EmployeeID ?? emp.employeeId ?? "—";
+          const first = emp.FirstName ?? emp.firstName ?? "—";
+          const last = emp.LastName ?? emp.lastName ?? "—";
+          const email = emp.Email ?? emp.email ?? "—";
+          const type = emp.EmploymentType ?? emp.employmentType ?? "—";
+          const active = emp.Active ?? emp.active ?? false;
+          const manager = emp.ManagerID ?? emp.managerId ?? "—";
+          const cw = emp.CW_ID ?? emp.cwId ?? "—";
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${id}</td>
+            <td>${first}</td>
+            <td>${last}</td>
+            <td>${email}</td>
+            <td>${type}</td>
+            <td><input type="checkbox" ${active ? "checked" : ""} disabled /></td>
+            <td class="muted">${manager}</td>
+            <td class="muted">${cw}</td>
+            <td>
+              <button class="btn action primary" onclick="editEmployee(${id})">Edit</button>
+              <button class="btn action secondary" onclick="toggleActive(${id}, ${active ? 0 : 1})">
+                ${active ? "Deactivate" : "Activate"}
+              </button>
+              <button class="btn action danger" onclick="deleteEmployee(${id})">Delete</button>
+            </td>`;
+          tbody.appendChild(tr);
+        }
+      } catch (err) {
+        console.error("Error loading staff:", err);
+        const tbody = document.querySelector("#staffTable tbody");
+        tbody.innerHTML = `<tr><td colspan="9">⚠️ Error fetching staff data.</td></tr>`;
       }
     }
 
