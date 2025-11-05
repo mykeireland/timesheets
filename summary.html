@@ -6,9 +6,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Entry Summary</title>
   <link rel="stylesheet" href="style.css" />
-  <script>
-    window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
-  </script>
+  <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
+  <style>
+    /* Overtime row highlight (soft red tint) */
+    tr.overtime-row td {
+      background-color: rgba(242, 139, 130, 0.2);
+    }
+    /* Totals row styling */
+    tr.totals-row td {
+      background: #f5f5f7;
+      font-weight: 700;
+    }
+    /* Make hours look like the rest of the text but align nicely */
+    .hours-group {
+      display: inline-block;
+      background: #f9fafc;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: #333;
+      /* Key change: match normal font, use tabular numbers for alignment */
+      font-family: inherit;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
 </head>
 
 <body>
@@ -67,74 +88,85 @@
   </div>
 
   <script>
+    function num(v){ return Number(v) || 0; }
+
     async function loadSummary() {
       try {
         const res = await fetch(`${window.API_BASE}/timesheets/summary`);
         const data = await res.json();
-
-        const approvedTable = document.querySelector("#approvedTable tbody");
-        const unapprovedTable = document.querySelector("#unapprovedTable tbody");
-        approvedTable.innerHTML = "";
-        unapprovedTable.innerHTML = "";
-
         if (!data.ok) return;
+
+        const approvedBody = document.querySelector("#approvedTable tbody");
+        const unapprovedBody = document.querySelector("#unapprovedTable tbody");
+        approvedBody.innerHTML = "";
+        unapprovedBody.innerHTML = "";
 
         let approvedStd = 0, approvedOT = 0;
         let unapprovedStd = 0, unapprovedOT = 0;
 
-        // --- APPROVED ENTRIES ---
-        for (const entry of data.approved || []) {
-          const isOvertime = entry.hours15x > 0 || entry.hours2x > 0;
+        // ---- APPROVED ENTRIES ----
+        for (const e of (data.approved || [])) {
+          const hs = num(e.hoursStandard), h15 = num(e.hours15x), h2 = num(e.hours2x);
+          const isOT = (h15 + h2) > 0;
+
+          approvedStd += hs;
+          approvedOT += (h15 + h2);
+
           const tr = document.createElement("tr");
-          if (isOvertime) tr.classList.add("overtime-row");
-
-          approvedStd += entry.hoursStandard;
-          approvedOT += entry.hours15x + entry.hours2x;
-
+          if (isOT) tr.classList.add("overtime-row");
           tr.innerHTML = `
-            <td>${entry.name}</td>
-            <td>${entry.summary || "—"}</td>
-            <td>${entry.cwTicketId || "—"}</td>
-            <td>${entry.date}</td>
-            <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
-            <td>${entry.notes || "—"}</td>`;
-          approvedTable.appendChild(tr);
+            <td>${e.name}</td>
+            <td>${e.summary || "—"}</td>
+            <td>${e.cwTicketId || "—"}</td>
+            <td>${e.date}</td>
+            <td><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
+            <td>${e.notes || "—"}</td>
+          `;
+          approvedBody.appendChild(tr);
         }
 
-        // --- UNAPPROVED / REJECTED ENTRIES ---
-        for (const entry of data.unapproved || []) {
-          const isOvertime = entry.hours15x > 0 || entry.hours2x > 0;
-          const tr = document.createElement("tr");
-          if (isOvertime) tr.classList.add("overtime-row");
-
-          unapprovedStd += entry.hoursStandard;
-          unapprovedOT += entry.hours15x + entry.hours2x;
-
-          tr.innerHTML = `
-            <td>${entry.name}</td>
-            <td>${entry.summary || "—"}</td>
-            <td>${entry.cwTicketId || "—"}</td>
-            <td>${entry.date}</td>
-            <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
-            <td><span class="status-badge status-${entry.status.toLowerCase()}">${entry.status}</span></td>
-            <td>${entry.notes || "—"}</td>`;
-          unapprovedTable.appendChild(tr);
-        }
-
-        // --- Add total rows ---
-        const approvedFooter = document.createElement("tr");
-        approvedFooter.innerHTML = `
-          <td colspan="4" style="font-weight:700; text-align:right;">Totals:</td>
+        // Add totals row to approved
+        const trA = document.createElement("tr");
+        trA.className = "totals-row";
+        trA.innerHTML = `
+          <td colspan="4" style="text-align:right;">Totals:</td>
           <td><span class="hours-group">Std: ${approvedStd.toFixed(2)} / OT: ${approvedOT.toFixed(2)}</span></td>
-          <td colspan="2"></td>`;
-        approvedTable.appendChild(approvedFooter);
+          <td></td>
+        `;
+        approvedBody.appendChild(trA);
 
-        const unapprovedFooter = document.createElement("tr");
-        unapprovedFooter.innerHTML = `
-          <td colspan="4" style="font-weight:700; text-align:right;">Totals:</td>
+        // ---- UNAPPROVED / REJECTED ENTRIES ----
+        for (const e of (data.unapproved || [])) {
+          const hs = num(e.hoursStandard), h15 = num(e.hours15x), h2 = num(e.hours2x);
+          const isOT = (h15 + h2) > 0;
+
+          unapprovedStd += hs;
+          unapprovedOT += (h15 + h2);
+
+          const tr = document.createElement("tr");
+          if (isOT) tr.classList.add("overtime-row");
+          tr.innerHTML = `
+            <td>${e.name}</td>
+            <td>${e.summary || "—"}</td>
+            <td>${e.cwTicketId || "—"}</td>
+            <td>${e.date}</td>
+            <td><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
+            <td><span class="status-badge status-${String(e.status||'').toLowerCase()}">${e.status}</span></td>
+            <td>${e.notes || "—"}</td>
+          `;
+          unapprovedBody.appendChild(tr);
+        }
+
+        // Add totals row to unapproved
+        const trU = document.createElement("tr");
+        trU.className = "totals-row";
+        trU.innerHTML = `
+          <td colspan="4" style="text-align:right;">Totals:</td>
           <td><span class="hours-group">Std: ${unapprovedStd.toFixed(2)} / OT: ${unapprovedOT.toFixed(2)}</span></td>
-          <td colspan="2"></td>`;
-        unapprovedTable.appendChild(unapprovedFooter);
+          <td colspan="2"></td>
+        `;
+        unapprovedBody.appendChild(trU);
+
       } catch (err) {
         console.error("Error loading summary:", err);
       }
