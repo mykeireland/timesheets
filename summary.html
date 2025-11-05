@@ -1,17 +1,24 @@
 <!-- ===================== SUMMARY.HTML ===================== -->
 <!DOCTYPE html>
 <html lang="en">
-  <header>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <div class="header-content">
-        <img src="InsightSystems_PrimaryLogo_Rev.png" alt="Insight Systems Logo" class="header-logo" />
-          <h1>Entry Summary</h1>
-            <link rel="stylesheet" href="style.css" />
-      </div>
-    <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
-  </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entry Summary</title>
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
+  </script>
+</head>
+
 <body>
+  <header>
+    <div class="header-content">
+      <img src="InsightSystems_PrimaryLogo_Rev.png" alt="Insight Systems Logo" class="header-logo" />
+      <h1>Entry Summary</h1>
+    </div>
+  </header>
+
   <div class="container">
     <div class="toolbar">
       <input id="filterInput" class="search-input" type="text" placeholder="Filter by name..." />
@@ -21,6 +28,7 @@
       </div>
     </div>
 
+    <!-- APPROVED ENTRIES -->
     <div class="table-responsive">
       <h2>✅ Approved Time Entries</h2>
       <table id="approvedTable">
@@ -38,6 +46,7 @@
       </table>
     </div>
 
+    <!-- UNAPPROVED / REJECTED ENTRIES -->
     <div class="table-responsive" style="margin-top: 2rem;">
       <h2>🕗 Unapproved / Rejected Time Entries</h2>
       <table id="unapprovedTable">
@@ -59,39 +68,75 @@
 
   <script>
     async function loadSummary() {
-      const res = await fetch(`${window.API_BASE}/timesheets/summary`);
-      const data = await res.json();
+      try {
+        const res = await fetch(`${window.API_BASE}/timesheets/summary`);
+        const data = await res.json();
 
-      const approvedTable = document.querySelector("#approvedTable tbody");
-      const unapprovedTable = document.querySelector("#unapprovedTable tbody");
-      approvedTable.innerHTML = "";
-      unapprovedTable.innerHTML = "";
+        const approvedTable = document.querySelector("#approvedTable tbody");
+        const unapprovedTable = document.querySelector("#unapprovedTable tbody");
+        approvedTable.innerHTML = "";
+        unapprovedTable.innerHTML = "";
 
-      if (!data.ok) return;
+        if (!data.ok) return;
 
-      for (const entry of data.approved || []) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${entry.name}</td>
-          <td>${entry.summary || "—"}</td>
-          <td>${entry.cwTicketId || "—"}</td>
-          <td>${entry.date}</td>
-          <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
-          <td>${entry.notes || "—"}</td>`;
-        approvedTable.appendChild(tr);
-      }
+        let approvedStd = 0, approvedOT = 0;
+        let unapprovedStd = 0, unapprovedOT = 0;
 
-      for (const entry of data.unapproved || []) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${entry.name}</td>
-          <td>${entry.summary || "—"}</td>
-          <td>${entry.cwTicketId || "—"}</td>
-          <td>${entry.date}</td>
-          <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
-          <td><span class="status-badge status-${entry.status.toLowerCase()}">${entry.status}</span></td>
-          <td>${entry.notes || "—"}</td>`;
-        unapprovedTable.appendChild(tr);
+        // --- APPROVED ENTRIES ---
+        for (const entry of data.approved || []) {
+          const isOvertime = entry.hours15x > 0 || entry.hours2x > 0;
+          const tr = document.createElement("tr");
+          if (isOvertime) tr.classList.add("overtime-row");
+
+          approvedStd += entry.hoursStandard;
+          approvedOT += entry.hours15x + entry.hours2x;
+
+          tr.innerHTML = `
+            <td>${entry.name}</td>
+            <td>${entry.summary || "—"}</td>
+            <td>${entry.cwTicketId || "—"}</td>
+            <td>${entry.date}</td>
+            <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
+            <td>${entry.notes || "—"}</td>`;
+          approvedTable.appendChild(tr);
+        }
+
+        // --- UNAPPROVED / REJECTED ENTRIES ---
+        for (const entry of data.unapproved || []) {
+          const isOvertime = entry.hours15x > 0 || entry.hours2x > 0;
+          const tr = document.createElement("tr");
+          if (isOvertime) tr.classList.add("overtime-row");
+
+          unapprovedStd += entry.hoursStandard;
+          unapprovedOT += entry.hours15x + entry.hours2x;
+
+          tr.innerHTML = `
+            <td>${entry.name}</td>
+            <td>${entry.summary || "—"}</td>
+            <td>${entry.cwTicketId || "—"}</td>
+            <td>${entry.date}</td>
+            <td><span class="hours-group">${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}</span></td>
+            <td><span class="status-badge status-${entry.status.toLowerCase()}">${entry.status}</span></td>
+            <td>${entry.notes || "—"}</td>`;
+          unapprovedTable.appendChild(tr);
+        }
+
+        // --- Add total rows ---
+        const approvedFooter = document.createElement("tr");
+        approvedFooter.innerHTML = `
+          <td colspan="4" style="font-weight:700; text-align:right;">Totals:</td>
+          <td><span class="hours-group">Std: ${approvedStd.toFixed(2)} / OT: ${approvedOT.toFixed(2)}</span></td>
+          <td colspan="2"></td>`;
+        approvedTable.appendChild(approvedFooter);
+
+        const unapprovedFooter = document.createElement("tr");
+        unapprovedFooter.innerHTML = `
+          <td colspan="4" style="font-weight:700; text-align:right;">Totals:</td>
+          <td><span class="hours-group">Std: ${unapprovedStd.toFixed(2)} / OT: ${unapprovedOT.toFixed(2)}</span></td>
+          <td colspan="2"></td>`;
+        unapprovedTable.appendChild(unapprovedFooter);
+      } catch (err) {
+        console.error("Error loading summary:", err);
       }
     }
 
