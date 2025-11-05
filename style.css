@@ -1,294 +1,123 @@
-/* ===================== GLOBAL BASE ===================== */
-body {
-  font-family: Calibri, sans-serif;
-  background-color: #f5f7fa;
+/* ---------- Base Layout ---------- */
+html, body {
   margin: 0;
   padding: 0;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #fafafa;
   color: #222;
 }
 
-h1, h2 {
-  font-weight: 700;
-  margin: 0.5rem 0;
-}
-
-h2 {
-  text-align: center;
-  margin-top: 1rem;
-  margin-bottom: 0.8rem;
-}
-
-/* ===================== HEADER ===================== */
-header {
-  background-color: #b73229;
-  color: #fff;
-  padding: 14px 20px;
-  border-bottom: 4px solid #a02a22;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  position: relative;
-  flex-wrap: nowrap;
-}
-
-.header-logo {
-  position: absolute;
-  left: 20px;
-  height: 38px;
-  width: auto;
-}
-
-header h1 {
-  font-size: 1.6rem;
-  font-weight: 700;
-  text-align: center;
-  margin: 0;
-  color: #fff;
-}
-
-/* ===================== CONTAINERS ===================== */
+/* ---------- Containers ---------- */
 .container {
-  max-width: 1100px;
-  margin: 20px auto;
-  background: #fff;
-  padding: 20px 30px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
 }
 
 .container.wide {
-  max-width: 1300px;
+  max-width: 95%;
+  margin: 0 auto;
+  padding: 24px;
 }
 
-/* ===================== TOOLBARS ===================== */
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
+/* ---------- Headings ---------- */
+h1, h2, h3 {
+  color: #222;
+  font-weight: 600;
+  margin-bottom: 12px;
 }
 
-.search-input {
-  flex: 1 1 360px;
-  min-width: 240px;
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #d0d0d7;
-  border-radius: 8px;
-  font-size: 16px;
-}
-
-/* ===================== TABLES ===================== */
-.table-responsive {
-  overflow-x: auto;
-  width: 100%;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  background: #fff;
-  margin-top: 15px;
-}
-
+/* ---------- Tables ---------- */
 table {
   width: 100%;
   border-collapse: collapse;
-  border-spacing: 0;
-  font-size: 0.95rem;
-}
-
-th, td {
-  border: 1px solid #e0e0e0;
-  padding: 8px 10px;
-  text-align: center;
-  vertical-align: middle;
-}
-
-th {
-  background: #f9f9f9;
-  font-weight: 600;
-}
-
-tr:nth-child(even) {
-  background: #fafafa;
-}
-
-/* Monospace block for hours display */
-.hours-group {
-  display: inline-block;
-  background: #f9fafc;
-  font-family: monospace;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  color: #333;
-}
-
-/* ===================== BUTTONS ===================== */
-.btn {
-  padding: 6px 12px;
-  margin: 4px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 15px;
-  height: 40px;
-  line-height: 1.1;
-}
-
-.btn:hover {
-  opacity: 0.9;
-}
-
-.btn.primary   { background: #007bff; color: #fff; }
-.btn.secondary { background: #6c757d; color: #fff; }
-.btn.danger    { background: #dc3545; color: #fff; }
-.btn.light     { background: #e0e0e0; color: #000; }
-
-.btn.small {
-  padding: 3px 6px;
-  font-size: 0.8rem;
-  margin: 1px;
-  line-height: 1.1;
-}
-
-/* Compact, flatter action buttons ONLY in Manage Staff table */
-#staffTable td .btn {
-  height: 24px;              
-  padding: 2px 14px;         
-  font-size: 0.8rem;
-  line-height: 1.2;
-  border-radius: 6px;
-  margin: 2px 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#staffTable td .btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* ===================== FORM ELEMENTS ===================== */
-.form-row { margin-bottom: 15px; }
-.form-actions { margin-top: 15px; }
-
-select,
-input[type="date"],
-input[type="number"],
-input[type="text"] {
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  font-size: 0.9rem;
-}
-
-/* ===================== STATUS BADGES ===================== */
-.status-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #fff;
-  text-transform: capitalize;
-  min-width: 80px;
-  text-align: center;
-  letter-spacing: 0.3px;
-}
-
-.status-submitted { background-color: #6ea8fe; } /* pastel blue */
-.status-approved  { background-color: #7bd88f; } /* pastel green */
-.status-rejected  { background-color: #f28b82; } /* pastel red */
-.status-draft     { background-color: #b0b0b0; } /* neutral gray */
-
-/* ===================== STAFF TABLE (COMPACT LAYOUT) ===================== */
-#staffTable {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: auto;
-  font-size: 0.9rem;
-}
-
-#staffTable th,
-#staffTable td {
-  padding: 4px 6px;
-  text-align: left;
+  background-color: #fff;
   border: 1px solid #ddd;
-  vertical-align: middle;
-  height: 28px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 
-#staffTable th {
-  background: #f8f9fa;
-  font-weight: 700;
-  height: 32px;
-}
-
-#staffTable td input[type="text"],
-#staffTable td input[type="email"],
-#staffTable td select {
-  padding: 3px 4px;
-  font-size: 0.85rem;
-}
-
-#staffTable td input[type="checkbox"] {
-  transform: scale(0.9);
-  margin: 0;
-  vertical-align: middle;
-}
-
-/* ===================== SORTABLE HEADERS ===================== */
-.sort-btn {
-  border: none;
-  background: transparent;
-  cursor: pointer;
+thead th {
+  background-color: #333;           /* Dark grey header */
+  color: #fff;                      /* White text */
+  text-align: left;
+  padding: 10px 12px;
   font-weight: 600;
+  font-size: 0.95rem;
+  position: sticky;
+  top: 0;
 }
 
-.sort-btn:hover { text-decoration: underline; }
-
-/* ===================== MUTED TEXT ===================== */
-.muted { opacity: 0.55; }
-
-/* ===================== RESPONSIVE FIXES ===================== */
-@media (max-width: 640px) {
-  .toolbar { gap: 10px; }
-  .search-input { flex-basis: 100%; }
-  .container, .container.wide {
-    padding: 16px;
-    margin: 10px;
-  }
-  .table-responsive { overflow-x: auto; }
-  table { font-size: 0.9rem; }
-  th, td { padding: 6px 8px; }
-
-  /* ===================== SUMMARY PAGE HIGHLIGHT ===================== */
-tr.overtime-row td {
-  background-color: rgba(242, 139, 130, 0.2); /* same red tone, 20% opacity */
+tbody td {
+  padding: 10px 12px;
+  border-top: 1px solid #e3e3e3;
+  vertical-align: middle;
+  font-size: 0.93rem;
 }
-  
-  /* Stack header logo and title vertically */
-  .header-content {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
 
-  .header-logo {
-    position: static;
-    height: 32px;
-    margin-bottom: 4px;
-  }
+tbody tr:nth-child(even) {
+  background-color: #f7f7f7;
+}
 
-  header h1 {
-    font-size: 1.3rem;
-    text-align: center;
+tbody tr:hover {
+  background-color: #f0f0f0;
+}
+
+/* ---------- Buttons ---------- */
+button {
+  background-color: #0078d7;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: #005a9e;
+}
+
+/* ---------- Hours Groups / Totals ---------- */
+.hours-group {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ---------- Utility ---------- */
+.center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+  thead {
+    display: none;
+  }
+  tr {
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 8px;
+    background-color: #fff;
+  }
+  td {
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+  }
+  td::before {
+    content: attr(data-label);
+    font-weight: 600;
   }
 }
