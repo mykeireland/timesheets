@@ -228,7 +228,7 @@ input[type="text"] {
 }
 
 #staffTable th {
-  background: #f8f9fa; /* unchanged: staff table keeps original light header */
+  background: #4b4b4b; /* unchanged: staff table keeps original light header */
   font-weight: 700;
   height: 32px;
 }
