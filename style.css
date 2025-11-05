@@ -297,3 +297,34 @@ input[type="text"] {
   }
   .form-actions .btn { width: 100%; }
 }
+
+/* ===================== HEADER WITH LOGO ===================== */
+header {
+  background-color: #b73229;
+  color: #fff;
+  padding: 14px 20px;
+  border-bottom: 4px solid #a02a22;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+}
+
+.header-logo {
+  position: absolute;
+  left: 20px;
+  height: 38px;
+  width: auto;
+}
+
+header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+  color: #fff;
+}
