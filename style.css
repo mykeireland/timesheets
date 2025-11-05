@@ -20,10 +20,11 @@ h2 {
 
 /* ===================== HEADER ===================== */
 header {
-  background-color: #b73229;
+  /* CHANGED: red -> dark grey */
+  background-color: #222;
   color: #fff;
   padding: 14px 20px;
-  border-bottom: 4px solid #a02a22;
+  border-bottom: 4px solid #1a1a1a; /* slightly darker edge */
 }
 
 .header-content {
@@ -109,7 +110,9 @@ th, td {
 }
 
 th {
-  background: #f9f9f9;
+  /* CHANGED: light grey -> medium grey + white text */
+  background: #4b4b4b;
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -225,7 +228,7 @@ input[type="text"] {
 }
 
 #staffTable th {
-  background: #f8f9fa;
+  background: #f8f9fa; /* unchanged: staff table keeps original light header */
   font-weight: 700;
   height: 32px;
 }
@@ -269,9 +272,9 @@ input[type="text"] {
   th, td { padding: 6px 8px; }
 
   /* ===================== SUMMARY PAGE HIGHLIGHT ===================== */
-tr.overtime-row td {
-  background-color: rgba(242, 139, 130, 0.2); /* same red tone, 20% opacity */
-}
+  tr.overtime-row td {
+    background-color: rgba(242, 139, 130, 0.2); /* same red tone, 20% opacity */
+  }
   
   /* Stack header logo and title vertically */
   .header-content {
