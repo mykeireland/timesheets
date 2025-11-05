@@ -7,14 +7,6 @@ body {
   color: #222;
 }
 
-header {
-  background-color: #b73229;
-  color: #fff;
-  padding: 20px;
-  text-align: center;
-  border-bottom: 4px solid #a02a22;
-}
-
 h1, h2 {
   font-weight: 700;
   margin: 0.5rem 0;
@@ -24,6 +16,38 @@ h2 {
   text-align: center;
   margin-top: 1rem;
   margin-bottom: 0.8rem;
+}
+
+/* ===================== HEADER ===================== */
+header {
+  background-color: #b73229;
+  color: #fff;
+  padding: 14px 20px;
+  border-bottom: 4px solid #a02a22;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  flex-wrap: nowrap;
+}
+
+.header-logo {
+  position: absolute;
+  left: 20px;
+  height: 38px;
+  width: auto;
+}
+
+header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+  color: #fff;
 }
 
 /* ===================== CONTAINERS ===================== */
@@ -132,14 +156,27 @@ tr:nth-child(even) {
   line-height: 1.1;
 }
 
-/* ===================== FORM ELEMENTS ===================== */
-.form-row {
-  margin-bottom: 15px;
+/* Compact, flatter action buttons ONLY in Manage Staff table */
+#staffTable td .btn {
+  height: 24px;              
+  padding: 2px 14px;         
+  font-size: 0.8rem;
+  line-height: 1.2;
+  border-radius: 6px;
+  margin: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.form-actions {
-  margin-top: 15px;
+#staffTable td .btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
+
+/* ===================== FORM ELEMENTS ===================== */
+.form-row { margin-bottom: 15px; }
+.form-actions { margin-top: 15px; }
 
 select,
 input[type="date"],
@@ -170,39 +207,6 @@ input[type="text"] {
 .status-rejected  { background-color: #f28b82; } /* pastel red */
 .status-draft     { background-color: #b0b0b0; } /* neutral gray */
 
-/* --- COMPACT ROWS FOR MANAGE STAFF PAGE --- */
-#staffTable th,
-#staffTable td {
-  padding: 4px 6px;          /* tighter spacing */
-  height: 28px;              /* reduced vertical height */
-  font-size: 0.9rem;
-  vertical-align: middle;
-}
-
-/* --- FLATTER ACTION BUTTONS (Edit / Save / etc.) --- */
-#staffTable td .btn {
-  height: 24px;              /* lower profile */
-  padding: 2px 14px;         /* wider rectangle */
-  font-size: 0.8rem;
-  line-height: 1.2;
-  border-radius: 6px;
-  margin: 2px 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#staffTable td .btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* --- Slightly smaller checkbox to match compact rows --- */
-#staffTable td input[type="checkbox"] {
-  transform: scale(0.9);
-  vertical-align: middle;
-}
-
 /* ===================== STAFF TABLE (COMPACT LAYOUT) ===================== */
 #staffTable {
   width: 100%;
@@ -217,16 +221,13 @@ input[type="text"] {
   text-align: left;
   border: 1px solid #ddd;
   vertical-align: middle;
+  height: 28px;
 }
 
 #staffTable th {
   background: #f8f9fa;
   font-weight: 700;
   height: 32px;
-}
-
-#staffTable td {
-  height: 28px;
 }
 
 #staffTable td input[type="text"],
@@ -237,30 +238,10 @@ input[type="text"] {
 }
 
 #staffTable td input[type="checkbox"] {
-  transform: scale(1);
+  transform: scale(0.9);
   margin: 0;
   vertical-align: middle;
 }
-
-#staffTable .btn.small {
-  padding: 3px 6px;
-  font-size: 0.8rem;
-  margin: 1px;
-  line-height: 1.1;
-}
-
-/* Column widths for clarity */
-#staffTable th:nth-child(1), #staffTable td:nth-child(1) { width: 50px; text-align: center; }
-#staffTable th:nth-child(2), #staffTable td:nth-child(2) { width: 130px; }
-#staffTable th:nth-child(3), #staffTable td:nth-child(3) { width: 130px; }
-#staffTable th:nth-child(4), #staffTable td:nth-child(4) { width: 200px; }
-#staffTable th:nth-child(5), #staffTable td:nth-child(5) { width: 100px; text-align: center; }
-#staffTable th:nth-child(6), #staffTable td:nth-child(6) { width: 80px; text-align: center; }
-#staffTable th:nth-child(7), #staffTable td:nth-child(7),
-#staffTable th:nth-child(8), #staffTable td:nth-child(8) {
-  width: 90px; text-align: center;
-}
-#staffTable th:nth-child(9), #staffTable td:nth-child(9) { width: 140px; text-align: center; }
 
 /* ===================== SORTABLE HEADERS ===================== */
 .sort-btn {
@@ -270,16 +251,12 @@ input[type="text"] {
   font-weight: 600;
 }
 
-.sort-btn:hover {
-  text-decoration: underline;
-}
+.sort-btn:hover { text-decoration: underline; }
 
 /* ===================== MUTED TEXT ===================== */
-.muted {
-  opacity: 0.55;
-}
+.muted { opacity: 0.55; }
 
-/* ===================== MOBILE ADAPTATION ===================== */
+/* ===================== RESPONSIVE FIXES ===================== */
 @media (max-width: 640px) {
   .toolbar { gap: 10px; }
   .search-input { flex-basis: 100%; }
@@ -290,41 +267,23 @@ input[type="text"] {
   .table-responsive { overflow-x: auto; }
   table { font-size: 0.9rem; }
   th, td { padding: 6px 8px; }
-  .form-actions {
-    display: flex;
+
+  /* Stack header logo and title vertically */
+  .header-content {
     flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
-  .form-actions .btn { width: 100%; }
-}
 
-/* ===================== HEADER WITH LOGO ===================== */
-header {
-  background-color: #b73229;
-  color: #fff;
-  padding: 14px 20px;
-  border-bottom: 4px solid #a02a22;
-}
+  .header-logo {
+    position: static;
+    height: 32px;
+    margin-bottom: 4px;
+  }
 
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  position: relative;
-}
-
-.header-logo {
-  position: absolute;
-  left: 20px;
-  height: 38px;
-  width: auto;
-}
-
-header h1 {
-  font-size: 1.6rem;
-  font-weight: 700;
-  text-align: center;
-  margin: 0;
-  color: #fff;
+  header h1 {
+    font-size: 1.3rem;
+    text-align: center;
+  }
 }
