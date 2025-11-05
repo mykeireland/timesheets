@@ -268,6 +268,11 @@ input[type="text"] {
   table { font-size: 0.9rem; }
   th, td { padding: 6px 8px; }
 
+  /* ===================== SUMMARY PAGE HIGHLIGHT ===================== */
+tr.overtime-row td {
+  background-color: rgba(242, 139, 130, 0.2); /* same red tone, 20% opacity */
+}
+  
   /* Stack header logo and title vertically */
   .header-content {
     flex-direction: column;
