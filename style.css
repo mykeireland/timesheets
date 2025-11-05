@@ -170,6 +170,39 @@ input[type="text"] {
 .status-rejected  { background-color: #f28b82; } /* pastel red */
 .status-draft     { background-color: #b0b0b0; } /* neutral gray */
 
+/* --- COMPACT ROWS FOR MANAGE STAFF PAGE --- */
+#staffTable th,
+#staffTable td {
+  padding: 4px 6px;          /* tighter spacing */
+  height: 28px;              /* reduced vertical height */
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+/* --- FLATTER ACTION BUTTONS (Edit / Save / etc.) --- */
+#staffTable td .btn {
+  height: 24px;              /* lower profile */
+  padding: 2px 14px;         /* wider rectangle */
+  font-size: 0.8rem;
+  line-height: 1.2;
+  border-radius: 6px;
+  margin: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#staffTable td .btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* --- Slightly smaller checkbox to match compact rows --- */
+#staffTable td input[type="checkbox"] {
+  transform: scale(0.9);
+  vertical-align: middle;
+}
+
 /* ===================== STAFF TABLE (COMPACT LAYOUT) ===================== */
 #staffTable {
   width: 100%;
