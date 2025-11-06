@@ -34,10 +34,22 @@
         </table>
       </div>
       <div id="queuedEntries" style="margin-top:20px; display:none;">
-        <h3>Queued Entries</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3 style="margin:0;">Queued Entries</h3>
+          <input id="queueFilter" class="search-input" type="text" placeholder="Filter queue..." style="max-width:300px;" />
+        </div>
         <div class="table-responsive">
           <table>
-            <thead><tr><th>Date</th><th>Employee</th><th>Ticket</th><th>Std</th><th>1.5x</th><th>2x</th><th>Notes</th><th>Action</th></tr></thead>
+            <thead><tr>
+              <th data-field="date">Date <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+              <th data-field="employeeName">Employee <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+              <th data-field="ticketName">Ticket <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+              <th data-field="hoursStandard">Std <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+              <th data-field="hours15x">1.5x <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+              <th data-field="hours2x">2x <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+              <th data-field="notes">Notes <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+              <th>Action</th>
+            </tr></thead>
             <tbody id="queueTable"></tbody>
           </table>
         </div>

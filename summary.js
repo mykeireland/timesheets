@@ -3,6 +3,21 @@
 // Use the global API_BASE defined in config.js
 const API_BASE = window.API_BASE;
 
+// State management
+const state = {
+  approved: [],
+  unapproved: [],
+  filterText: "",
+  sortField: {
+    approved: null,
+    unapproved: null
+  },
+  sortDir: {
+    approved: 1,
+    unapproved: 1
+  }
+};
+
 function num(v) {
   return Number(v) || 0;
 }
@@ -23,34 +38,98 @@ async function loadSummary() {
       throw new Error("Failed to load summary");
     }
 
-    const approvedBody = document.querySelector("#approvedTable tbody");
-    const unapprovedBody = document.querySelector("#unapprovedTable tbody");
+    // Store raw data with computed total hours for sorting
+    state.approved = (data.approved || []).map(e => ({
+      ...e,
+      hours: num(e.hoursStandard) + num(e.hours15x) + num(e.hours2x)
+    }));
 
-    if (!approvedBody || !unapprovedBody) {
-      console.error("Table bodies not found");
-      return;
-    }
+    state.unapproved = (data.unapproved || []).map(e => ({
+      ...e,
+      hours: num(e.hoursStandard) + num(e.hours15x) + num(e.hours2x)
+    }));
 
-    approvedBody.innerHTML = "";
-    unapprovedBody.innerHTML = "";
+    renderTables();
+  } catch (err) {
+    console.error("Error loading summary:", err);
+    alert("Failed to load summary: " + err.message);
+  }
+}
 
-    let approvedStd = 0,
-      approvedOT = 0;
-    let unapprovedStd = 0,
-      unapprovedOT = 0;
+function applyFilterAndSort(entries, tableType) {
+  let rows = [...entries];
 
-    // ---- APPROVED ENTRIES ----
-    for (const e of data.approved || []) {
-      const hs = num(e.hoursStandard),
-        h15 = num(e.hours15x),
-        h2 = num(e.hours2x);
-      const isOT = h15 + h2 > 0;
+  // Apply filter
+  if (state.filterText) {
+    const q = state.filterText.toLowerCase();
+    rows = rows.filter(e =>
+      [e.name, e.summary, e.cwTicketId, e.date, e.notes, e.status]
+        .map(x => String(x || "").toLowerCase())
+        .some(s => s.includes(q))
+    );
+  }
 
-      approvedStd += hs;
-      approvedOT += h15 + h2;
+  // Apply sort
+  const sortField = state.sortField[tableType];
+  const sortDir = state.sortDir[tableType];
 
-      const tr = document.createElement("tr");
-      if (isOT) tr.classList.add("overtime-row");
+  if (sortField) {
+    rows.sort((a, b) => {
+      let va = a[sortField] ?? "";
+      let vb = b[sortField] ?? "";
+
+      // For hours, sort numerically
+      if (sortField === "hours") {
+        va = Number(va) || 0;
+        vb = Number(vb) || 0;
+        return (va - vb) * sortDir;
+      }
+
+      // For text fields, sort as strings
+      va = String(va).toLowerCase();
+      vb = String(vb).toLowerCase();
+      if (va < vb) return -1 * sortDir;
+      if (va > vb) return 1 * sortDir;
+      return 0;
+    });
+  }
+
+  return rows;
+}
+
+function renderTables() {
+  renderTable("approved", state.approved);
+  renderTable("unapproved", state.unapproved);
+}
+
+function renderTable(tableType, entries) {
+  const tableBody = document.querySelector(`#${tableType}Table tbody`);
+  if (!tableBody) {
+    console.error(`Table body for ${tableType} not found`);
+    return;
+  }
+
+  tableBody.innerHTML = "";
+
+  const rows = applyFilterAndSort(entries, tableType);
+
+  let totalStd = 0;
+  let totalOT = 0;
+
+  // Render data rows
+  for (const e of rows) {
+    const hs = num(e.hoursStandard);
+    const h15 = num(e.hours15x);
+    const h2 = num(e.hours2x);
+    const isOT = h15 + h2 > 0;
+
+    totalStd += hs;
+    totalOT += h15 + h2;
+
+    const tr = document.createElement("tr");
+    if (isOT) tr.classList.add("overtime-row");
+
+    if (tableType === "approved") {
       tr.innerHTML = `
         <td>${escapeHtml(e.name)}</td>
         <td>${escapeHtml(e.summary || "—")}</td>
@@ -59,31 +138,7 @@ async function loadSummary() {
         <td><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
         <td>${escapeHtml(e.notes || "—")}</td>
       `;
-      approvedBody.appendChild(tr);
-    }
-
-    // Add totals row to approved
-    const trA = document.createElement("tr");
-    trA.className = "totals-row";
-    trA.innerHTML = `
-      <td colspan="4" style="text-align:right;">Totals:</td>
-      <td><span class="hours-group">Std: ${approvedStd.toFixed(2)} / OT: ${approvedOT.toFixed(2)}</span></td>
-      <td></td>
-    `;
-    approvedBody.appendChild(trA);
-
-    // ---- UNAPPROVED / REJECTED ENTRIES ----
-    for (const e of data.unapproved || []) {
-      const hs = num(e.hoursStandard),
-        h15 = num(e.hours15x),
-        h2 = num(e.hours2x);
-      const isOT = h15 + h2 > 0;
-
-      unapprovedStd += hs;
-      unapprovedOT += h15 + h2;
-
-      const tr = document.createElement("tr");
-      if (isOT) tr.classList.add("overtime-row");
+    } else {
       tr.innerHTML = `
         <td>${escapeHtml(e.name)}</td>
         <td>${escapeHtml(e.summary || "—")}</td>
@@ -93,22 +148,47 @@ async function loadSummary() {
         <td><span class="status-badge status-${escapeHtml(String(e.status || "").toLowerCase())}">${escapeHtml(e.status)}</span></td>
         <td>${escapeHtml(e.notes || "—")}</td>
       `;
-      unapprovedBody.appendChild(tr);
     }
 
-    // Add totals row to unapproved
-    const trU = document.createElement("tr");
-    trU.className = "totals-row";
-    trU.innerHTML = `
+    tableBody.appendChild(tr);
+  }
+
+  // Add totals row
+  const trTotals = document.createElement("tr");
+  trTotals.className = "totals-row";
+
+  if (tableType === "approved") {
+    trTotals.innerHTML = `
       <td colspan="4" style="text-align:right;">Totals:</td>
-      <td><span class="hours-group">Std: ${unapprovedStd.toFixed(2)} / OT: ${unapprovedOT.toFixed(2)}</span></td>
+      <td><span class="hours-group">Std: ${totalStd.toFixed(2)} / OT: ${totalOT.toFixed(2)}</span></td>
+      <td></td>
+    `;
+  } else {
+    trTotals.innerHTML = `
+      <td colspan="4" style="text-align:right;">Totals:</td>
+      <td><span class="hours-group">Std: ${totalStd.toFixed(2)} / OT: ${totalOT.toFixed(2)}</span></td>
       <td colspan="2"></td>
     `;
-    unapprovedBody.appendChild(trU);
-  } catch (err) {
-    console.error("Error loading summary:", err);
-    alert("Failed to load summary: " + err.message);
   }
+
+  tableBody.appendChild(trTotals);
+}
+
+function updateSortIcons(tableType) {
+  const table = document.querySelector(`#${tableType}Table`);
+  if (!table) return;
+
+  table.querySelectorAll("th[data-field]").forEach(th => {
+    const field = th.getAttribute("data-field");
+    const icon = th.querySelector(".sort-icon");
+    if (!icon) return;
+
+    if (field === state.sortField[tableType]) {
+      icon.textContent = state.sortDir[tableType] === 1 ? "↑" : "↓";
+    } else {
+      icon.textContent = "⇅";
+    }
+  });
 }
 
 // Navigation handlers
@@ -128,7 +208,44 @@ function setupNavigation() {
   });
 }
 
+function setupFilterAndSort() {
+  // Filter input handler
+  const filterInput = document.getElementById("filterInput");
+  if (filterInput) {
+    filterInput.addEventListener("input", () => {
+      state.filterText = filterInput.value.trim().toLowerCase();
+      renderTables();
+    });
+  }
+
+  // Sort button click handler
+  document.addEventListener("click", (ev) => {
+    const sortBtn = ev.target.closest(".sort-btn");
+    if (!sortBtn) return;
+
+    const th = sortBtn.closest("th");
+    if (!th) return;
+
+    const field = th.getAttribute("data-field");
+    const tableType = sortBtn.getAttribute("data-table");
+
+    if (!field || !tableType) return;
+
+    // Toggle sort direction if clicking same field, otherwise reset to ascending
+    if (state.sortField[tableType] === field) {
+      state.sortDir[tableType] *= -1;
+    } else {
+      state.sortField[tableType] = field;
+      state.sortDir[tableType] = 1;
+    }
+
+    updateSortIcons(tableType);
+    renderTable(tableType, state[tableType]);
+  });
+}
+
 window.addEventListener("DOMContentLoaded", () => {
-  loadSummary();
   setupNavigation();
+  setupFilterAndSort();
+  loadSummary();
 });

@@ -94,8 +94,19 @@
 
     if (state.sortField) {
       rows.sort((a, b) => {
-        const va = (a[state.sortField] ?? "").toString().toLowerCase();
-        const vb = (b[state.sortField] ?? "").toString().toLowerCase();
+        let va = a[state.sortField] ?? "";
+        let vb = b[state.sortField] ?? "";
+
+        // For hours, sort numerically
+        if (state.sortField === "hours") {
+          va = Number(va) || 0;
+          vb = Number(vb) || 0;
+          return (va - vb) * state.sortDir;
+        }
+
+        // For text fields, sort as strings
+        va = va.toString().toLowerCase();
+        vb = vb.toString().toLowerCase();
         if (va < vb) return -1 * state.sortDir;
         if (va > vb) return 1 * state.sortDir;
         return 0;

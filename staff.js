@@ -9,6 +9,8 @@ const API_BASE = window.API_BASE;
 
 let employees = [];
 let filterText = "";
+let sortField = null;
+let sortDir = 1; // 1 = ascending, -1 = descending
 
 document.addEventListener("DOMContentLoaded", () => {
   const tableBody = document.querySelector("#staffTable tbody");
@@ -44,6 +46,29 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "index.html";
     });
   }
+
+  // Sort button click handler
+  document.addEventListener("click", (ev) => {
+    const sortBtn = ev.target.closest(".sort-btn");
+    if (!sortBtn) return;
+
+    const th = sortBtn.closest("th");
+    if (!th) return;
+
+    const field = th.getAttribute("data-field");
+    if (!field) return;
+
+    // Toggle sort direction if clicking same field, otherwise reset to ascending
+    if (sortField === field) {
+      sortDir *= -1;
+    } else {
+      sortField = field;
+      sortDir = 1;
+    }
+
+    updateSortIcons();
+    renderTable(tableBody);
+  });
 
   loadEmployees(tableBody);
 });
@@ -97,6 +122,8 @@ async function loadEmployees(tbody) {
 
 function renderTable(tbody) {
   let rows = employees;
+
+  // Apply filter
   if (filterText) {
     rows = rows.filter(e =>
       [e.first_name, e.last_name, e.email, e.type]
@@ -104,6 +131,37 @@ function renderTable(tbody) {
         .join(" ")
         .includes(filterText)
     );
+  }
+
+  // Apply sort
+  if (sortField) {
+    rows.sort((a, b) => {
+      let va = a[sortField];
+      let vb = b[sortField];
+
+      // Handle null/undefined values
+      if (va === null || va === undefined) va = "";
+      if (vb === null || vb === undefined) vb = "";
+
+      // For numeric fields, compare as numbers
+      if (sortField === "employee_id" || sortField === "manager_employee_id" || sortField === "cw_member_id") {
+        va = Number(va) || 0;
+        vb = Number(vb) || 0;
+        return (va - vb) * sortDir;
+      }
+
+      // For boolean (active)
+      if (sortField === "active") {
+        return (Number(va) - Number(vb)) * sortDir;
+      }
+
+      // For text fields, compare as strings
+      va = String(va).toLowerCase();
+      vb = String(vb).toLowerCase();
+      if (va < vb) return -1 * sortDir;
+      if (va > vb) return 1 * sortDir;
+      return 0;
+    });
   }
 
   if (!rows.length) {
@@ -258,6 +316,20 @@ async function onSaveClick(btn) {
     console.error("Update employee error:", err);
     alert(`Failed to update employee: ${err.message}`);
   }
+}
+
+function updateSortIcons() {
+  document.querySelectorAll("#staffTable th[data-field]").forEach(th => {
+    const field = th.getAttribute("data-field");
+    const icon = th.querySelector(".sort-icon");
+    if (!icon) return;
+
+    if (field === sortField) {
+      icon.textContent = sortDir === 1 ? "↑" : "↓";
+    } else {
+      icon.textContent = "⇅";
+    }
+  });
 }
 
 // helpers
