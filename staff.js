@@ -126,7 +126,7 @@ function renderTable(tbody) {
         <td contenteditable="false">${e.manager_employee_id ?? ""}</td>
         <td contenteditable="false">${e.cw_member_id ?? ""}</td>
         <td>
-          <button class="btn small edit">Edit</button>
+          <button class="btn secondary small edit">Edit</button>
           <button class="btn primary small save" style="display:none;">Save</button>
         </td>
       </tr>`
@@ -165,8 +165,8 @@ function onAddClick(tbody) {
     <td><input type="number" placeholder="Mgr ID"></td>
     <td><input type="number" placeholder="CW ID"></td>
     <td>
-      <button class="btn primary small save-new">💾 Save</button>
-      <button class="btn danger small cancel-new">✖ Cancel</button>
+      <button class="btn primary small save-new">Save</button>
+      <button class="btn secondary small cancel-new">Cancel</button>
     </td>`;
   tbody.prepend(tr);
 
