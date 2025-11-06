@@ -29,14 +29,14 @@
       <table id="staffTable">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>First</th>
-            <th>Last</th>
-            <th>Email</th>
-            <th>Type</th>
-            <th>Active</th>
-            <th class="muted">Mgr ID</th>
-            <th class="muted">CW ID</th>
+            <th data-field="employee_id">ID <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+            <th data-field="first_name">First <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+            <th data-field="last_name">Last <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+            <th data-field="email">Email <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+            <th data-field="type">Type <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+            <th data-field="active">Active <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+            <th class="muted" data-field="manager_employee_id">Mgr ID <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
+            <th class="muted" data-field="cw_member_id">CW ID <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
             <th>Actions</th>
           </tr>
         </thead>

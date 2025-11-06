@@ -6,6 +6,11 @@ const API_BASE = window.API_BASE;
 // Simple queue of timesheet entries before submission
 let queuedEntries = [];
 
+// Filtering and sorting state
+let queueFilterText = "";
+let queueSortField = null;
+let queueSortDir = 1; // 1 = ascending, -1 = descending
+
 // ---------- LOAD EMPLOYEES ----------
 async function loadEmployees() {
   const select = document.getElementById("employeeSelect");
@@ -121,7 +126,47 @@ function renderQueue() {
     return;
   }
 
-  queuedEntries.forEach((e, i) => {
+  // Apply filtering and sorting
+  let displayEntries = queuedEntries.map((e, i) => ({ ...e, originalIndex: i }));
+
+  // Filter
+  if (queueFilterText) {
+    const q = queueFilterText.toLowerCase();
+    displayEntries = displayEntries.filter(e =>
+      [e.date, e.employeeName, e.ticketName, e.notes]
+        .map(x => String(x || "").toLowerCase())
+        .some(s => s.includes(q))
+    );
+  }
+
+  // Sort
+  if (queueSortField) {
+    displayEntries.sort((a, b) => {
+      let va = a[queueSortField];
+      let vb = b[queueSortField];
+
+      // Handle null/undefined
+      if (va === null || va === undefined) va = "";
+      if (vb === null || vb === undefined) vb = "";
+
+      // Numeric fields
+      if (queueSortField === "hoursStandard" || queueSortField === "hours15x" || queueSortField === "hours2x") {
+        va = Number(va) || 0;
+        vb = Number(vb) || 0;
+        return (va - vb) * queueSortDir;
+      }
+
+      // Text fields
+      va = String(va).toLowerCase();
+      vb = String(vb).toLowerCase();
+      if (va < vb) return -1 * queueSortDir;
+      if (va > vb) return 1 * queueSortDir;
+      return 0;
+    });
+  }
+
+  // Render rows
+  displayEntries.forEach((e) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${e.date}</td>
@@ -131,12 +176,27 @@ function renderQueue() {
       <td>${e.hours15x.toFixed(2)}</td>
       <td>${e.hours2x.toFixed(2)}</td>
       <td>${e.notes || "—"}</td>
-      <td><button class="btn light remove-btn" data-index="${i}">Remove</button></td>
+      <td><button class="btn light remove-btn" data-index="${e.originalIndex}">Remove</button></td>
     `;
     tbody.appendChild(tr);
   });
 
   queueDiv.style.display = "block";
+}
+
+// ---------- UPDATE SORT ICONS ----------
+function updateQueueSortIcons() {
+  document.querySelectorAll("#queuedEntries th[data-field]").forEach(th => {
+    const field = th.getAttribute("data-field");
+    const icon = th.querySelector(".sort-icon");
+    if (!icon) return;
+
+    if (field === queueSortField) {
+      icon.textContent = queueSortDir === 1 ? "↑" : "↓";
+    } else {
+      icon.textContent = "⇅";
+    }
+  });
 }
 
 // ---------- SUBMIT QUEUED ENTRIES ----------
@@ -214,5 +274,41 @@ window.addEventListener("DOMContentLoaded", () => {
       const index = parseInt(ev.target.dataset.index, 10);
       removeFromQueue(index);
     }
+  });
+
+  // Queue filter input handler
+  const queueFilter = document.getElementById("queueFilter");
+  if (queueFilter) {
+    queueFilter.addEventListener("input", () => {
+      queueFilterText = queueFilter.value.trim().toLowerCase();
+      renderQueue();
+    });
+  }
+
+  // Queue sort button click handler
+  document.addEventListener("click", (ev) => {
+    const sortBtn = ev.target.closest(".sort-btn");
+    if (!sortBtn) return;
+
+    const th = sortBtn.closest("th");
+    if (!th) return;
+
+    // Only handle queue table sorts
+    const isQueueTable = th.closest("#queuedEntries");
+    if (!isQueueTable) return;
+
+    const field = th.getAttribute("data-field");
+    if (!field) return;
+
+    // Toggle sort direction if clicking same field, otherwise reset to ascending
+    if (queueSortField === field) {
+      queueSortDir *= -1;
+    } else {
+      queueSortField = field;
+      queueSortDir = 1;
+    }
+
+    updateQueueSortIcons();
+    renderQueue();
   });
 });
