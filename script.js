@@ -33,7 +33,7 @@ async function loadEmployees() {
     for (const e of employees) {
       const opt = document.createElement("option");
       opt.value = e.employee_id;
-      opt.textContent = `${e.first_name} ${e.last_name} (${e.email})`;
+      opt.textContent = `${e.first_name} ${e.last_name}`;
       select.appendChild(opt);
     }
   } catch (err) {

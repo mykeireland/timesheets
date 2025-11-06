@@ -613,11 +613,12 @@ input:hover {
 
 #staffTable th,
 #staffTable td {
-  padding: 0.5rem 0.625rem;
+  padding: 0.375rem 0.5rem;
   text-align: left;
   border: 1px solid var(--color-border);
   vertical-align: middle;
-  height: 32px;
+  height: 28px;
+  line-height: 1.2;
 }
 
 #staffTable th {
