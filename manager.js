@@ -116,11 +116,11 @@
         <td>${escapeHtml(r.ticketId)}</td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.hours)}</td>
-        <td><span class="status ${escapeHtml(r.status)}">${escapeHtml(r.status)}</span></td>
+        <td><span class="status-badge status-${escapeHtml(r.status.toLowerCase())}">${escapeHtml(r.status)}</span></td>
         <td class="col-notes">${escapeHtml(r.notes || "")}</td>
         <td>
-          <button class="btn approve" data-approve="${r.entryId}">Approve</button>
-          <button class="btn reject" data-reject="${r.entryId}">Reject</button>
+          <button class="btn primary small approve" data-approve="${r.entryId}">Approve</button>
+          <button class="btn danger small reject" data-reject="${r.entryId}">Reject</button>
         </td>
       </tr>`
       )
