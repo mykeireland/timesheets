@@ -131,22 +131,22 @@ function renderTable(tableType, entries) {
 
     if (tableType === "approved") {
       tr.innerHTML = `
-        <td>${escapeHtml(e.name)}</td>
-        <td>${escapeHtml(e.summary || "—")}</td>
-        <td>${escapeHtml(e.cwTicketId || "—")}</td>
-        <td>${escapeHtml(e.date)}</td>
-        <td><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
-        <td>${escapeHtml(e.notes || "—")}</td>
+        <td data-label="Employee">${escapeHtml(e.name)}</td>
+        <td data-label="Date">${escapeHtml(e.date)}</td>
+        <td data-label="Ticket ID">${escapeHtml(e.cwTicketId || "—")}</td>
+        <td data-label="Summary">${escapeHtml(e.summary || "—")}</td>
+        <td data-label="Hours"><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
+        <td data-label="Notes">${escapeHtml(e.notes || "—")}</td>
       `;
     } else {
       tr.innerHTML = `
-        <td>${escapeHtml(e.name)}</td>
-        <td>${escapeHtml(e.summary || "—")}</td>
-        <td>${escapeHtml(e.cwTicketId || "—")}</td>
-        <td>${escapeHtml(e.date)}</td>
-        <td><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
-        <td><span class="status-badge status-${escapeHtml(String(e.status || "").toLowerCase())}">${escapeHtml(e.status)}</span></td>
-        <td>${escapeHtml(e.notes || "—")}</td>
+        <td data-label="Employee">${escapeHtml(e.name)}</td>
+        <td data-label="Date">${escapeHtml(e.date)}</td>
+        <td data-label="Ticket ID">${escapeHtml(e.cwTicketId || "—")}</td>
+        <td data-label="Summary">${escapeHtml(e.summary || "—")}</td>
+        <td data-label="Hours"><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
+        <td data-label="Status"><span class="status-badge status-${escapeHtml(String(e.status || "").toLowerCase())}">${escapeHtml(e.status)}</span></td>
+        <td data-label="Notes">${escapeHtml(e.notes || "—")}</td>
       `;
     }
 
@@ -159,13 +159,13 @@ function renderTable(tableType, entries) {
 
   if (tableType === "approved") {
     trTotals.innerHTML = `
-      <td colspan="4" style="text-align:right;">Totals:</td>
+      <td colspan="4" style="text-align:right; font-weight: 700;">Totals:</td>
       <td><span class="hours-group">Std: ${totalStd.toFixed(2)} / OT: ${totalOT.toFixed(2)}</span></td>
       <td></td>
     `;
   } else {
     trTotals.innerHTML = `
-      <td colspan="4" style="text-align:right;">Totals:</td>
+      <td colspan="4" style="text-align:right; font-weight: 700;">Totals:</td>
       <td><span class="hours-group">Std: ${totalStd.toFixed(2)} / OT: ${totalOT.toFixed(2)}</span></td>
       <td colspan="2"></td>
     `;

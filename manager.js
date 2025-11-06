@@ -122,14 +122,14 @@
       .map(
         (r) => `
       <tr data-id="${r.entryId}">
-        <td>${escapeHtml(r.firstName)} ${escapeHtml(r.lastName)}</td>
-        <td>${escapeHtml(r.siteName)}</td>
-        <td>${escapeHtml(r.ticketId)}</td>
-        <td>${escapeHtml(r.date)}</td>
-        <td>${escapeHtml(r.hours)}</td>
-        <td><span class="status-badge status-${escapeHtml(r.status.toLowerCase())}">${escapeHtml(r.status)}</span></td>
-        <td class="col-notes">${escapeHtml(r.notes || "")}</td>
-        <td>
+        <td data-label="Employee">${escapeHtml(r.firstName)} ${escapeHtml(r.lastName)}</td>
+        <td data-label="Company/Site">${escapeHtml(r.siteName)}</td>
+        <td data-label="Ticket ID">${escapeHtml(r.ticketId)}</td>
+        <td data-label="Date">${escapeHtml(r.date)}</td>
+        <td data-label="Hours">${escapeHtml(r.hours)}</td>
+        <td data-label="Status"><span class="status-badge status-${escapeHtml(r.status.toLowerCase())}">${escapeHtml(r.status)}</span></td>
+        <td data-label="Notes" class="col-notes">${escapeHtml(r.notes || "")}</td>
+        <td data-label="Action">
           <button class="btn primary small approve" data-approve="${r.entryId}">Approve</button>
           <button class="btn danger small reject" data-reject="${r.entryId}">Reject</button>
         </td>

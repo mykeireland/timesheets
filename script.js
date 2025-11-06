@@ -169,14 +169,14 @@ function renderQueue() {
   displayEntries.forEach((e) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${e.date}</td>
-      <td>${e.employeeName}</td>
-      <td>${e.ticketName}</td>
-      <td>${e.hoursStandard.toFixed(2)}</td>
-      <td>${e.hours15x.toFixed(2)}</td>
-      <td>${e.hours2x.toFixed(2)}</td>
-      <td>${e.notes || "—"}</td>
-      <td><button class="btn light remove-btn" data-index="${e.originalIndex}">Remove</button></td>
+      <td data-label="Date">${e.date}</td>
+      <td data-label="Employee">${e.employeeName}</td>
+      <td data-label="Ticket">${e.ticketName}</td>
+      <td data-label="Std Hours">${e.hoursStandard.toFixed(2)}</td>
+      <td data-label="1.5x Hours">${e.hours15x.toFixed(2)}</td>
+      <td data-label="2x Hours">${e.hours2x.toFixed(2)}</td>
+      <td data-label="Notes">${e.notes || "—"}</td>
+      <td data-label="Action"><button class="btn light remove-btn" data-index="${e.originalIndex}">Remove</button></td>
     `;
     tbody.appendChild(tr);
   });
