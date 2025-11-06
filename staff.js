@@ -173,17 +173,17 @@ function renderTable(tbody) {
     .map(
       e => `
       <tr data-id="${e.employee_id}">
-        <td>${e.employee_id}</td>
-        <td contenteditable="false">${escapeHtml(e.first_name)}</td>
-        <td contenteditable="false">${escapeHtml(e.last_name)}</td>
-        <td contenteditable="false">${escapeHtml(e.email)}</td>
-        <td contenteditable="false">${escapeHtml(e.type)}</td>
-        <td style="text-align:center">
+        <td data-label="ID">${e.employee_id}</td>
+        <td data-label="First Name" contenteditable="false">${escapeHtml(e.first_name)}</td>
+        <td data-label="Last Name" contenteditable="false">${escapeHtml(e.last_name)}</td>
+        <td data-label="Email" contenteditable="false">${escapeHtml(e.email)}</td>
+        <td data-label="Type" contenteditable="false">${escapeHtml(e.type)}</td>
+        <td data-label="Active" style="text-align:center">
           <input type="checkbox" ${e.active ? "checked" : ""} disabled>
         </td>
-        <td contenteditable="false">${e.manager_employee_id ?? ""}</td>
-        <td contenteditable="false">${e.cw_member_id ?? ""}</td>
-        <td>
+        <td data-label="Manager ID" contenteditable="false">${e.manager_employee_id ?? ""}</td>
+        <td data-label="CW Member ID" contenteditable="false">${e.cw_member_id ?? ""}</td>
+        <td data-label="Action">
           <button class="btn secondary small edit">Edit</button>
           <button class="btn primary small save" style="display:none;">Save</button>
         </td>
@@ -208,21 +208,21 @@ function onAddClick(tbody) {
   const tr = document.createElement("tr");
   tr.className = "new-row";
   tr.innerHTML = `
-    <td>New</td>
-    <td><input type="text" placeholder="First Name"></td>
-    <td><input type="text" placeholder="Last Name"></td>
-    <td><input type="email" placeholder="Email"></td>
-    <td>
+    <td data-label="ID">New</td>
+    <td data-label="First Name"><input type="text" placeholder="First Name"></td>
+    <td data-label="Last Name"><input type="text" placeholder="Last Name"></td>
+    <td data-label="Email"><input type="email" placeholder="Email"></td>
+    <td data-label="Type">
       <select>
         <option value="Casual">Casual</option>
         <option value="FTE">FTE</option>
         <option value="Contractor">Contractor</option>
       </select>
     </td>
-    <td style="text-align:center"><input type="checkbox" checked></td>
-    <td><input type="number" placeholder="Mgr ID"></td>
-    <td><input type="number" placeholder="CW ID"></td>
-    <td>
+    <td data-label="Active" style="text-align:center"><input type="checkbox" checked></td>
+    <td data-label="Manager ID"><input type="number" placeholder="Mgr ID"></td>
+    <td data-label="CW Member ID"><input type="number" placeholder="CW ID"></td>
+    <td data-label="Action">
       <button class="btn primary small save-new">Save</button>
       <button class="btn secondary small cancel-new">Cancel</button>
     </td>`;
