@@ -269,23 +269,28 @@ tr:nth-child(even) {
   background: var(--color-gray-50);
 }
 
-/* Overtime row highlight (soft red tint) */
-tr.overtime-row td {
+/* ===================== ROW HIGHLIGHTING SYSTEM ===================== */
+
+/* Approved table highlighting */
+tr.approved-no-overtime td {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+tr.approved-with-overtime td {
   background-color: rgba(239, 68, 68, 0.1);
-  border-left: 3px solid var(--color-danger);
 }
 
-/* Status row colored borders (for unapproved entries) */
-tr.status-row-submitted td:first-child {
-  border-left: 5px solid #3b82f6;
+/* Unapproved table highlighting */
+tr.submitted-no-overtime td {
+  background-color: rgba(59, 130, 246, 0.1);
 }
 
-tr.status-row-rejected td:first-child {
-  border-left: 5px solid var(--color-danger);
+tr.submitted-with-overtime td {
+  background-color: rgba(168, 85, 247, 0.1);
 }
 
-tr.status-row-draft td:first-child {
-  border-left: 5px solid var(--color-gray-400);
+tr.rejected-row td {
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 /* Totals row styling */
@@ -595,8 +600,8 @@ input:hover {
   background: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-hover) 100%);
 }
 
-.legend-draft {
-  background: linear-gradient(135deg, var(--color-gray-400) 0%, var(--color-gray-500) 100%);
+.legend-submitted-ot {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
 }
 
 .legend-label {
@@ -885,13 +890,19 @@ input:hover {
     border-color: var(--color-primary);
   }
 
-  /* Overtime row styling for cards */
-  tbody tr.overtime-row {
-    border-left: 5px solid var(--color-danger);
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, transparent 100%);
+  /* Row highlighting on mobile cards - approved table */
+  tbody tr.approved-no-overtime {
+    background: rgba(16, 185, 129, 0.1);
+    border-left: 5px solid #10b981;
   }
 
-  tbody tr.overtime-row td {
+  tbody tr.approved-with-overtime {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 5px solid var(--color-danger);
+  }
+
+  tbody tr.approved-no-overtime td,
+  tbody tr.approved-with-overtime td {
     background: transparent;
     border: none;
   }
@@ -976,17 +987,27 @@ input:hover {
     height: 18px;
   }
 
-  /* Status row borders visible on mobile cards */
-  tbody tr.status-row-submitted {
+  /* Row highlighting on mobile cards - unapproved table */
+  tbody tr.submitted-no-overtime {
+    background: rgba(59, 130, 246, 0.1);
     border-left: 5px solid #3b82f6;
   }
 
-  tbody tr.status-row-rejected {
+  tbody tr.submitted-with-overtime {
+    background: rgba(168, 85, 247, 0.1);
+    border-left: 5px solid #a855f7;
+  }
+
+  tbody tr.rejected-row {
+    background: rgba(239, 68, 68, 0.1);
     border-left: 5px solid var(--color-danger);
   }
 
-  tbody tr.status-row-draft {
-    border-left: 5px solid var(--color-gray-400);
+  tbody tr.submitted-no-overtime td,
+  tbody tr.submitted-with-overtime td,
+  tbody tr.rejected-row td {
+    background: transparent;
+    border: none;
   }
 
   /* Form inputs - larger for touch */

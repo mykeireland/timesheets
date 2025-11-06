@@ -127,7 +127,7 @@
         <td data-label="Ticket ID">${escapeHtml(r.ticketId)}</td>
         <td data-label="Date">${escapeHtml(r.date)}</td>
         <td data-label="Hours">${escapeHtml(r.hours)}</td>
-        <td data-label="Status"><span class="status-badge status-${escapeHtml(r.status.toLowerCase())}">${escapeHtml(r.status)}</span></td>
+        <td data-label="Status"><span class="status-badge-inline status-${escapeHtml(r.status.toLowerCase())}">${escapeHtml(r.status)}</span></td>
         <td data-label="Notes" class="col-notes">${escapeHtml(r.notes || "")}</td>
         <td data-label="Action">
           <button class="btn primary small approve" data-approve="${r.entryId}">Approve</button>

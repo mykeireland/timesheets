@@ -127,9 +127,15 @@ function renderTable(tableType, entries) {
     totalOT += h15 + h2;
 
     const tr = document.createElement("tr");
-    if (isOT) tr.classList.add("overtime-row");
 
     if (tableType === "approved") {
+      // Approved table: green for no OT, red for OT
+      if (isOT) {
+        tr.classList.add("approved-with-overtime");
+      } else {
+        tr.classList.add("approved-no-overtime");
+      }
+
       tr.innerHTML = `
         <td data-label="Employee">${escapeHtml(e.name)}</td>
         <td data-label="Date">${escapeHtml(e.date)}</td>
@@ -139,9 +145,18 @@ function renderTable(tableType, entries) {
         <td data-label="Notes">${escapeHtml(e.notes || "—")}</td>
       `;
     } else {
-      // Add status class to row for colored border
+      // Unapproved table: blue for submitted (no OT), purple for submitted (with OT), red for rejected
       const statusClass = String(e.status || "").toLowerCase();
-      tr.classList.add(`status-row-${statusClass}`);
+
+      if (statusClass === "rejected") {
+        tr.classList.add("rejected-row");
+      } else if (statusClass === "submitted") {
+        if (isOT) {
+          tr.classList.add("submitted-with-overtime");
+        } else {
+          tr.classList.add("submitted-no-overtime");
+        }
+      }
 
       tr.innerHTML = `
         <td data-label="Employee">
