@@ -1,245 +1,167 @@
-// === Config & State ===
-const API_BASE = window.API_BASE || "http://localhost:7071/api";
-const state = { queue: [], employeeId: null };
-console.log("🔥 script.js loaded");
+// ===================== script.js =====================
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadEmployees();
-  loadTickets();
-  setupFormHandlers();
-  adjustTicketSelectWidth(); // compact “Select Ticket” width on load
-});
+// Use the global API_BASE defined in index.html
+const API_BASE = window.API_BASE;
 
-// === Helpers ===
-function unwrapArray(payload, ...arrayKeys) {
-  if (Array.isArray(payload)) return payload;
-  if (payload && typeof payload === "object") {
-    for (const k of arrayKeys) if (Array.isArray(payload[k])) return payload[k];
-  }
-  return [];
-}
+// Simple queue of timesheet entries before submission
+let queuedEntries = [];
 
-function flattenValue(v) {
-  if (v == null) return "";
-  if (typeof v === "string" || typeof v === "number") return String(v);
-  if (typeof v === "object") {
-    for (const key of ["value", "id", "number", "$numberLong"])
-      if (v[key] != null && typeof v[key] !== "object") return String(v[key]);
-    try { const s = JSON.stringify(v); return s === "{}" ? "" : s; } catch { return ""; }
-  }
-  return "";
-}
-
-function measureTextWidth(text, refEl) {
-  const span = document.createElement("span");
-  span.style.visibility = "hidden";
-  span.style.position = "absolute";
-  span.style.whiteSpace = "nowrap";
-  const cs = window.getComputedStyle(refEl);
-  const font = [cs.fontStyle, cs.fontVariant, cs.fontWeight, cs.fontSize, "/", cs.lineHeight, cs.fontFamily].join(" ");
-  span.style.font = font;
-  span.textContent = text || "";
-  document.body.appendChild(span);
-  const w = span.offsetWidth;
-  document.body.removeChild(span);
-  return w;
-}
-
-function adjustTicketSelectWidth() {
-  const select = document.getElementById("entryTicket");
-  if (!select) return;
-  const cs = window.getComputedStyle(select);
-  const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-  const border = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
-  const arrow = 24, buffer = 10; // tweak arrow to 28 if needed on Safari
-  const currentText = select.options[select.selectedIndex]?.text || "Select Ticket";
-  const minText = "Select Ticket";
-  const currentW = measureTextWidth(currentText, select) + pad + border + arrow + buffer;
-  const minW = measureTextWidth(minText, select) + pad + border + arrow + buffer;
-  select.style.width = Math.max(currentW, minW) + "px";
-}
-
-// === Loaders ===
+// ---------- LOAD EMPLOYEES ----------
 async function loadEmployees() {
-  const select = document.getElementById("employeeSelect");
-  select.innerHTML = "";
-
   try {
     const res = await fetch(`${API_BASE}/employees`);
-    const data = await res.json();
+    const employees = await res.json();
 
-    // Normalize result (handle both old and new API shapes)
-    const employees = Array.isArray(data)
-      ? data.map(e => ({
-          id: e.id || e.employee_id,
-          name: e.name || `${e.first_name || ""} ${e.last_name || ""}`.trim(),
-          active: e.active !== undefined ? e.active : true,
-          type: e.type || "Unknown"
-        }))
-      : [];
+    const select = document.getElementById("employeeSelect");
+    select.innerHTML = "";
 
-    // Optionally: only show active or casuals
-    const filtered = employees.filter(e => e.active && e.type.toLowerCase().includes("casual"));
-
-    filtered.forEach(emp => {
+    if (!Array.isArray(employees) || employees.length === 0) {
       const opt = document.createElement("option");
-      opt.value = emp.id;
-      opt.textContent = emp.name || "(No Name)";
+      opt.textContent = "(no employees found)";
       select.appendChild(opt);
-    });
+      return;
+    }
 
-    console.log(`✅ Loaded ${filtered.length} employees`);
+    for (const e of employees) {
+      const opt = document.createElement("option");
+      opt.value = e.employee_id;
+      opt.textContent = `${e.first_name} ${e.last_name} (${e.email})`;
+      select.appendChild(opt);
+    }
   } catch (err) {
     console.error("❌ Failed to load employees:", err);
-    const opt = document.createElement("option");
-    opt.textContent = "⚠️ Error loading employees";
-    select.appendChild(opt);
   }
 }
 
+// ---------- LOAD TICKETS ----------
 async function loadTickets() {
   try {
     const res = await fetch(`${API_BASE}/tickets/open`);
-    if (!res.ok) throw new Error(`GET /tickets/open -> ${res.status}`);
-    const data = await res.json();
-    const tickets = unwrapArray(data, "tickets", "data");
+    const tickets = await res.json();
+
     const select = document.getElementById("entryTicket");
-    if (!select) { console.warn("#entryTicket not found"); return; }
-    select.innerHTML = "<option value=''>Select Ticket</option>";
-    tickets.forEach(ticket => {
-      const ticketId   = ticket.ticketId ?? ticket.id ?? ticket.TicketId ?? ticket.ID ?? null;
-      const summary    = flattenValue(ticket.summary ?? ticket.Summary);
-      const company    = flattenValue(ticket.companyName ?? ticket.CompanyName);
-      if (ticketId == null) return;
-      const parts = [summary, company].filter(Boolean);
-      const label = parts.join(" • ") || `Ticket ${ticketId}`;
+    select.innerHTML = "";
+
+    if (!Array.isArray(tickets) || tickets.length === 0) {
       const opt = document.createElement("option");
-      opt.value = String(ticketId);
-      opt.textContent = label;
+      opt.textContent = "(no tickets found)";
       select.appendChild(opt);
-    });
-    // compact by default
-    select.selectedIndex = 0;
-    adjustTicketSelectWidth();
+      return;
+    }
+
+    for (const t of tickets) {
+      const opt = document.createElement("option");
+      opt.value = t.ticket_id;
+      // build a clear readable label from available columns
+      opt.textContent = `${t.company_name || ""} — ${t.summary || t.name || "(no summary)"} (${t.site_name || "—"})`;
+      select.appendChild(opt);
+    }
   } catch (err) {
-    console.error("❌ Load tickets failed:", err);
-    alert("Could not load tickets.");
+    console.error("❌ Failed to load tickets:", err);
   }
 }
 
-// === Form Handlers ===
-function setupFormHandlers() {
-  document.getElementById("timesheetForm").addEventListener("submit", handleSubmit);
-  document.getElementById("managerBtn").addEventListener("click", () => {
-    window.location.href = "manager.html";
-  });
-  document.addEventListener("change", (e) => {
-    if (e.target && e.target.id === "entryTicket") adjustTicketSelectWidth();
-  });
-  window.addEventListener("resize", adjustTicketSelectWidth);
-}
-
+// ---------- ADD ENTRY TO QUEUE ----------
 function addToQueue() {
   const employeeSelect = document.getElementById("employeeSelect");
-  const employeeId = parseInt(employeeSelect.value);
-  const employeeName = employeeSelect.options[employeeSelect.selectedIndex]?.text || "";
-
-  const date = document.getElementById("entryDate").value;
   const ticketSelect = document.getElementById("entryTicket");
-  const ticketId = parseInt(ticketSelect.value);
-  const ticketLabel = ticketSelect.options[ticketSelect.selectedIndex]?.text || "";
 
-  const hoursStandard = parseFloat(document.getElementById("hoursStd").value) || 0;
-  const hours15x = parseFloat(document.getElementById("hours15").value) || 0;
-  const hours2x = parseFloat(document.getElementById("hours2").value) || 0;
-  const notes = document.getElementById("entryNotes").value;
+  const entry = {
+    employeeId: employeeSelect.value,
+    employeeName: employeeSelect.options[employeeSelect.selectedIndex]?.textContent || "Unknown",
+    ticketId: ticketSelect.value,
+    ticketName: ticketSelect.options[ticketSelect.selectedIndex]?.textContent || "Unknown",
+    date: document.getElementById("entryDate").value,
+    hoursStandard: Number(document.getElementById("hoursStd").value || 0),
+    hours15x: Number(document.getElementById("hours15").value || 0),
+    hours2x: Number(document.getElementById("hours2").value || 0),
+    notes: document.getElementById("entryNotes").value.trim()
+  };
 
-  if (!employeeId || !date || !ticketId) {
-    alert("Missing required fields.");
+  if (!entry.date || !entry.employeeId || !entry.ticketId) {
+    alert("Please select an employee, ticket, and date.");
     return;
   }
 
-  const entry = {
-    employeeId,
-    employeeName,
-    ticketId,
-    ticketLabel,
-    date,
-    hoursStandard,
-    hours15x,
-    hours2x,
-    notes
-  };
-
-  state.queue.push(entry);
+  queuedEntries.push(entry);
   renderQueue();
-  clearForm();
 }
 
+// ---------- REMOVE ENTRY FROM QUEUE ----------
+function removeFromQueue(index) {
+  queuedEntries.splice(index, 1);
+  renderQueue();
+}
+
+// ---------- RENDER QUEUE TABLE ----------
 function renderQueue() {
+  const queueDiv = document.getElementById("queuedEntries");
   const tbody = document.getElementById("queueTable");
   tbody.innerHTML = "";
 
-  if (state.queue.length === 0) {
-    document.getElementById("queuedEntries").style.display = "none";
+  if (queuedEntries.length === 0) {
+    queueDiv.style.display = "none";
     return;
   }
 
-  document.getElementById("queuedEntries").style.display = "block";
-
-  state.queue.forEach((entry, i) => {
+  queuedEntries.forEach((e, i) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${entry.date}</td>
-      <td>${entry.employeeName || ""}</td>
-      <td>${entry.ticketLabel || entry.ticketId}</td>
-      <td>${entry.hoursStandard}</td>
-      <td>${entry.hours15x}</td>
-      <td>${entry.hours2x}</td>
-      <td>${entry.notes || ""}</td>
-      <td><button class="btn danger" onclick="removeFromQueue(${i})">Remove</button></td>
+      <td>${e.date}</td>
+      <td>${e.employeeName}</td>
+      <td>${e.ticketName}</td>
+      <td>${e.hoursStandard.toFixed(2)}</td>
+      <td>${e.hours15x.toFixed(2)}</td>
+      <td>${e.hours2x.toFixed(2)}</td>
+      <td>${e.notes || "—"}</td>
+      <td><button class="btn light" onclick="removeFromQueue(${i})">🗑 Remove</button></td>
     `;
     tbody.appendChild(tr);
   });
+
+  queueDiv.style.display = "block";
 }
 
-function removeFromQueue(index) {
-  state.queue.splice(index, 1);
-  renderQueue();
-}
-
-function clearForm() {
-  document.getElementById("entryDate").value = "";
-  document.getElementById("entryTicket").value = "";
-  document.getElementById("hoursStd").value = "0";
-  document.getElementById("hours15").value = "0";
-  document.getElementById("hours2").value = "0";
-  document.getElementById("entryNotes").value = "";
-  adjustTicketSelectWidth();
-}
-
-// === Submission ===
-async function handleSubmit(e) {
-  e.preventDefault();
-  if (state.queue.length === 0) return alert("Please add at least one entry before submitting.");
-
-  let failures = 0;
-  for (const entry of state.queue) {
-    try {
-      const res = await fetch(`${API_BASE}/timesheets/submit`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entry)
-      });
-      const result = await res.json().catch(() => ({ ok: false, error: "Invalid JSON" }));
-      if (!res.ok || !result.ok) failures++;
-    } catch { failures++; }
+// ---------- SUBMIT QUEUED ENTRIES ----------
+async function submitTimesheets() {
+  if (queuedEntries.length === 0) {
+    alert("No entries to submit.");
+    return;
   }
 
-  if (failures > 0) alert(`⚠️ ${failures} entry(ies) failed to submit.`);
-  else {
-    alert("✅ Timesheet submitted successfully!");
-    state.queue = [];
-    renderQueue();
-    document.getElementById("timesheetForm").reset();
-    adjustTicketSelectWidth();
+  try {
+    const res = await fetch(`${API_BASE}/timesheets/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(queuedEntries)
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      alert("✅ Timesheet entries submitted successfully!");
+      queuedEntries = [];
+      renderQueue();
+    } else {
+      console.error("❌ Submission failed:", data);
+      alert("Submission failed. Check console for details.");
+    }
+  } catch (err) {
+    console.error("❌ Error submitting timesheets:", err);
+    alert("Error submitting timesheets.");
   }
 }
+
+// ---------- INITIALIZE ----------
+window.addEventListener("DOMContentLoaded", () => {
+  loadEmployees();
+  loadTickets();
+
+  document.getElementById("timesheetForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    submitTimesheets();
+  });
+
+  document.getElementById("managerBtn").addEventListener("click", () => {
+    window.location.href = "manager.html";
+  });
+});
