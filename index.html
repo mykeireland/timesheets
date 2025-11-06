@@ -25,11 +25,37 @@
         <table>
           <thead><tr><th>Date</th><th>Ticket</th><th>Hours (Std/1.5x/2x)</th><th>Notes</th><th>Action</th></tr></thead>
           <tbody><tr>
-            <td data-label="Date"><input type="date" id="entryDate" /></td>
-            <td data-label="Ticket"><select id="entryTicket"></select></td>
-            <td data-label="Hours"><input type="number" id="hoursStd" step="0.25" min="0" value="0" style="width:50px;" placeholder="Standard" /> <input type="number" id="hours15" step="0.25" min="0" value="0" style="width:50px;" placeholder="1.5x" /> <input type="number" id="hours2" step="0.25" min="0" value="0" style="width:50px;" placeholder="2x" /></td>
-            <td data-label="Notes"><input type="text" id="entryNotes" placeholder="Notes (optional)" /></td>
-            <td data-label="Action"><button type="button" id="addToQueueBtn" class="btn light">Add</button></td>
+            <td data-label="Date">
+              <label for="entryDate" class="mobile-label">Date</label>
+              <input type="date" id="entryDate" />
+            </td>
+            <td data-label="Ticket">
+              <label for="entryTicket" class="mobile-label">Ticket</label>
+              <select id="entryTicket"></select>
+            </td>
+            <td data-label="Hours">
+              <div class="hours-grid">
+                <div class="hours-input-wrapper">
+                  <label for="hoursStd" class="mobile-label">Standard Hours</label>
+                  <input type="number" id="hoursStd" step="0.25" min="0" value="0" style="width:50px;" placeholder="0.00" />
+                </div>
+                <div class="hours-input-wrapper">
+                  <label for="hours15" class="mobile-label">Hours at 1.5x</label>
+                  <input type="number" id="hours15" step="0.25" min="0" value="0" style="width:50px;" placeholder="0.00" />
+                </div>
+                <div class="hours-input-wrapper">
+                  <label for="hours2" class="mobile-label">Hours at 2x</label>
+                  <input type="number" id="hours2" step="0.25" min="0" value="0" style="width:50px;" placeholder="0.00" />
+                </div>
+              </div>
+            </td>
+            <td data-label="Notes">
+              <label for="entryNotes" class="mobile-label">Notes (optional)</label>
+              <input type="text" id="entryNotes" placeholder="Notes (optional)" />
+            </td>
+            <td data-label="Action">
+              <button type="button" id="addToQueueBtn" class="btn light">Add to Queue</button>
+            </td>
           </tr></tbody>
         </table>
       </div>
