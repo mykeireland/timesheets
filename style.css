@@ -473,6 +473,13 @@ select {
   max-width: 100%;
 }
 
+/* Employee picker - natural sizing, not full width */
+#employeeSelect {
+  width: auto;
+  max-width: 400px;
+  min-width: 250px;
+}
+
 /* Ticket picker - smaller text to prevent overflow */
 #entryTicket {
   font-size: 0.8125rem;
