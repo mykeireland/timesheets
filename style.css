@@ -666,6 +666,27 @@ input:hover {
   to { opacity: 1; }
 }
 
+/* ===================== DESKTOP TIMESHEET FORM ===================== */
+/* Hide mobile labels on desktop - they're only for mobile */
+#timesheetForm .mobile-label {
+  display: none;
+}
+
+/* Hours grid displays inline on desktop */
+#timesheetForm .hours-grid {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#timesheetForm .hours-input-wrapper {
+  display: inline-block;
+}
+
+#timesheetForm .hours-input-wrapper label {
+  display: none; /* Hide on desktop */
+}
+
 /* ===================== MOBILE-OPTIMIZED RESPONSIVE DESIGN ===================== */
 @media (max-width: 768px) {
   :root {
@@ -944,13 +965,13 @@ input:hover {
     border-width: 6px;
   }
 
-  /* Special handling for time entry form on mobile - VERTICAL LAYOUT */
+  /* Special handling for time entry form on mobile - CLEAN VERTICAL GRID */
   #timesheetForm table {
     display: block;
   }
 
   #timesheetForm thead {
-    display: none; /* Hide header row, we'll use labels instead */
+    display: none; /* Hide desktop header row */
   }
 
   #timesheetForm tbody {
@@ -958,58 +979,69 @@ input:hover {
   }
 
   #timesheetForm tbody tr {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
     background: var(--color-bg-primary);
     border: 2px solid var(--color-primary);
     border-radius: 1rem;
-    padding: 1.25rem;
+    padding: 1.5rem;
     box-shadow: var(--shadow-lg);
   }
 
   #timesheetForm tbody tr td {
     display: block;
     border: none;
-    padding: 0.875rem 0;
+    padding: 0;
     text-align: left !important;
-    position: relative;
   }
 
-  /* Add visible labels for each field */
-  #timesheetForm tbody tr td::before {
-    content: attr(data-label);
+  /* Show mobile labels on mobile only */
+  #timesheetForm .mobile-label {
     display: block;
     font-weight: 700;
     color: var(--color-text-secondary);
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.625rem;
+  }
+
+  /* Hours grid container - stack vertically */
+  #timesheetForm .hours-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Individual hours input wrapper */
+  #timesheetForm .hours-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  #timesheetForm .hours-input-wrapper label {
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.5rem;
   }
 
-  /* Stack all form inputs vertically with full width */
-  #timesheetForm input[type="date"],
-  #timesheetForm select,
-  #timesheetForm input[type="text"] {
-    width: 100%;
+  /* All inputs full width on mobile */
+  #timesheetForm tbody tr td input,
+  #timesheetForm tbody tr td select {
+    width: 100% !important;
     display: block;
     margin: 0;
-  }
-
-  /* Stack the three hours inputs vertically with spacing */
-  #timesheetForm input[type="number"] {
-    width: 100%;
-    display: block;
-    margin-bottom: 0.75rem;
-  }
-
-  #timesheetForm input[type="number"]:last-of-type {
-    margin-bottom: 0;
   }
 
   /* Make action button full width */
   #timesheetForm tbody tr td button {
     width: 100%;
-    margin-top: 0.5rem;
+    margin-top: 0;
   }
 
   /* Time entry form explanation text */
