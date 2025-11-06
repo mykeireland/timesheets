@@ -139,13 +139,19 @@ function renderTable(tableType, entries) {
         <td data-label="Notes">${escapeHtml(e.notes || "—")}</td>
       `;
     } else {
+      // Add status class to row for colored border
+      const statusClass = String(e.status || "").toLowerCase();
+      tr.classList.add(`status-row-${statusClass}`);
+
       tr.innerHTML = `
-        <td data-label="Employee">${escapeHtml(e.name)}</td>
+        <td data-label="Employee">
+          ${escapeHtml(e.name)}
+          <span class="status-badge-inline status-${escapeHtml(statusClass)}">${escapeHtml(e.status)}</span>
+        </td>
         <td data-label="Date">${escapeHtml(e.date)}</td>
         <td data-label="Ticket ID">${escapeHtml(e.cwTicketId || "—")}</td>
         <td data-label="Summary">${escapeHtml(e.summary || "—")}</td>
         <td data-label="Hours"><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
-        <td data-label="Status"><span class="status-badge status-${escapeHtml(String(e.status || "").toLowerCase())}">${escapeHtml(e.status)}</span></td>
         <td data-label="Notes">${escapeHtml(e.notes || "—")}</td>
       `;
     }
@@ -157,19 +163,12 @@ function renderTable(tableType, entries) {
   const trTotals = document.createElement("tr");
   trTotals.className = "totals-row";
 
-  if (tableType === "approved") {
-    trTotals.innerHTML = `
-      <td colspan="4" style="text-align:right; font-weight: 700;">Totals:</td>
-      <td><span class="hours-group">Std: ${totalStd.toFixed(2)} / OT: ${totalOT.toFixed(2)}</span></td>
-      <td></td>
-    `;
-  } else {
-    trTotals.innerHTML = `
-      <td colspan="4" style="text-align:right; font-weight: 700;">Totals:</td>
-      <td><span class="hours-group">Std: ${totalStd.toFixed(2)} / OT: ${totalOT.toFixed(2)}</span></td>
-      <td colspan="2"></td>
-    `;
-  }
+  // Both tables now have same 6-column structure
+  trTotals.innerHTML = `
+    <td colspan="4" style="text-align:right; font-weight: 700;">Totals:</td>
+    <td><span class="hours-group">Std: ${totalStd.toFixed(2)} / OT: ${totalOT.toFixed(2)}</span></td>
+    <td></td>
+  `;
 
   tableBody.appendChild(trTotals);
 }
