@@ -249,6 +249,19 @@ tr.overtime-row td {
   border-left: 3px solid var(--color-danger);
 }
 
+/* Status row colored borders (for unapproved entries) */
+tr.status-row-submitted td:first-child {
+  border-left: 5px solid #3b82f6;
+}
+
+tr.status-row-rejected td:first-child {
+  border-left: 5px solid var(--color-danger);
+}
+
+tr.status-row-draft td:first-child {
+  border-left: 5px solid var(--color-gray-400);
+}
+
 /* Totals row styling */
 tr.totals-row td {
   background: linear-gradient(to bottom, var(--color-gray-100) 0%, var(--color-gray-200) 100%);
@@ -461,6 +474,21 @@ input:hover {
   box-shadow: var(--shadow-md);
 }
 
+/* Inline status badge (appears next to employee name) */
+.status-badge-inline {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  box-shadow: var(--shadow-sm);
+}
+
 .status-submitted {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-color: #1d4ed8;
@@ -479,6 +507,52 @@ input:hover {
 .status-draft {
   background: linear-gradient(135deg, var(--color-gray-400) 0%, var(--color-gray-500) 100%);
   border-color: var(--color-gray-600);
+}
+
+/* ===================== STATUS LEGEND ===================== */
+.status-legend {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.legend-indicator {
+  display: inline-block;
+  width: 24px;
+  height: 16px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.legend-submitted {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.legend-rejected {
+  background: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-hover) 100%);
+}
+
+.legend-draft {
+  background: linear-gradient(135deg, var(--color-gray-400) 0%, var(--color-gray-500) 100%);
+}
+
+.legend-label {
+  white-space: nowrap;
 }
 
 /* ===================== STAFF TABLE (COMPACT LAYOUT) ===================== */
@@ -789,6 +863,48 @@ input:hover {
     min-width: 120px;
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
+  }
+
+  /* Mobile status badge inline */
+  .status-badge-inline {
+    display: block;
+    margin-left: 0;
+    margin-top: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    width: fit-content;
+  }
+
+  /* Mobile legend */
+  .status-legend {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .legend-item {
+    gap: 0.625rem;
+    font-size: 0.9375rem;
+  }
+
+  .legend-indicator {
+    width: 28px;
+    height: 18px;
+  }
+
+  /* Status row borders visible on mobile cards */
+  tbody tr.status-row-submitted {
+    border-left: 5px solid #3b82f6;
+  }
+
+  tbody tr.status-row-rejected {
+    border-left: 5px solid var(--color-danger);
+  }
+
+  tbody tr.status-row-draft {
+    border-left: 5px solid var(--color-gray-400);
   }
 
   /* Form inputs - larger for touch */

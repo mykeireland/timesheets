@@ -46,7 +46,23 @@
 
     <!-- UNAPPROVED / REJECTED ENTRIES -->
     <div class="table-responsive" style="margin-top: 2rem;">
-      <h2>Unapproved / Rejected Time Entries</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <h2 style="margin: 0;">Unapproved / Rejected Time Entries</h2>
+        <div class="status-legend">
+          <span class="legend-item">
+            <span class="legend-indicator legend-submitted"></span>
+            <span class="legend-label">Submitted</span>
+          </span>
+          <span class="legend-item">
+            <span class="legend-indicator legend-rejected"></span>
+            <span class="legend-label">Rejected</span>
+          </span>
+          <span class="legend-item">
+            <span class="legend-indicator legend-draft"></span>
+            <span class="legend-label">Draft</span>
+          </span>
+        </div>
+      </div>
       <table id="unapprovedTable">
         <thead>
           <tr>
@@ -55,7 +71,6 @@
             <th data-field="cwTicketId">Ticket ID <button class="sort-btn" type="button" data-table="unapproved"><span class="sort-icon">⇅</span></button></th>
             <th data-field="summary">Summary <button class="sort-btn" type="button" data-table="unapproved"><span class="sort-icon">⇅</span></button></th>
             <th data-field="hours">Hours <button class="sort-btn" type="button" data-table="unapproved"><span class="sort-icon">⇅</span></button></th>
-            <th data-field="status">Status <button class="sort-btn" type="button" data-table="unapproved"><span class="sort-icon">⇅</span></button></th>
             <th data-field="notes">Notes <button class="sort-btn" type="button" data-table="unapproved"><span class="sort-icon">⇅</span></button></th>
           </tr>
         </thead>
