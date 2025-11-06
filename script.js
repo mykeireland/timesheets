@@ -33,10 +33,10 @@ async function loadEmployees() {
   }
 }
 
-// ---------- LOAD TICKETS ----------
+// === Replace ONLY the contents of your loadTickets() ===
 async function loadTickets() {
   try {
-    const res = await fetch(`${API_BASE}/tickets/open`);
+    const res = await fetch(`${window.API_BASE}/tickets/open`);
     const tickets = await res.json();
 
     const select = document.getElementById("entryTicket");
@@ -49,13 +49,21 @@ async function loadTickets() {
       return;
     }
 
-    for (const t of tickets) {
+    // Map new backend field names to what your old code expected
+    tickets.forEach(t => {
+      const mapped = {
+        ticketId: t.ticket_id,
+        ticketName: t.summary || t.name || "(no summary)",
+        companyName: t.company_name || "",
+        siteName: t.site_name || ""
+      };
+
       const opt = document.createElement("option");
-      opt.value = t.ticket_id;
-      // build a clear readable label from available columns
-      opt.textContent = `${t.company_name || ""} — ${t.summary || t.name || "(no summary)"} (${t.site_name || "—"})`;
+      // Preserve your original visual format and scaling behaviour
+      opt.value = mapped.ticketId;
+      opt.textContent = `${mapped.ticketName}`; // exactly as original did
       select.appendChild(opt);
-    }
+    });
   } catch (err) {
     console.error("❌ Failed to load tickets:", err);
   }
