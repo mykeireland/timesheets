@@ -1,6 +1,6 @@
 // ===================== script.js =====================
 
-// Use the global API_BASE defined in index.html
+// Use the global API_BASE defined in config.js
 const API_BASE = window.API_BASE;
 
 // Simple queue of timesheet entries before submission
@@ -8,11 +8,14 @@ let queuedEntries = [];
 
 // ---------- LOAD EMPLOYEES ----------
 async function loadEmployees() {
+  const select = document.getElementById("employeeSelect");
   try {
     const res = await fetch(`${API_BASE}/employees`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
     const employees = await res.json();
 
-    const select = document.getElementById("employeeSelect");
     select.innerHTML = "";
 
     if (!Array.isArray(employees) || employees.length === 0) {
@@ -30,16 +33,21 @@ async function loadEmployees() {
     }
   } catch (err) {
     console.error("❌ Failed to load employees:", err);
+    select.innerHTML = '<option>(Error loading employees)</option>';
+    alert("Failed to load employees. Please refresh the page or contact support.");
   }
 }
 
-// === Replace ONLY the contents of your loadTickets() ===
+// ---------- LOAD TICKETS ----------
 async function loadTickets() {
+  const select = document.getElementById("entryTicket");
   try {
-    const res = await fetch(`${window.API_BASE}/tickets/open`);
+    const res = await fetch(`${API_BASE}/tickets/open`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
     const tickets = await res.json();
 
-    const select = document.getElementById("entryTicket");
     select.innerHTML = "";
 
     if (!Array.isArray(tickets) || tickets.length === 0) {
@@ -59,13 +67,14 @@ async function loadTickets() {
       };
 
       const opt = document.createElement("option");
-      // Preserve your original visual format and scaling behaviour
       opt.value = mapped.ticketId;
-      opt.textContent = `${mapped.ticketName}`; // exactly as original did
+      opt.textContent = `${mapped.ticketName}`;
       select.appendChild(opt);
     });
   } catch (err) {
     console.error("❌ Failed to load tickets:", err);
+    select.innerHTML = '<option>(Error loading tickets)</option>';
+    alert("Failed to load tickets. Please refresh the page or contact support.");
   }
 }
 
@@ -122,7 +131,7 @@ function renderQueue() {
       <td>${e.hours15x.toFixed(2)}</td>
       <td>${e.hours2x.toFixed(2)}</td>
       <td>${e.notes || "—"}</td>
-      <td><button class="btn light" onclick="removeFromQueue(${i})">🗑 Remove</button></td>
+      <td><button class="btn light remove-btn" data-index="${i}">Remove</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -137,6 +146,7 @@ async function submitTimesheets() {
     return;
   }
 
+  window.showLoading();
   try {
     const res = await fetch(`${API_BASE}/timesheets/submit`, {
       method: "POST",
@@ -144,18 +154,24 @@ async function submitTimesheets() {
       body: JSON.stringify(queuedEntries)
     });
 
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
+
     const data = await res.json();
     if (data.ok) {
-      alert("✅ Timesheet entries submitted successfully!");
+      alert("Timesheet entries submitted successfully!");
       queuedEntries = [];
       renderQueue();
     } else {
-      console.error("❌ Submission failed:", data);
-      alert("Submission failed. Check console for details.");
+      throw new Error(data.error || "Unknown error from server");
     }
   } catch (err) {
     console.error("❌ Error submitting timesheets:", err);
-    alert("Error submitting timesheets.");
+    alert(`Failed to submit timesheets: ${err.message}`);
+  } finally {
+    window.hideLoading();
   }
 }
 
@@ -164,12 +180,39 @@ window.addEventListener("DOMContentLoaded", () => {
   loadEmployees();
   loadTickets();
 
+  // Form submit handler
   document.getElementById("timesheetForm").addEventListener("submit", (ev) => {
     ev.preventDefault();
     submitTimesheets();
   });
 
-  document.getElementById("managerBtn").addEventListener("click", () => {
-    window.location.href = "manager.html";
+  // Add to queue button
+  const addBtn = document.getElementById("addToQueueBtn");
+  if (addBtn) {
+    addBtn.addEventListener("click", addToQueue);
+  }
+
+  // Print button
+  const printBtn = document.getElementById("printBtn");
+  if (printBtn) {
+    printBtn.addEventListener("click", () => {
+      window.print();
+    });
+  }
+
+  // Manager view button
+  const managerBtn = document.getElementById("managerBtn");
+  if (managerBtn) {
+    managerBtn.addEventListener("click", () => {
+      window.location.href = "manager.html";
+    });
+  }
+
+  // Event delegation for remove buttons in queue
+  document.getElementById("queueTable").addEventListener("click", (ev) => {
+    if (ev.target.classList.contains("remove-btn")) {
+      const index = parseInt(ev.target.dataset.index, 10);
+      removeFromQueue(index);
+    }
   });
 });

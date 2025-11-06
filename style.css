@@ -120,11 +120,23 @@ tr:nth-child(even) {
   background: #fafafa;
 }
 
+/* Overtime row highlight (soft red tint) */
+tr.overtime-row td {
+  background-color: rgba(242, 139, 130, 0.2);
+}
+
+/* Totals row styling */
+tr.totals-row td {
+  background: #f5f5f7;
+  font-weight: 700;
+}
+
 /* Monospace block for hours display */
 .hours-group {
   display: inline-block;
   background: #f9fafc;
-  font-family: monospace;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.9rem;
@@ -259,6 +271,38 @@ input[type="text"] {
 /* ===================== MUTED TEXT ===================== */
 .muted { opacity: 0.55; }
 
+/* ===================== LOADING INDICATOR ===================== */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-overlay.active {
+  display: flex;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* ===================== RESPONSIVE FIXES ===================== */
 @media (max-width: 640px) {
   .toolbar { gap: 10px; }
@@ -271,11 +315,6 @@ input[type="text"] {
   table { font-size: 0.9rem; }
   th, td { padding: 6px 8px; }
 
-  /* ===================== SUMMARY PAGE HIGHLIGHT ===================== */
-  tr.overtime-row td {
-    background-color: rgba(242, 139, 130, 0.2); /* same red tone, 20% opacity */
-  }
-  
   /* Stack header logo and title vertically */
   .header-content {
     flex-direction: column;
@@ -293,5 +332,75 @@ input[type="text"] {
   header h1 {
     font-size: 1.3rem;
     text-align: center;
+  }
+}
+
+/* ===================== PRINT STYLES ===================== */
+@media print {
+  /* Hide navigation and action buttons */
+  .toolbar,
+  .form-actions button:not([type="submit"]),
+  button.btn.secondary,
+  button.btn.danger,
+  button.btn.light,
+  header {
+    display: none !important;
+  }
+
+  /* Show form title */
+  body::before {
+    content: "Timesheet Entry Form";
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  /* Optimize layout for printing */
+  body {
+    background: white;
+    color: black;
+    font-size: 12pt;
+  }
+
+  .container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0.5in;
+    box-shadow: none;
+  }
+
+  /* Table styling for print */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: avoid;
+  }
+
+  th, td {
+    border: 1px solid #000;
+    padding: 4pt 8pt;
+  }
+
+  th {
+    background: #e0e0e0 !important;
+    color: #000 !important;
+  }
+
+  /* Remove alternating row colors for better print contrast */
+  tr:nth-child(even) {
+    background: white;
+  }
+
+  /* Ensure queued entries are visible */
+  #queuedEntries {
+    display: block !important;
+  }
+
+  /* Hide action columns */
+  th:last-child,
+  td:last-child {
+    display: none;
   }
 }

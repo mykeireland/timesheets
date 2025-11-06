@@ -1,25 +1,28 @@
 <!-- ===================== MANAGER.HTML ===================== -->
 <!DOCTYPE html>
 <html lang="en">
-  <header>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <div class="header-content">
-        <img src="InsightSystems_PrimaryLogo_Rev.png" alt="Insight Systems Logo" class="header-logo" />
-          <h1>Time Approvals</h1>
-            <link rel="stylesheet" href="style.css" />
-      </div>
-    <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
-  </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Approvals</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="config.js"></script>
+</head>
 <body>
+  <header>
+    <div class="header-content">
+      <img src="InsightSystems_PrimaryLogo_Rev.png" alt="Insight Systems Logo" class="header-logo" />
+      <h1>Time Approvals</h1>
+    </div>
+  </header>
   <div class="container wide">
     <div class="toolbar">
       <input id="filterInput" class="search-input" type="text"
              placeholder="Filter by name / company / status" />
       <div>
-        <button type="button" class="btn danger" onclick="window.location.href='staff.html'">👤 Manage Staff</button>
-        <button type="button" class="btn secondary" onclick="window.location.href='summary.html'">📊 View Summary</button>
-        <button type="button" class="btn light" onclick="window.location.href='index.html'">🏠 Home</button>
+        <button type="button" id="staffBtn" class="btn danger">Manage Staff</button>
+        <button type="button" id="summaryBtn" class="btn secondary">View Summary</button>
+        <button type="button" id="homeBtn" class="btn light">Home</button>
       </div>
     </div>
 
@@ -28,10 +31,10 @@
         <thead>
           <tr>
             <th>Employee</th>
-            <th>Ticket Summary</th>
-            <th>CW ID</th>
+            <th>Company/Site</th>
+            <th>Ticket ID</th>
             <th>Date</th>
-            <th>Hours (Std / 1.5x / 2x)</th>
+            <th>Hours</th>
             <th>Status</th>
             <th>Notes</th>
             <th>Action</th>
@@ -42,46 +45,6 @@
     </div>
   </div>
 
-  <script>
-    async function loadPendingTimesheets() {
-      const res = await fetch(`${window.API_BASE}/timesheets/pending`);
-      const data = await res.json();
-      const tbody = document.querySelector("#pendingTable tbody");
-      tbody.innerHTML = "";
-
-      if (!data.ok || !Array.isArray(data.results)) return;
-
-      for (const entry of data.results) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${entry.firstName} ${entry.lastName}</td>
-          <td>${entry.ticketSummary || "—"}</td>
-          <td>${entry.cwTicketId || "—"}</td>
-          <td>${entry.date}</td>
-          <td><span class="hours-group">
-              ${entry.hoursStandard.toFixed(2)} / ${entry.hours15x.toFixed(2)} / ${entry.hours2x.toFixed(2)}
-          </span></td>
-          <td><span class="status-badge status-${entry.status.toLowerCase()}">${entry.status}</span></td>
-          <td>${entry.notes || "—"}</td>
-          <td>
-            <button class="btn action primary" onclick="approve(${entry.entryId})">Approve</button>
-            <button class="btn action danger" onclick="reject(${entry.entryId})">Reject</button>
-          </td>`;
-        tbody.appendChild(tr);
-      }
-    }
-
-    async function approve(id) {
-      await fetch(`${window.API_BASE}/timesheets/approve/${id}`, { method: "POST" });
-      loadPendingTimesheets();
-    }
-
-    async function reject(id) {
-      await fetch(`${window.API_BASE}/timesheets/reject/${id}`, { method: "POST" });
-      loadPendingTimesheets();
-    }
-
-    window.addEventListener("DOMContentLoaded", loadPendingTimesheets);
-  </script>
+  <script src="manager.js"></script>
 </body>
 </html>

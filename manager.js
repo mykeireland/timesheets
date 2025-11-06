@@ -1,7 +1,8 @@
 (function () {
   "use strict";
 
-  const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
+  // Use the global API_BASE defined in config.js
+  const API_BASE = window.API_BASE;
 
   const els = {
     filterInput: document.getElementById("filterInput"),
@@ -19,6 +20,11 @@
     const url = `${API_BASE}/timesheets/pending`;
     console.log("🔎 GET", url);
     const res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
     const raw = await res.json();
     console.log("📥 raw response:", raw);
 
@@ -28,7 +34,9 @@
                  : Array.isArray(raw.data) ? raw.data
                  : [];
 
-    if (!Array.isArray(items)) throw new Error("Unexpected response format (no array)");
+    if (!Array.isArray(items)) {
+      throw new Error("Unexpected response format (no array)");
+    }
 
     // Normalize to what renderTable expects:
     // { entryId, firstName, lastName, siteName, ticketId, date, hours, status, notes }
@@ -67,7 +75,8 @@
     renderTable();
   } catch (err) {
     console.error("Failed to load pending timesheets:", err);
-    els.tableBody.innerHTML = `<tr><td colspan="8">Error loading timesheets</td></tr>`;
+    els.tableBody.innerHTML = `<tr><td colspan="8">Error: ${err.message}</td></tr>`;
+    alert("Failed to load pending timesheets. Please refresh the page.");
   }
 }
 
@@ -121,26 +130,52 @@
   async function approve(entryId) {
     try {
       const res = await fetch(`${API_BASE}/timesheets/approve/${entryId}`, { method: "POST" });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
       state.timesheets = state.timesheets.filter((t) => t.entryId !== entryId);
       renderTable();
+      alert("Entry approved successfully!");
     } catch (err) {
-      alert("Approve failed: " + err.message);
+      console.error("Approve failed:", err);
+      alert("Failed to approve entry: " + err.message);
     }
   }
 
   async function reject(entryId) {
     try {
       const res = await fetch(`${API_BASE}/timesheets/reject/${entryId}`, { method: "POST" });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
       state.timesheets = state.timesheets.filter((t) => t.entryId !== entryId);
       renderTable();
+      alert("Entry rejected successfully!");
     } catch (err) {
-      alert("Reject failed: " + err.message);
+      console.error("Reject failed:", err);
+      alert("Failed to reject entry: " + err.message);
     }
   }
 
   els.filterInput.addEventListener("input", renderTable);
+
+  // Navigation button handlers
+  const navButtons = {
+    staffBtn: "staff.html",
+    summaryBtn: "summary.html",
+    homeBtn: "index.html"
+  };
+
+  Object.entries(navButtons).forEach(([id, url]) => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener("click", () => {
+        window.location.href = url;
+      });
+    }
+  });
 
   document.addEventListener("click", (ev) => {
     const t = ev.target;

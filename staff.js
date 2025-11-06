@@ -4,7 +4,8 @@
  * staff.js — Manage Casual Staff (final clean build)
  */
 
-const API_BASE = (window.API_BASE || "http://localhost:7071/api").replace(/\/+$/g, "");
+// Use the global API_BASE defined in config.js
+const API_BASE = window.API_BASE;
 
 let employees = [];
 let filterText = "";
@@ -13,6 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const tableBody = document.querySelector("#staffTable tbody");
   const addBtn = document.getElementById("addBtn");
   const staffFilter = document.getElementById("staffFilter");
+  const managerBtn = document.getElementById("managerBtn");
+  const homeBtn = document.getElementById("homeBtn");
 
   if (!tableBody) {
     console.error("❌ #staffTable tbody not found");
@@ -29,6 +32,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Navigation buttons
+  if (managerBtn) {
+    managerBtn.addEventListener("click", () => {
+      window.location.href = "manager.html";
+    });
+  }
+
+  if (homeBtn) {
+    homeBtn.addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+  }
+
   loadEmployees(tableBody);
 });
 
@@ -37,6 +53,11 @@ async function loadEmployees(tbody) {
 
   try {
     const res = await fetch(`${API_BASE}/employees`, { cache: "no-store" });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
     const rawText = await res.text();
 
     let data;
@@ -45,6 +66,7 @@ async function loadEmployees(tbody) {
     } catch {
       console.error("Invalid JSON:", rawText);
       tbody.innerHTML = `<tr><td colspan="9">Invalid JSON from API</td></tr>`;
+      alert("Received invalid data from server. Please contact support.");
       return;
     }
 
@@ -68,7 +90,8 @@ async function loadEmployees(tbody) {
     renderTable(tbody);
   } catch (err) {
     console.error("Load error:", err);
-    tbody.innerHTML = `<tr><td colspan="9">Error loading employees</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9">Error: ${err.message}</td></tr>`;
+    alert("Failed to load employees. Please refresh the page.");
   }
 }
 
@@ -164,7 +187,7 @@ async function saveNewRow(tr, tbody) {
   };
 
   if (!payload.first_name || !payload.last_name) {
-    alert("⚠️ First and Last name required.");
+    alert("First and Last name required.");
     return;
   }
 
@@ -174,13 +197,18 @@ async function saveNewRow(tr, tbody) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error(await res.text());
-    alert("✅ Employee added.");
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
+
+    alert("Employee added successfully!");
     tr.remove();
     loadEmployees(tbody);
   } catch (err) {
-    console.error(err);
-    alert("❌ Error adding employee.");
+    console.error("Add employee error:", err);
+    alert(`Failed to add employee: ${err.message}`);
   }
 }
 
@@ -213,8 +241,13 @@ async function onSaveClick(btn) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error(await res.text());
-    alert("✅ Updated.");
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
+
+    alert("Employee updated successfully!");
     for (let i = 1; i <= 4; i++) tr.cells[i].contentEditable = "false";
     tr.cells[6].contentEditable = "false";
     tr.cells[7].contentEditable = "false";
@@ -222,8 +255,8 @@ async function onSaveClick(btn) {
     tr.querySelector(".edit").style.display = "inline-block";
     tr.querySelector(".save").style.display = "none";
   } catch (err) {
-    console.error(err);
-    alert("❌ Error updating employee.");
+    console.error("Update employee error:", err);
+    alert(`Failed to update employee: ${err.message}`);
   }
 }
 

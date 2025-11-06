@@ -1,17 +1,20 @@
 <!-- ===================== INDEX.HTML ===================== -->
 <!DOCTYPE html>
 <html lang="en">
-  <header>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <div class="header-content">
-        <img src="InsightSystems_PrimaryLogo_Rev.png" alt="Insight Systems Logo" class="header-logo" />
-          <h1>Time Entry</h1>
-            <link rel="stylesheet" href="style.css" />
-      </div>
-    <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
-  </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Entry</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="config.js"></script>
+</head>
 <body>
+  <header>
+    <div class="header-content">
+      <img src="InsightSystems_PrimaryLogo_Rev.png" alt="Insight Systems Logo" class="header-logo" />
+      <h1>Time Entry</h1>
+    </div>
+  </header>
   <div class="container">
     <form id="timesheetForm" novalidate>
       <div class="form-row"><label for="employeeSelect">Employee:</label><select id="employeeSelect"></select></div>
@@ -26,7 +29,7 @@
             <td><select id="entryTicket"></select></td>
             <td><input type="number" id="hoursStd" step="0.25" min="0" value="0" style="width:50px;" /> <input type="number" id="hours15" step="0.25" min="0" value="0" style="width:50px;" /> <input type="number" id="hours2" step="0.25" min="0" value="0" style="width:50px;" /></td>
             <td><input type="text" id="entryNotes" placeholder="Notes (optional)" /></td>
-            <td><button type="button" class="btn light" onclick="addToQueue()">Add</button></td>
+            <td><button type="button" id="addToQueueBtn" class="btn light">Add</button></td>
           </tr></tbody>
         </table>
       </div>
@@ -41,7 +44,7 @@
       </div>
       <div class="form-actions">
         <button type="reset" class="btn secondary">Clear Form</button>
-        <button type="button" class="btn secondary" onclick="window.print()">Print Form</button>
+        <button type="button" id="printBtn" class="btn secondary">Print Form</button>
         <button type="submit" class="btn primary">Submit</button>
         <button type="button" id="managerBtn" class="btn danger">Manager View</button>
       </div>

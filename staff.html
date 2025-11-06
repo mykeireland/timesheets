@@ -1,25 +1,27 @@
 <!-- ===================== STAFF.HTML ===================== -->
 <!DOCTYPE html>
 <html lang="en">
-  <header>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <div class="header-content">
-        <img src="InsightSystems_PrimaryLogo_Rev.png" alt="Insight Systems Logo" class="header-logo" />
-          <h1>Casual Staff Management</h1>
-            <link rel="stylesheet" href="style.css" />
-      </div>
-    <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
-  </header>
-
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Casual Staff Management</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="config.js"></script>
+</head>
 <body>
+  <header>
+    <div class="header-content">
+      <img src="InsightSystems_PrimaryLogo_Rev.png" alt="Insight Systems Logo" class="header-logo" />
+      <h1>Casual Staff Management</h1>
+    </div>
+  </header>
   <div class="container wide">
     <div class="toolbar">
       <input id="staffFilter" class="search-input" type="text" placeholder="Filter by name / email / type" />
       <div>
-        <button id="addBtn" type="button" class="btn danger">➕ Add Employee</button>
-        <button type="button" class="btn secondary" onclick="window.location.href='manager.html'">🗂 Manage Approvals</button>
-        <button type="button" class="btn light" onclick="window.location.href='index.html'">🏠 Home</button>
+        <button id="addBtn" type="button" class="btn danger">Add Employee</button>
+        <button id="managerBtn" type="button" class="btn secondary">Manage Approvals</button>
+        <button id="homeBtn" type="button" class="btn light">Home</button>
       </div>
     </div>
 

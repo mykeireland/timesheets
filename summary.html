@@ -6,30 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Entry Summary</title>
   <link rel="stylesheet" href="style.css" />
-  <script>window.API_BASE = "https://func-timesheetsNET-api-dev.azurewebsites.net/api";</script>
-  <style>
-    /* Overtime row highlight (soft red tint) */
-    tr.overtime-row td {
-      background-color: rgba(242, 139, 130, 0.2);
-    }
-    /* Totals row styling */
-    tr.totals-row td {
-      background: #f5f5f7;
-      font-weight: 700;
-    }
-    /* Make hours look like the rest of the text but align nicely */
-    .hours-group {
-      display: inline-block;
-      background: #f9fafc;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      color: #333;
-      /* Key change: match normal font, use tabular numbers for alignment */
-      font-family: inherit;
-      font-variant-numeric: tabular-nums;
-    }
-  </style>
+  <script src="config.js"></script>
 </head>
 
 <body>
@@ -44,14 +21,14 @@
     <div class="toolbar">
       <input id="filterInput" class="search-input" type="text" placeholder="Filter by name..." />
       <div>
-        <button class="btn secondary" onclick="window.location.href='manager.html'">⬅ Back to Approvals</button>
-        <button class="btn light" onclick="window.location.href='index.html'">🏠 Home</button>
+        <button type="button" id="managerBtn" class="btn secondary">Back to Approvals</button>
+        <button type="button" id="homeBtn" class="btn light">Home</button>
       </div>
     </div>
 
     <!-- APPROVED ENTRIES -->
     <div class="table-responsive">
-      <h2>✅ Approved Time Entries</h2>
+      <h2>Approved Time Entries</h2>
       <table id="approvedTable">
         <thead>
           <tr>
@@ -69,7 +46,7 @@
 
     <!-- UNAPPROVED / REJECTED ENTRIES -->
     <div class="table-responsive" style="margin-top: 2rem;">
-      <h2>🕗 Unapproved / Rejected Time Entries</h2>
+      <h2>Unapproved / Rejected Time Entries</h2>
       <table id="unapprovedTable">
         <thead>
           <tr>
@@ -87,92 +64,6 @@
     </div>
   </div>
 
-  <script>
-    function num(v){ return Number(v) || 0; }
-
-    async function loadSummary() {
-      try {
-        const res = await fetch(`${window.API_BASE}/timesheets/summary`);
-        const data = await res.json();
-        if (!data.ok) return;
-
-        const approvedBody = document.querySelector("#approvedTable tbody");
-        const unapprovedBody = document.querySelector("#unapprovedTable tbody");
-        approvedBody.innerHTML = "";
-        unapprovedBody.innerHTML = "";
-
-        let approvedStd = 0, approvedOT = 0;
-        let unapprovedStd = 0, unapprovedOT = 0;
-
-        // ---- APPROVED ENTRIES ----
-        for (const e of (data.approved || [])) {
-          const hs = num(e.hoursStandard), h15 = num(e.hours15x), h2 = num(e.hours2x);
-          const isOT = (h15 + h2) > 0;
-
-          approvedStd += hs;
-          approvedOT += (h15 + h2);
-
-          const tr = document.createElement("tr");
-          if (isOT) tr.classList.add("overtime-row");
-          tr.innerHTML = `
-            <td>${e.name}</td>
-            <td>${e.summary || "—"}</td>
-            <td>${e.cwTicketId || "—"}</td>
-            <td>${e.date}</td>
-            <td><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
-            <td>${e.notes || "—"}</td>
-          `;
-          approvedBody.appendChild(tr);
-        }
-
-        // Add totals row to approved
-        const trA = document.createElement("tr");
-        trA.className = "totals-row";
-        trA.innerHTML = `
-          <td colspan="4" style="text-align:right;">Totals:</td>
-          <td><span class="hours-group">Std: ${approvedStd.toFixed(2)} / OT: ${approvedOT.toFixed(2)}</span></td>
-          <td></td>
-        `;
-        approvedBody.appendChild(trA);
-
-        // ---- UNAPPROVED / REJECTED ENTRIES ----
-        for (const e of (data.unapproved || [])) {
-          const hs = num(e.hoursStandard), h15 = num(e.hours15x), h2 = num(e.hours2x);
-          const isOT = (h15 + h2) > 0;
-
-          unapprovedStd += hs;
-          unapprovedOT += (h15 + h2);
-
-          const tr = document.createElement("tr");
-          if (isOT) tr.classList.add("overtime-row");
-          tr.innerHTML = `
-            <td>${e.name}</td>
-            <td>${e.summary || "—"}</td>
-            <td>${e.cwTicketId || "—"}</td>
-            <td>${e.date}</td>
-            <td><span class="hours-group">${hs.toFixed(2)} / ${h15.toFixed(2)} / ${h2.toFixed(2)}</span></td>
-            <td><span class="status-badge status-${String(e.status||'').toLowerCase()}">${e.status}</span></td>
-            <td>${e.notes || "—"}</td>
-          `;
-          unapprovedBody.appendChild(tr);
-        }
-
-        // Add totals row to unapproved
-        const trU = document.createElement("tr");
-        trU.className = "totals-row";
-        trU.innerHTML = `
-          <td colspan="4" style="text-align:right;">Totals:</td>
-          <td><span class="hours-group">Std: ${unapprovedStd.toFixed(2)} / OT: ${unapprovedOT.toFixed(2)}</span></td>
-          <td colspan="2"></td>
-        `;
-        unapprovedBody.appendChild(trU);
-
-      } catch (err) {
-        console.error("Error loading summary:", err);
-      }
-    }
-
-    window.addEventListener("DOMContentLoaded", loadSummary);
-  </script>
+  <script src="summary.js"></script>
 </body>
 </html>
