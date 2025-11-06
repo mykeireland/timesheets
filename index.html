@@ -25,11 +25,11 @@
         <table>
           <thead><tr><th>Date</th><th>Ticket</th><th>Hours (Std/1.5x/2x)</th><th>Notes</th><th>Action</th></tr></thead>
           <tbody><tr>
-            <td><input type="date" id="entryDate" /></td>
-            <td><select id="entryTicket"></select></td>
-            <td><input type="number" id="hoursStd" step="0.25" min="0" value="0" style="width:50px;" /> <input type="number" id="hours15" step="0.25" min="0" value="0" style="width:50px;" /> <input type="number" id="hours2" step="0.25" min="0" value="0" style="width:50px;" /></td>
-            <td><input type="text" id="entryNotes" placeholder="Notes (optional)" /></td>
-            <td><button type="button" id="addToQueueBtn" class="btn light">Add</button></td>
+            <td data-label="Date"><input type="date" id="entryDate" /></td>
+            <td data-label="Ticket"><select id="entryTicket"></select></td>
+            <td data-label="Hours"><input type="number" id="hoursStd" step="0.25" min="0" value="0" style="width:50px;" placeholder="Standard" /> <input type="number" id="hours15" step="0.25" min="0" value="0" style="width:50px;" placeholder="1.5x" /> <input type="number" id="hours2" step="0.25" min="0" value="0" style="width:50px;" placeholder="2x" /></td>
+            <td data-label="Notes"><input type="text" id="entryNotes" placeholder="Notes (optional)" /></td>
+            <td data-label="Action"><button type="button" id="addToQueueBtn" class="btn light">Add</button></td>
           </tr></tbody>
         </table>
       </div>
