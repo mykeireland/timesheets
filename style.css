@@ -388,6 +388,15 @@ tr.totals-row td {
   background: linear-gradient(135deg, var(--color-danger-hover) 0%, #b91c1c 100%);
 }
 
+.btn.warning {
+  background: linear-gradient(135deg, var(--color-warning) 0%, #ea580c 100%);
+  color: #fff;
+}
+
+.btn.warning:hover {
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+}
+
 .btn.light {
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
