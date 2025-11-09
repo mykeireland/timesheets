@@ -172,6 +172,35 @@
 
   els.filterInput.addEventListener("input", renderTable);
 
+  // Sync Monthly Tickets handler
+  async function syncTickets() {
+    if (!confirm("Are you sure you want to sync monthly tickets? This may take a few moments.")) {
+      return;
+    }
+
+    window.showLoading();
+    try {
+      const res = await fetch(`${API_BASE}/timesheets/sync-tickets`, {
+        method: "POST"
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
+
+      const data = await res.json();
+      alert("Tickets synced successfully!");
+      // Reload pending timesheets to show any new data
+      loadPending();
+    } catch (err) {
+      console.error("Sync tickets failed:", err);
+      alert("Failed to sync tickets: " + err.message);
+    } finally {
+      window.hideLoading();
+    }
+  }
+
   // Navigation button handlers
   const navButtons = {
     staffBtn: "staff.html",
@@ -187,6 +216,12 @@
       });
     }
   });
+
+  // Sync Tickets button handler
+  const syncTicketsBtn = document.getElementById("syncTicketsBtn");
+  if (syncTicketsBtn) {
+    syncTicketsBtn.addEventListener("click", syncTickets);
+  }
 
   document.addEventListener("click", (ev) => {
     const t = ev.target;
