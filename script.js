@@ -206,26 +206,45 @@ async function submitTimesheets() {
     return;
   }
 
+  // Transform queued entries to match backend expected format (snake_case)
+  const payload = queuedEntries.map(entry => ({
+    employee_id: parseInt(entry.employeeId, 10),
+    cw_ticket_id: parseInt(entry.ticketId, 10),
+    date: entry.date,
+    hours_standard: entry.hoursStandard,
+    hours_15x: entry.hours15x,
+    hours_2x: entry.hours2x,
+    notes_internal: entry.notes || ""
+  }));
+
+  console.log("📤 Submitting timesheets:", payload);
+
   window.showLoading();
   try {
     const res = await fetch(`${API_BASE}/timesheets/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(queuedEntries)
+      body: JSON.stringify(payload)
     });
+
+    console.log("📥 Response status:", res.status);
 
     if (!res.ok) {
       const errorText = await res.text();
+      console.error("❌ Error response:", errorText);
       throw new Error(`HTTP ${res.status}: ${errorText}`);
     }
 
     const data = await res.json();
-    if (data.ok) {
+    console.log("📥 Response data:", data);
+
+    // Handle both {ok: true} and {success: true} response formats
+    if (data.ok || data.success || res.status === 200 || res.status === 201) {
       alert("Timesheet entries submitted successfully!");
       queuedEntries = [];
       renderQueue();
     } else {
-      throw new Error(data.error || "Unknown error from server");
+      throw new Error(data.error || data.message || "Unknown error from server");
     }
   } catch (err) {
     console.error("❌ Error submitting timesheets:", err);
