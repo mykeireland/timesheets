@@ -267,15 +267,17 @@ async function submitTimesheets() {
     }
   }
 
-  // Transform queued entries to match backend expected format (snake_case)
+  // Transform queued entries to match backend expected format (camelCase)
   const payload = queuedEntries.map(entry => ({
-    employee_id: parseInt(entry.employeeId, 10),
-    cw_ticket_id: parseInt(entry.ticketId, 10),
+    employeeId: entry.employeeId,
+    employeeName: entry.employeeName,
+    ticketId: entry.ticketId,
+    ticketName: entry.ticketName,
     date: entry.date,
-    hours_standard: entry.hoursStandard,
-    hours_15x: entry.hours15x,
-    hours_2x: entry.hours2x,
-    notes_internal: entry.notes || ""
+    hoursStandard: entry.hoursStandard,
+    hours15x: entry.hours15x,
+    hours2x: entry.hours2x,
+    notes: entry.notes || ""
   }));
 
   console.log("📤 Submitting timesheets:", payload);
