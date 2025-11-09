@@ -23,8 +23,16 @@ async function loadEmployees() {
 
     select.innerHTML = "";
 
+    // Add default placeholder option
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "-- Please select an employee --";
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+
     if (!Array.isArray(employees) || employees.length === 0) {
       const opt = document.createElement("option");
+      opt.value = "";
       opt.textContent = "(no employees found)";
       select.appendChild(opt);
       return;
@@ -38,7 +46,7 @@ async function loadEmployees() {
     }
   } catch (err) {
     console.error("❌ Failed to load employees:", err);
-    select.innerHTML = '<option>(Error loading employees)</option>';
+    select.innerHTML = '<option value="">(Error loading employees)</option>';
     alert("Failed to load employees. Please refresh the page or contact support.");
   }
 }
@@ -55,8 +63,16 @@ async function loadTickets() {
 
     select.innerHTML = "";
 
+    // Add default placeholder option
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "-- Please select a ticket --";
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+
     if (!Array.isArray(tickets) || tickets.length === 0) {
       const opt = document.createElement("option");
+      opt.value = "";
       opt.textContent = "(no tickets found)";
       select.appendChild(opt);
       return;
@@ -78,7 +94,7 @@ async function loadTickets() {
     });
   } catch (err) {
     console.error("❌ Failed to load tickets:", err);
-    select.innerHTML = '<option>(Error loading tickets)</option>';
+    select.innerHTML = '<option value="">(Error loading tickets)</option>';
     alert("Failed to load tickets. Please refresh the page or contact support.");
   }
 }
@@ -87,24 +103,49 @@ async function loadTickets() {
 function addToQueue() {
   const employeeSelect = document.getElementById("employeeSelect");
   const ticketSelect = document.getElementById("entryTicket");
+  const dateInput = document.getElementById("entryDate");
+
+  // Validate employee selection first
+  if (!employeeSelect.value || employeeSelect.value.trim() === "") {
+    alert("Please select an employee first");
+    employeeSelect.focus();
+    return;
+  }
+
+  // Validate ticket selection
+  if (!ticketSelect.value || ticketSelect.value.trim() === "") {
+    alert("Please select a ticket");
+    ticketSelect.focus();
+    return;
+  }
+
+  // Validate date
+  if (!dateInput.value || dateInput.value.trim() === "") {
+    alert("Please select a date");
+    dateInput.focus();
+    return;
+  }
 
   const entry = {
     employeeId: employeeSelect.value,
     employeeName: employeeSelect.options[employeeSelect.selectedIndex]?.textContent || "Unknown",
     ticketId: ticketSelect.value,
     ticketName: ticketSelect.options[ticketSelect.selectedIndex]?.textContent || "Unknown",
-    date: document.getElementById("entryDate").value,
+    date: dateInput.value,
     hoursStandard: Number(document.getElementById("hoursStd").value || 0),
     hours15x: Number(document.getElementById("hours15").value || 0),
     hours2x: Number(document.getElementById("hours2").value || 0),
     notes: document.getElementById("entryNotes").value.trim()
   };
 
-  if (!entry.date || !entry.employeeId || !entry.ticketId) {
-    alert("Please select an employee, ticket, and date.");
+  // Validate at least one hour type has a value
+  if (entry.hoursStandard === 0 && entry.hours15x === 0 && entry.hours2x === 0) {
+    alert("Please enter hours for at least one hour type (Standard, 1.5x, or 2x)");
+    document.getElementById("hoursStd").focus();
     return;
   }
 
+  console.log("Adding entry to queue:", entry);
   queuedEntries.push(entry);
   renderQueue();
 }
@@ -204,6 +245,26 @@ async function submitTimesheets() {
   if (queuedEntries.length === 0) {
     alert("No entries to submit.");
     return;
+  }
+
+  // Validate all entries before submission
+  for (let i = 0; i < queuedEntries.length; i++) {
+    const entry = queuedEntries[i];
+    if (!entry.employeeId || entry.employeeId.trim() === "") {
+      alert(`Entry #${i + 1} is missing an employee ID. Please remove and re-add this entry.`);
+      console.error("Invalid entry found:", entry);
+      return;
+    }
+    if (!entry.ticketId || entry.ticketId.trim() === "") {
+      alert(`Entry #${i + 1} is missing a ticket ID. Please remove and re-add this entry.`);
+      console.error("Invalid entry found:", entry);
+      return;
+    }
+    if (!entry.date || entry.date.trim() === "") {
+      alert(`Entry #${i + 1} is missing a date. Please remove and re-add this entry.`);
+      console.error("Invalid entry found:", entry);
+      return;
+    }
   }
 
   // Transform queued entries to match backend expected format (snake_case)
