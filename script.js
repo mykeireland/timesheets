@@ -11,6 +11,42 @@ let queueFilterText = "";
 let queueSortField = null;
 let queueSortDir = 1; // 1 = ascending, -1 = descending
 
+// ---------- POPULATE HOURS PICKERS ----------
+function populateHoursPickers() {
+  const hoursStd = document.getElementById("hoursStd");
+  const hours15 = document.getElementById("hours15");
+  const hours2 = document.getElementById("hours2");
+
+  // Standard hours: 0 to 7.6 in 0.25 increments
+  populatePicker(hoursStd, 0, 7.6, 0.25);
+
+  // 1.5x hours: 0 to 2 in 0.25 increments
+  populatePicker(hours15, 0, 2, 0.25);
+
+  // 2x hours: 0 to 10 in 0.25 increments
+  populatePicker(hours2, 0, 10, 0.25);
+}
+
+function populatePicker(select, min, max, step) {
+  select.innerHTML = "";
+
+  // Add blank/zero option
+  const blank = document.createElement("option");
+  blank.value = "";
+  blank.textContent = "--";
+  select.appendChild(blank);
+
+  // Add incremental options
+  for (let val = min; val <= max; val += step) {
+    // Round to avoid floating point errors
+    const rounded = Math.round(val * 100) / 100;
+    const opt = document.createElement("option");
+    opt.value = rounded;
+    opt.textContent = rounded.toFixed(2);
+    select.appendChild(opt);
+  }
+}
+
 // ---------- LOAD EMPLOYEES ----------
 async function loadEmployees() {
   const select = document.getElementById("employeeSelect");
@@ -345,6 +381,7 @@ async function submitTimesheets() {
 
 // ---------- INITIALIZE ----------
 window.addEventListener("DOMContentLoaded", () => {
+  populateHoursPickers();
   loadEmployees();
   loadTickets();
 
@@ -420,59 +457,21 @@ window.addEventListener("DOMContentLoaded", () => {
     renderQueue();
   });
 
-  // Time stepper button handlers
+  // Preset button handlers
   document.addEventListener("click", (ev) => {
     const target = ev.target;
-
-    // Handle stepper buttons
-    if (target.classList.contains("stepper-btn")) {
-      ev.preventDefault();
-      const inputId = target.getAttribute("data-target");
-      const action = target.getAttribute("data-action");
-      const input = document.getElementById(inputId);
-
-      if (!input) return;
-
-      const step = parseFloat(input.step) || 0.25;
-      const min = parseFloat(input.min) || 0;
-      let currentValue = parseFloat(input.value) || 0;
-
-      if (action === "increment") {
-        // Round to avoid floating point errors
-        const newValue = Math.round((currentValue + step) * 100) / 100;
-        input.value = newValue;
-      } else if (action === "decrement") {
-        const decremented = Math.round((currentValue - step) * 100) / 100;
-        const newValue = Math.max(min, decremented);
-        input.value = newValue;
-      }
-
-      // Trigger change event in case other code listens to it
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    }
 
     // Handle preset buttons
     if (target.classList.contains("preset-btn")) {
       ev.preventDefault();
+      const targetFieldId = target.getAttribute("data-target");
       const hours = parseFloat(target.getAttribute("data-hours"));
 
-      // Set standard hours, clear OT - use empty string for 0 to keep input clean
-      const hoursStdInput = document.getElementById("hoursStd");
-      const hours15Input = document.getElementById("hours15");
-      const hours2Input = document.getElementById("hours2");
-
-      if (hours > 0) {
-        hoursStdInput.value = hours;
-      } else {
-        hoursStdInput.value = "";
+      const targetField = document.getElementById(targetFieldId);
+      if (targetField) {
+        targetField.value = hours;
+        targetField.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      hours15Input.value = "";
-      hours2Input.value = "";
-
-      // Trigger change events
-      [hoursStdInput, hours15Input, hours2Input].forEach(input => {
-        if (input) input.dispatchEvent(new Event("input", { bubbles: true }));
-      });
     }
   });
 });
