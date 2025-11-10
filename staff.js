@@ -307,7 +307,7 @@ async function saveNewRow(tr, tbody) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            employeeId: String(newEmployeeId),
+            employeeId: parseInt(newEmployeeId, 10),
             newPin: "0000"
           })
         });
@@ -394,7 +394,7 @@ async function onResetPinClick(btn, tbody) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        employeeId: String(employeeId),
+        employeeId: employeeId,
         newPin: "0000"
       })
     });
