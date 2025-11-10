@@ -127,9 +127,11 @@ async function loadEmployees(tbody) {
     }));
 
     // Load PIN status data
+    console.log("🔍 PIN Status Response Status:", pinStatusRes.status, pinStatusRes.statusText);
     if (pinStatusRes.ok) {
       try {
         const pinData = await pinStatusRes.json();
+        console.log("📥 PIN Status Data:", pinData);
         if (pinData.success && Array.isArray(pinData.data)) {
           pinStatuses = {};
           pinData.data.forEach(status => {
@@ -138,10 +140,17 @@ async function loadEmployees(tbody) {
               lastUpdated: status.lastUpdated
             };
           });
+          console.log("✅ Loaded PIN status for", Object.keys(pinStatuses).length, "employees");
+        } else {
+          console.warn("⚠️ Unexpected PIN status data structure:", pinData);
         }
       } catch (err) {
-        console.warn("Failed to load PIN status:", err);
+        console.warn("❌ Failed to load PIN status:", err);
       }
+    } else {
+      const errorText = await pinStatusRes.text();
+      console.error("❌ PIN Status API Error:", pinStatusRes.status, errorText);
+      console.error("💡 Solution: Backend needs AuthorizationLevel.Anonymous or add function key to config.js");
     }
 
     renderTable(tbody);
