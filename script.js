@@ -81,7 +81,7 @@ async function loadTickets() {
     // Map new backend field names to what your old code expected
     tickets.forEach(t => {
       const mapped = {
-        ticketId: t.ticket_id,
+        ticketId: t.cw_ticket_id,  // Use ConnectWise ticket ID (7-digit), not auto-increment ticket_id
         ticketName: t.summary || t.name || "(no summary)",
         companyName: t.company_name || "",
         siteName: t.site_name || ""
