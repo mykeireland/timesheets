@@ -135,9 +135,10 @@ async function loadEmployees(tbody) {
         if (pinData.success && Array.isArray(pinData.data)) {
           pinStatuses = {};
           pinData.data.forEach(status => {
-            pinStatuses[status.employeeId] = {
-              hasPin: status.hasPin,
-              lastUpdated: status.lastUpdated
+            // Backend returns PascalCase: EmployeeId, HasPin, LastUpdated
+            pinStatuses[status.EmployeeId] = {
+              hasPin: status.HasPin,
+              lastUpdated: status.LastUpdated
             };
           });
           console.log("✅ Loaded PIN status for", Object.keys(pinStatuses).length, "employees");
