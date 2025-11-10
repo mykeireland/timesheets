@@ -419,4 +419,50 @@ window.addEventListener("DOMContentLoaded", () => {
     updateQueueSortIcons();
     renderQueue();
   });
+
+  // Time stepper button handlers
+  document.addEventListener("click", (ev) => {
+    const target = ev.target;
+
+    // Handle stepper buttons
+    if (target.classList.contains("stepper-btn")) {
+      ev.preventDefault();
+      const inputId = target.getAttribute("data-target");
+      const action = target.getAttribute("data-action");
+      const input = document.getElementById(inputId);
+
+      if (!input) return;
+
+      const step = parseFloat(input.step) || 0.25;
+      const min = parseFloat(input.min) || 0;
+      let currentValue = parseFloat(input.value) || 0;
+
+      if (action === "increment") {
+        input.value = (currentValue + step).toFixed(2);
+      } else if (action === "decrement") {
+        const newValue = Math.max(min, currentValue - step);
+        input.value = newValue.toFixed(2);
+      }
+
+      // Trigger change event in case other code listens to it
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    // Handle preset buttons
+    if (target.classList.contains("preset-btn")) {
+      ev.preventDefault();
+      const hours = parseFloat(target.getAttribute("data-hours"));
+
+      // Set standard hours, clear OT
+      document.getElementById("hoursStd").value = hours > 0 ? hours.toFixed(2) : "";
+      document.getElementById("hours15").value = "";
+      document.getElementById("hours2").value = "";
+
+      // Trigger change events
+      ["hoursStd", "hours15", "hours2"].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    }
+  });
 });
