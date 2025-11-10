@@ -349,18 +349,18 @@ tr.pending-with-overtime td {
   background-color: rgba(239, 68, 68, 0.1);
 }
 
-/* Selected for approval - bright green highlight */
+/* Selected for approval - subtle green accent */
 tr.selected-approve td {
-  background-color: rgba(16, 185, 129, 0.35) !important;
-  border-left: 5px solid #10b981 !important;
-  font-weight: 600;
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-left: 3px solid rgba(16, 185, 129, 0.4) !important;
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.15);
 }
 
-/* Selected for rejection - bright red highlight */
+/* Selected for rejection - subtle red accent */
 tr.selected-reject td {
-  background-color: rgba(239, 68, 68, 0.35) !important;
-  border-left: 5px solid var(--color-danger) !important;
-  font-weight: 600;
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  border-left: 3px solid rgba(239, 68, 68, 0.4) !important;
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.15);
 }
 
 /* Totals row styling */
@@ -761,19 +761,20 @@ input:hover {
 
 /* ===================== SELECTION INSTRUCTIONS ===================== */
 .selection-instructions {
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, #dbeafe 100%);
-  border: 2px solid var(--color-primary);
-  border-radius: var(--radius-lg);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
   font-size: var(--text-sm);
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   text-align: center;
   box-shadow: var(--shadow-sm);
 }
 
 .selection-instructions strong {
-  color: var(--color-primary);
+  color: var(--color-text-primary);
 }
 
 .selection-instructions kbd {
@@ -792,10 +793,10 @@ input:hover {
 .batch-actions {
   margin-top: var(--spacing-xl);
   padding: var(--spacing-lg);
-  background: linear-gradient(135deg, var(--color-gray-50) 0%, var(--color-gray-100) 100%);
-  border: 2px solid var(--color-primary);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .batch-summary {
@@ -811,24 +812,24 @@ input:hover {
   display: inline-block;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-lg);
-  font-size: var(--text-base);
-  font-weight: 700;
-  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 600;
   min-width: 150px;
   text-align: center;
   box-shadow: var(--shadow-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 .batch-count.approve-armed {
-  background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
-  border: 2px solid #047857;
+  background: var(--color-gray-50);
+  color: var(--color-success);
+  border: 2px solid rgba(16, 185, 129, 0.3);
 }
 
 .batch-count.reject-armed {
-  background: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-hover) 100%);
-  border: 2px solid #b91c1c;
+  background: var(--color-gray-50);
+  color: var(--color-danger);
+  border: 2px solid rgba(239, 68, 68, 0.3);
 }
 
 .batch-buttons {
@@ -1195,15 +1196,17 @@ input:hover {
     border: none;
   }
 
-  /* Selected states on mobile - more prominent */
+  /* Selected states on mobile - subtle accent */
   tbody tr.selected-approve {
-    background: rgba(16, 185, 129, 0.4) !important;
-    border-left: 6px solid #10b981 !important;
+    background: rgba(16, 185, 129, 0.08) !important;
+    border-left: 3px solid rgba(16, 185, 129, 0.5) !important;
+    box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.2);
   }
 
   tbody tr.selected-reject {
-    background: rgba(239, 68, 68, 0.4) !important;
-    border-left: 6px solid var(--color-danger) !important;
+    background: rgba(239, 68, 68, 0.08) !important;
+    border-left: 3px solid rgba(239, 68, 68, 0.5) !important;
+    box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.2);
   }
 
   tbody tr.selected-approve td,
