@@ -150,6 +150,14 @@ async function verifyPin() {
 
       console.log(`✅ Employee authenticated: ${authenticatedEmployee.employeeName}`);
 
+      // Check if PIN is default "0000" - force change on first login
+      if (pin === "0000") {
+        console.log("🔐 Default PIN detected - forcing PIN change");
+        hidePinModal();
+        showChangePinModal(authenticatedEmployee.employeeId, authenticatedEmployee.employeeName);
+        return; // Don't proceed with authentication until PIN is changed
+      }
+
       // Update UI to show authenticated state
       updateAuthenticatedUI();
 
@@ -211,6 +219,130 @@ function handleEmployeeSelectionChange() {
   // Different employee selected, require PIN authentication
   console.log(`🔐 Requesting PIN for employee: ${selectedEmployeeName}`);
   showPinModal(selectedEmployeeId, selectedEmployeeName);
+}
+
+// ---------- CHANGE PIN (First Login) ----------
+function showChangePinModal(employeeId, employeeName) {
+  const modal = document.getElementById("changePinModal");
+  const employeeNameDisplay = document.getElementById("changePinEmployeeName");
+  const newPinInput = document.getElementById("newPinInput");
+  const confirmPinInput = document.getElementById("confirmPinInput");
+  const changePinError = document.getElementById("changePinError");
+  const changePinSuccess = document.getElementById("changePinSuccess");
+
+  employeeNameDisplay.textContent = `${employeeName} - You must change your PIN from the default`;
+
+  // Clear inputs and messages
+  document.getElementById("currentPinInput").value = "0000";
+  document.getElementById("currentPinInput").disabled = true; // We know it's 0000
+  newPinInput.value = "";
+  confirmPinInput.value = "";
+  changePinError.style.display = "none";
+  changePinSuccess.style.display = "none";
+
+  // Show modal
+  modal.classList.add("show");
+  document.body.classList.add("modal-open");
+
+  // Focus new PIN input
+  setTimeout(() => newPinInput.focus(), 100);
+}
+
+function hideChangePinModal() {
+  const modal = document.getElementById("changePinModal");
+  modal.classList.remove("show");
+  document.body.classList.remove("modal-open");
+
+  // Clear all inputs
+  document.getElementById("currentPinInput").value = "";
+  document.getElementById("currentPinInput").disabled = false;
+  document.getElementById("newPinInput").value = "";
+  document.getElementById("confirmPinInput").value = "";
+  document.getElementById("changePinError").style.display = "none";
+  document.getElementById("changePinSuccess").style.display = "none";
+}
+
+async function submitPinChange() {
+  const newPinInput = document.getElementById("newPinInput");
+  const confirmPinInput = document.getElementById("confirmPinInput");
+  const changePinError = document.getElementById("changePinError");
+  const changePinSuccess = document.getElementById("changePinSuccess");
+  const submitBtn = document.getElementById("changePinSubmitBtn");
+
+  const newPin = newPinInput.value.trim();
+  const confirmPin = confirmPinInput.value.trim();
+
+  // Clear previous messages
+  changePinError.style.display = "none";
+  changePinSuccess.style.display = "none";
+
+  // Validate new PIN
+  if (!newPin || newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+    changePinError.textContent = "New PIN must be exactly 4 digits";
+    changePinError.style.display = "block";
+    return;
+  }
+
+  // Check if new PIN is same as default
+  if (newPin === "0000") {
+    changePinError.textContent = "New PIN cannot be 0000 (default). Please choose a unique PIN.";
+    changePinError.style.display = "block";
+    return;
+  }
+
+  // Validate confirmation
+  if (newPin !== confirmPin) {
+    changePinError.textContent = "New PIN and confirmation do not match";
+    changePinError.style.display = "block";
+    return;
+  }
+
+  if (!authenticatedEmployee) {
+    changePinError.textContent = "No employee authenticated";
+    changePinError.style.display = "block";
+    return;
+  }
+
+  // Disable button during submission
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Changing PIN...";
+
+  try {
+    const response = await fetch(`${API_BASE}/auth/change-pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        employeeId: authenticatedEmployee.employeeId,
+        currentPin: "0000",
+        newPin: newPin
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      changePinSuccess.textContent = "PIN changed successfully! You can now enter time.";
+      changePinSuccess.style.display = "block";
+
+      console.log(`✅ PIN changed for employee ${authenticatedEmployee.employeeName}`);
+
+      // Wait a moment then close modal and complete authentication
+      setTimeout(() => {
+        hideChangePinModal();
+        updateAuthenticatedUI();
+      }, 1500);
+    } else {
+      changePinError.textContent = data.message || "Failed to change PIN";
+      changePinError.style.display = "block";
+    }
+  } catch (err) {
+    console.error("❌ Error changing PIN:", err);
+    changePinError.textContent = "Error changing PIN. Please try again.";
+    changePinError.style.display = "block";
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Change PIN";
+  }
 }
 
 // ---------- LOAD EMPLOYEES ----------
@@ -607,6 +739,53 @@ window.addEventListener("DOMContentLoaded", () => {
     // Allow only numeric input
     pinInput.addEventListener("input", (ev) => {
       ev.target.value = ev.target.value.replace(/[^0-9]/g, "");
+    });
+  }
+
+  // Change PIN modal event handlers
+  const changePinSubmitBtn = document.getElementById("changePinSubmitBtn");
+  if (changePinSubmitBtn) {
+    changePinSubmitBtn.addEventListener("click", submitPinChange);
+  }
+
+  const changePinCancelBtn = document.getElementById("changePinCancelBtn");
+  if (changePinCancelBtn) {
+    changePinCancelBtn.addEventListener("click", () => {
+      // Cancel PIN change - logout
+      const employeeSelect = document.getElementById("employeeSelect");
+      employeeSelect.value = "";
+      authenticatedEmployee = null;
+      updateAuthenticatedUI();
+      hideChangePinModal();
+      alert("You must change your PIN from the default to continue. Please contact your manager if you need help.");
+    });
+  }
+
+  // Change PIN inputs - numeric only and Enter key support
+  const newPinInput = document.getElementById("newPinInput");
+  const confirmPinInput = document.getElementById("confirmPinInput");
+
+  if (newPinInput) {
+    newPinInput.addEventListener("input", (ev) => {
+      ev.target.value = ev.target.value.replace(/[^0-9]/g, "");
+    });
+    newPinInput.addEventListener("keypress", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        confirmPinInput.focus();
+      }
+    });
+  }
+
+  if (confirmPinInput) {
+    confirmPinInput.addEventListener("input", (ev) => {
+      ev.target.value = ev.target.value.replace(/[^0-9]/g, "");
+    });
+    confirmPinInput.addEventListener("keypress", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        submitPinChange();
+      }
     });
   }
 
