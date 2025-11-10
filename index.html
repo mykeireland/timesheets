@@ -116,6 +116,40 @@
     </div>
   </div>
 
+  <!-- Change PIN Modal -->
+  <div id="changePinModal" class="modal">
+    <div class="modal-content">
+      <h2>Change Your PIN</h2>
+      <p id="changePinEmployeeName" style="margin-bottom: 20px; font-weight: bold;"></p>
+
+      <div style="margin: 15px 0;">
+        <label for="currentPinInput">Current PIN:</label>
+        <input type="password" id="currentPinInput" maxlength="4" pattern="[0-9]*" inputmode="numeric"
+               placeholder="Current PIN" style="font-size: 1em; padding: 8px; width: 150px; display: block; margin: 5px 0;" />
+      </div>
+
+      <div style="margin: 15px 0;">
+        <label for="newPinInput">New PIN:</label>
+        <input type="password" id="newPinInput" maxlength="4" pattern="[0-9]*" inputmode="numeric"
+               placeholder="New PIN" style="font-size: 1em; padding: 8px; width: 150px; display: block; margin: 5px 0;" />
+      </div>
+
+      <div style="margin: 15px 0;">
+        <label for="confirmPinInput">Confirm New PIN:</label>
+        <input type="password" id="confirmPinInput" maxlength="4" pattern="[0-9]*" inputmode="numeric"
+               placeholder="Confirm PIN" style="font-size: 1em; padding: 8px; width: 150px; display: block; margin: 5px 0;" />
+      </div>
+
+      <div id="changePinError" style="color: #d32f2f; margin-bottom: 10px; display: none;"></div>
+      <div id="changePinSuccess" style="color: #10b981; margin-bottom: 10px; display: none;"></div>
+
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button type="button" id="changePinSubmitBtn" class="btn primary">Change PIN</button>
+        <button type="button" id="changePinCancelBtn" class="btn secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
