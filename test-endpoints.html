@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endpoint Test</title>
+  <script src="config.js"></script>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+    }
+    .test {
+      margin: 20px 0;
+      padding: 15px;
+      background: #252526;
+      border-left: 3px solid #007acc;
+    }
+    .url {
+      color: #4ec9b0;
+      word-break: break-all;
+    }
+    .success { color: #4ec9b0; }
+    .error { color: #f48771; }
+    .warning { color: #dcdcaa; }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #007acc;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-family: monospace;
+    }
+    button:hover { background: #005a9e; }
+    pre {
+      background: #1e1e1e;
+      padding: 10px;
+      overflow-x: auto;
+      border: 1px solid #3c3c3c;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Endpoint Direct Test</h1>
+  <p>Testing endpoints with full request/response details</p>
+
+  <button onclick="testAll()">Test All Endpoints</button>
+  <button onclick="clearResults()">Clear Results</button>
+
+  <div id="results"></div>
+
+  <script>
+    const API_BASE = window.API_BASE;
+
+    async function testEndpoint(name, url, method = 'GET', body = null) {
+      const resultsDiv = document.getElementById('results');
+      const testDiv = document.createElement('div');
+      testDiv.className = 'test';
+      testDiv.innerHTML = `
+        <h3>${name}</h3>
+        <div class="url">${method} ${url}</div>
+        <div>Testing...</div>
+      `;
+      resultsDiv.appendChild(testDiv);
+
+      try {
+        const options = {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        };
+
+        if (body) {
+          options.body = JSON.stringify(body);
+        }
+
+        const startTime = Date.now();
+        const response = await fetch(url, options);
+        const duration = Date.now() - startTime;
+
+        // Get all response info
+        const status = response.status;
+        const statusText = response.statusText;
+        const contentType = response.headers.get('content-type');
+        const responseHeaders = {};
+        response.headers.forEach((value, key) => {
+          responseHeaders[key] = value;
+        });
+
+        let responseBody = '';
+        let responseJson = null;
+
+        try {
+          const text = await response.text();
+          responseBody = text;
+          if (text) {
+            try {
+              responseJson = JSON.parse(text);
+            } catch (e) {
+              // Not JSON
+            }
+          }
+        } catch (e) {
+          responseBody = `Error reading body: ${e.message}`;
+        }
+
+        const statusClass = response.ok ? 'success' : 'error';
+
+        testDiv.innerHTML = `
+          <h3>${name}</h3>
+          <div class="url">${method} ${url}</div>
+          <div class="${statusClass}">
+            <strong>Status:</strong> ${status} ${statusText} (${duration}ms)
+          </div>
+          <div><strong>Content-Type:</strong> ${contentType || 'not set'}</div>
+          ${body ? `<div><strong>Request Body:</strong><pre>${JSON.stringify(body, null, 2)}</pre></div>` : ''}
+          <div><strong>Response Headers:</strong></div>
+          <pre>${JSON.stringify(responseHeaders, null, 2)}</pre>
+          <div><strong>Response Body:</strong></div>
+          <pre>${responseJson ? JSON.stringify(responseJson, null, 2) : responseBody.substring(0, 500)}</pre>
+        `;
+
+      } catch (error) {
+        testDiv.innerHTML = `
+          <h3>${name}</h3>
+          <div class="url">${method} ${url}</div>
+          <div class="error">
+            <strong>Network Error:</strong> ${error.message}
+          </div>
+          <div>This could indicate:</div>
+          <ul>
+            <li>CORS blocking the request</li>
+            <li>Function app is stopped</li>
+            <li>Network connectivity issue</li>
+          </ul>
+        `;
+      }
+    }
+
+    async function testAll() {
+      document.getElementById('results').innerHTML = '<h2>Running tests...</h2>';
+
+      // Test each endpoint
+      await testEndpoint(
+        '1. Verify PIN (Working Baseline)',
+        `${API_BASE}/auth/verify-pin`,
+        'POST',
+        { employeeId: '1', pin: '0000' }
+      );
+
+      await testEndpoint(
+        '2. Change PIN',
+        `${API_BASE}/auth/change-pin`,
+        'POST',
+        { employeeId: 1, currentPin: '0000', newPin: '1234' }
+      );
+
+      await testEndpoint(
+        '3. Get PIN Status',
+        `${API_BASE}/admin/pin-status`,
+        'GET'
+      );
+
+      await testEndpoint(
+        '4. Reset PIN',
+        `${API_BASE}/admin/reset-pin`,
+        'POST',
+        { employeeId: '1', newPin: '0000' }
+      );
+
+      // Also test if functions require authorization keys
+      await testEndpoint(
+        '5. Get Employees (Known Working)',
+        `${API_BASE}/employees`,
+        'GET'
+      );
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = '';
+    }
+
+    // Auto-run on load
+    window.addEventListener('load', () => {
+      setTimeout(testAll, 500);
+    });
+  </script>
+</body>
+</html>
