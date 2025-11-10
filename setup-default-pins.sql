@@ -15,7 +15,7 @@
 -- OPTION 2: Use MERGE to update existing and insert new (Recommended)
 -- This preserves the table and handles both updates and inserts
 -- Only processes users that exist in UserAccount table to satisfy FK constraint
-WITH EmployeeSalts AS (
+;WITH EmployeeSalts AS (
     SELECT
         ua.user_id,
         CRYPT_GEN_RANDOM(16) AS salt
