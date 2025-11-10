@@ -301,13 +301,19 @@ async function submitTimesheets() {
     const data = await res.json();
     console.log("📥 Response data:", data);
 
-    // Handle both {ok: true} and {success: true} response formats
-    if (data.ok || data.success || res.status === 200 || res.status === 201) {
+    // Check if submission was successful
+    // Backend returns {ok: true/false} with details in data.data
+    if (data.ok === true || data.success === true) {
       alert("Timesheet entries submitted successfully!");
       queuedEntries = [];
       renderQueue();
     } else {
-      throw new Error(data.error || data.message || "Unknown error from server");
+      // Backend returned errors - show detailed error message
+      const errors = data.data?.errors || [];
+      const errorMessage = errors.length > 0
+        ? `Failed to submit:\n\n${errors.join('\n')}`
+        : (data.message || "Unknown error from server");
+      throw new Error(errorMessage);
     }
   } catch (err) {
     console.error("❌ Error submitting timesheets:", err);
