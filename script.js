@@ -438,10 +438,13 @@ window.addEventListener("DOMContentLoaded", () => {
       let currentValue = parseFloat(input.value) || 0;
 
       if (action === "increment") {
-        input.value = (currentValue + step).toFixed(2);
+        // Round to avoid floating point errors
+        const newValue = Math.round((currentValue + step) * 100) / 100;
+        input.value = newValue;
       } else if (action === "decrement") {
-        const newValue = Math.max(min, currentValue - step);
-        input.value = newValue.toFixed(2);
+        const decremented = Math.round((currentValue - step) * 100) / 100;
+        const newValue = Math.max(min, decremented);
+        input.value = newValue;
       }
 
       // Trigger change event in case other code listens to it
@@ -453,14 +456,21 @@ window.addEventListener("DOMContentLoaded", () => {
       ev.preventDefault();
       const hours = parseFloat(target.getAttribute("data-hours"));
 
-      // Set standard hours, clear OT
-      document.getElementById("hoursStd").value = hours > 0 ? hours.toFixed(2) : "";
-      document.getElementById("hours15").value = "";
-      document.getElementById("hours2").value = "";
+      // Set standard hours, clear OT - use empty string for 0 to keep input clean
+      const hoursStdInput = document.getElementById("hoursStd");
+      const hours15Input = document.getElementById("hours15");
+      const hours2Input = document.getElementById("hours2");
+
+      if (hours > 0) {
+        hoursStdInput.value = hours;
+      } else {
+        hoursStdInput.value = "";
+      }
+      hours15Input.value = "";
+      hours2Input.value = "";
 
       // Trigger change events
-      ["hoursStd", "hours15", "hours2"].forEach(id => {
-        const input = document.getElementById(id);
+      [hoursStdInput, hours15Input, hours2Input].forEach(input => {
         if (input) input.dispatchEvent(new Event("input", { bubbles: true }));
       });
     }
