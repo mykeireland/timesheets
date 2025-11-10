@@ -97,6 +97,25 @@
       </div>
     </form>
   </div>
+
+  <!-- PIN Authentication Modal -->
+  <div id="pinModal" class="modal">
+    <div class="modal-content">
+      <h2>Employee Authentication</h2>
+      <p id="pinEmployeeName" style="margin-bottom: 20px; font-weight: bold;"></p>
+      <p>Please enter your 4-digit PIN to continue:</p>
+      <div style="margin: 20px 0;">
+        <input type="password" id="pinInput" maxlength="4" pattern="[0-9]*" inputmode="numeric"
+               placeholder="Enter PIN" style="font-size: 1.2em; padding: 10px; width: 150px; text-align: center;" />
+      </div>
+      <div id="pinError" style="color: #d32f2f; margin-bottom: 10px; display: none;"></div>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button type="button" id="pinSubmitBtn" class="btn primary">Verify PIN</button>
+        <button type="button" id="pinCancelBtn" class="btn secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
