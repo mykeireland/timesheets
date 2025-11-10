@@ -15,7 +15,7 @@ window.API_BASE = window.API_BASE.replace(/\/+$/, "");
 // Some admin endpoints require a function key for authorization
 // Get this from Azure Portal → Function App → Functions → [Function Name] → Function Keys → default
 // Leave blank if your functions use Anonymous authorization
-window.ADMIN_FUNCTION_KEY = "";  // TODO: Add your function key here
+window.ADMIN_FUNCTION_KEY = "ktj2ON-XKCRFjcw3EjuLk4Px1cZsYu8ZuOzYYm5fOhy8AzFu7Adrfw==";  // TODO: Add your function key here
 
 console.info("🔗 API_BASE configured:", window.API_BASE);
 
