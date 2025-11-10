@@ -24,7 +24,7 @@
 
     async function checkPinStatus() {
       try {
-        const res = await fetch(`${API_BASE}/auth/pin-status`);
+        const res = await fetch(`${API_BASE}/admin/pin-status`);
         const data = await res.json();
         document.getElementById('results').textContent =
           'PIN Status Response:\n' + JSON.stringify(data, null, 2);
