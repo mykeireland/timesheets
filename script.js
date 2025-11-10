@@ -309,10 +309,26 @@ async function submitTimesheets() {
       renderQueue();
     } else {
       // Backend returned errors - show detailed error message
-      const errors = data.data?.errors || [];
-      const errorMessage = errors.length > 0
-        ? `Failed to submit:\n\n${errors.join('\n')}`
-        : (data.message || "Unknown error from server");
+      console.error("❌ Backend returned failure response:", data);
+
+      // Try multiple possible error message locations in the response
+      let errorMessage = "Unknown error from server";
+
+      if (data.data?.errors && Array.isArray(data.data.errors) && data.data.errors.length > 0) {
+        errorMessage = `Failed to submit:\n\n${data.data.errors.join('\n')}`;
+      } else if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        errorMessage = `Failed to submit:\n\n${data.errors.join('\n')}`;
+      } else if (data.message) {
+        errorMessage = data.message;
+      } else if (data.error) {
+        errorMessage = data.error;
+      } else if (data.data?.message) {
+        errorMessage = data.data.message;
+      } else {
+        // Show the full response to help debug
+        errorMessage = `Server returned an error. Response: ${JSON.stringify(data)}`;
+      }
+
       throw new Error(errorMessage);
     }
   } catch (err) {
