@@ -307,7 +307,7 @@ async function saveNewRow(tr, tbody) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            employeeId: String(newEmployeeId),
+            employeeId: parseInt(newEmployeeId, 10),
             newPin: "0000"
           })
         });
@@ -380,22 +380,34 @@ async function onResetPinClick(btn, tbody) {
   const employeeId = parseInt(tr.dataset.id, 10);
   const employeeName = `${tr.cells[1].textContent} ${tr.cells[2].textContent}`;
 
-  const confirmed = confirm(
-    `Reset PIN to "0000" for ${employeeName}?\n\nThis will overwrite their current PIN if one is set.`
+  // Prompt manager for custom PIN or use default
+  const customPin = prompt(
+    `Set PIN for ${employeeName}\n\n` +
+    `Enter a 4-digit PIN (or leave blank for default "0000"):\n\n` +
+    `Note: Employee will be required to change from "0000" on first login.`,
+    "0000"
   );
 
-  if (!confirmed) return;
+  // User cancelled
+  if (customPin === null) return;
+
+  // Validate PIN
+  const pinToSet = customPin.trim() || "0000";
+  if (!/^\d{4}$/.test(pinToSet)) {
+    alert("PIN must be exactly 4 digits (0-9 only)");
+    return;
+  }
 
   try {
     btn.disabled = true;
-    btn.textContent = "Resetting...";
+    btn.textContent = "Setting PIN...";
 
     const res = await fetch(`${API_BASE}/admin/reset-pin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        employeeId: String(employeeId),
-        newPin: "0000"
+        employeeId: employeeId,
+        newPin: pinToSet
       })
     });
 
@@ -405,13 +417,17 @@ async function onResetPinClick(btn, tbody) {
       throw new Error(data.message || `HTTP ${res.status}`);
     }
 
-    alert(`PIN reset successfully for ${employeeName}!\nNew PIN: 0000`);
+    if (pinToSet === "0000") {
+      alert(`PIN reset to default for ${employeeName}!\n\nEmployee will be required to change PIN on first login.`);
+    } else {
+      alert(`Custom PIN set for ${employeeName}!\n\nNew PIN: ${pinToSet}\n\nPlease share this PIN with the employee securely.`);
+    }
 
     // Reload employees to refresh PIN status
     await loadEmployees(tbody);
   } catch (err) {
     console.error("Reset PIN error:", err);
-    alert(`Failed to reset PIN: ${err.message}`);
+    alert(`Failed to set PIN: ${err.message}`);
     btn.disabled = false;
     btn.textContent = "Reset PIN";
   }

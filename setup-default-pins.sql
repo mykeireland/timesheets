@@ -2,33 +2,43 @@
 -- SQL Script to populate PinCredential table with default PIN "0000"
 -- =====================================================
 -- This script will:
--- 1. Clear existing PIN credentials
+-- 1. Update existing PIN credentials OR insert new ones
 -- 2. Generate a unique salt for each employee
 -- 3. Hash the default PIN "0000" with each salt
--- 4. Insert records into PinCredential table
+-- 4. Works with existing PinCredential table
 -- =====================================================
 
--- Clear existing PIN credentials
-TRUNCATE TABLE dbo.PinCredential;
+-- OPTION 1: Clear all existing PIN credentials first (CAUTION: Deletes all PINs)
+-- Uncomment the next line if you want to reset ALL employee PINs
+-- DELETE FROM dbo.PinCredential;
 
--- Insert default PIN "0000" for all active employees
--- Using CRYPT_GEN_RANDOM for cryptographically secure salt generation
--- Using HASHBYTES for SHA-256 hashing
--- Note: We use a CTE to generate the salt first, then use it for hashing
-WITH EmployeeSalts AS (
+-- OPTION 2: Use MERGE to update existing and insert new (Recommended)
+-- This preserves the table and handles both updates and inserts
+-- Only processes users that exist in UserAccount table to satisfy FK constraint
+;WITH EmployeeSalts AS (
     SELECT
-        e.employee_id,
+        ua.user_id,
         CRYPT_GEN_RANDOM(16) AS salt
-    FROM dbo.Employee e
+    FROM dbo.UserAccount ua
+    INNER JOIN dbo.Employee e ON ua.user_id = e.employee_id
     WHERE e.active = 1
 )
-INSERT INTO dbo.PinCredential (user_id, pin_hash, salt, updated_utc)
-SELECT
-    es.employee_id,
-    HASHBYTES('SHA2_256', CONCAT(CAST('0000' AS VARBINARY(MAX)), es.salt)), -- Hash PIN + salt
-    es.salt,
-    GETUTCDATE()
-FROM EmployeeSalts es;
+MERGE dbo.PinCredential AS target
+USING EmployeeSalts AS source
+ON target.user_id = source.user_id
+WHEN MATCHED THEN
+    UPDATE SET
+        pin_hash = HASHBYTES('SHA2_256', CONCAT(CAST('0000' AS VARBINARY(MAX)), source.salt)),
+        salt = source.salt,
+        updated_utc = GETUTCDATE()
+WHEN NOT MATCHED BY TARGET THEN
+    INSERT (user_id, pin_hash, salt, updated_utc)
+    VALUES (
+        source.user_id,
+        HASHBYTES('SHA2_256', CONCAT(CAST('0000' AS VARBINARY(MAX)), source.salt)),
+        source.salt,
+        GETUTCDATE()
+    );
 
 -- Verify the results
 SELECT
