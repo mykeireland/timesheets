@@ -280,7 +280,9 @@ async function submitTimesheets() {
     notes: entry.notes || ""
   }));
 
-  console.log("📤 Submitting timesheets:", payload);
+  console.log("📤 Submitting timesheets:");
+  console.log("   Endpoint:", `${API_BASE}/timesheets/submit`);
+  console.log("   Payload:", JSON.stringify(payload, null, 2));
 
   window.showLoading();
   try {
@@ -299,7 +301,9 @@ async function submitTimesheets() {
     }
 
     const data = await res.json();
-    console.log("📥 Response data:", data);
+    console.log("📥 Response received:");
+    console.log("   Status:", res.status);
+    console.log("   Data:", JSON.stringify(data, null, 2));
 
     // Check if submission was successful
     // Backend returns {ok: true/false} with details in data.data
