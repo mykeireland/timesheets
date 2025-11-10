@@ -81,7 +81,7 @@ async function loadEmployees(tbody) {
     // Load employees and PIN status in parallel
     const [employeesRes, pinStatusRes] = await Promise.all([
       fetch(`${API_BASE}/employees`, { cache: "no-store" }),
-      fetch(`${API_BASE}/admin/pin-status`, { cache: "no-store" })
+      fetch(`${API_BASE}/pin-status`, { cache: "no-store" })
     ]);
 
     if (!employeesRes.ok) {
@@ -303,11 +303,11 @@ async function saveNewRow(tr, tbody) {
     // Automatically set default PIN (0000) for new employee
     if (newEmployeeId) {
       try {
-        await fetch(`${API_BASE}/admin/reset-pin`, {
+        await fetch(`${API_BASE}/reset-pin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            employeeId: parseInt(newEmployeeId, 10),
+            employeeId: String(newEmployeeId),
             newPin: "0000"
           })
         });
@@ -409,15 +409,23 @@ async function onResetPinClick(btn, tbody) {
 
     console.log("🔍 Reset PIN Request:", payload);
 
-    const res = await fetch(`${API_BASE}/admin/reset-pin`, {
+    const res = await fetch(`${API_BASE}/reset-pin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
     console.log("📥 Response status:", res.status);
-    const data = await res.json();
-    console.log("📥 Response data:", data);
+
+    // Handle non-JSON responses (like 404 HTML pages)
+    let data;
+    try {
+      data = await res.json();
+      console.log("📥 Response data:", data);
+    } catch (jsonError) {
+      const text = await res.text();
+      throw new Error(`HTTP ${res.status}: Endpoint not found or invalid response. Check backend deployment.`);
+    }
 
     if (!res.ok || !data.success) {
       throw new Error(data.message || `HTTP ${res.status}`);
