@@ -14,16 +14,18 @@
 
 -- OPTION 2: Use MERGE to update existing and insert new (Recommended)
 -- This preserves the table and handles both updates and inserts
+-- Only processes users that exist in UserAccount table to satisfy FK constraint
 WITH EmployeeSalts AS (
     SELECT
-        e.employee_id,
+        ua.user_id,
         CRYPT_GEN_RANDOM(16) AS salt
-    FROM dbo.Employee e
+    FROM dbo.UserAccount ua
+    INNER JOIN dbo.Employee e ON ua.user_id = e.employee_id
     WHERE e.active = 1
 )
 MERGE dbo.PinCredential AS target
 USING EmployeeSalts AS source
-ON target.user_id = source.employee_id
+ON target.user_id = source.user_id
 WHEN MATCHED THEN
     UPDATE SET
         pin_hash = HASHBYTES('SHA2_256', CONCAT(CAST('0000' AS VARBINARY(MAX)), source.salt)),
@@ -32,7 +34,7 @@ WHEN MATCHED THEN
 WHEN NOT MATCHED BY TARGET THEN
     INSERT (user_id, pin_hash, salt, updated_utc)
     VALUES (
-        source.employee_id,
+        source.user_id,
         HASHBYTES('SHA2_256', CONCAT(CAST('0000' AS VARBINARY(MAX)), source.salt)),
         source.salt,
         GETUTCDATE()
