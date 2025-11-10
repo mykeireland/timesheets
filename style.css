@@ -535,7 +535,8 @@ select,
 input[type="date"],
 input[type="number"],
 input[type="text"],
-input[type="email"] {
+input[type="email"],
+textarea {
   padding: 0.625rem 0.75rem;
   border-radius: var(--radius-md);
   border: 2px solid var(--color-border);
@@ -573,14 +574,16 @@ select:focus,
 input[type="date"]:focus,
 input[type="number"]:focus,
 input[type="text"]:focus,
-input[type="email"]:focus {
+input[type="email"]:focus,
+textarea:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light), var(--shadow-md);
 }
 
 select:hover,
-input:hover {
+input:hover,
+textarea:hover {
   border-color: var(--color-border-hover);
 }
 
@@ -918,7 +921,7 @@ input:hover {
 .preset-btn-single {
   width: 80px;
   padding: 0.25rem 0.5rem;
-  margin-top: 0.25rem;
+  margin-top: 0.125rem;
   border: 1px solid var(--color-border);
   background: var(--color-bg-primary);
   color: var(--color-text-secondary);
@@ -956,7 +959,7 @@ input:hover {
 /* Hours grid displays inline on desktop */
 #timesheetForm .hours-grid {
   display: inline-flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: flex-start;
 }
 
@@ -966,6 +969,16 @@ input:hover {
 
 #timesheetForm .hours-input-wrapper label {
   display: none; /* Hide on desktop */
+}
+
+/* Notes textarea */
+#entryNotes {
+  min-width: 300px;
+  width: 100%;
+  min-height: 42px;
+  resize: vertical;
+  font-family: var(--font-sans);
+  line-height: 1.4;
 }
 
 /* ===================== MOBILE-OPTIMIZED RESPONSIVE DESIGN ===================== */
@@ -1288,6 +1301,16 @@ input:hover {
     box-sizing: border-box;
   }
 
+  textarea {
+    min-height: 80px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-width: 2px;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
   /* Ticket picker even smaller on mobile */
   #entryTicket {
     font-size: 0.875rem;
@@ -1499,9 +1522,13 @@ input:hover {
   input[type="email"],
   input[type="number"],
   input[type="date"],
-  select,
-  textarea {
+  select {
     font-size: 16px !important; /* iOS won't zoom if 16px or larger */
+  }
+
+  textarea {
+    font-size: 16px !important;
+    line-height: 1.5;
   }
 }
 
