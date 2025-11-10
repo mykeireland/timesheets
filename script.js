@@ -81,7 +81,7 @@ async function loadTickets() {
     // Map new backend field names to what your old code expected
     tickets.forEach(t => {
       const mapped = {
-        ticketId: t.ticket_id,
+        ticketId: t.cw_ticket_id,  // Use ConnectWise ticket ID (7-digit), not auto-increment ticket_id
         ticketName: t.summary || t.name || "(no summary)",
         companyName: t.company_name || "",
         siteName: t.site_name || ""
@@ -269,9 +269,9 @@ async function submitTimesheets() {
 
   // Transform queued entries to match backend expected format (camelCase)
   const payload = queuedEntries.map(entry => ({
-    employeeId: entry.employeeId,
+    employeeId: parseInt(entry.employeeId, 10),
     employeeName: entry.employeeName,
-    ticketId: entry.ticketId,
+    ticketId: parseInt(entry.ticketId, 10),
     ticketName: entry.ticketName,
     date: entry.date,
     hoursStandard: entry.hoursStandard,
@@ -301,13 +301,19 @@ async function submitTimesheets() {
     const data = await res.json();
     console.log("📥 Response data:", data);
 
-    // Handle both {ok: true} and {success: true} response formats
-    if (data.ok || data.success || res.status === 200 || res.status === 201) {
+    // Check if submission was successful
+    // Backend returns {ok: true/false} with details in data.data
+    if (data.ok === true || data.success === true) {
       alert("Timesheet entries submitted successfully!");
       queuedEntries = [];
       renderQueue();
     } else {
-      throw new Error(data.error || data.message || "Unknown error from server");
+      // Backend returned errors - show detailed error message
+      const errors = data.data?.errors || [];
+      const errorMessage = errors.length > 0
+        ? `Failed to submit:\n\n${errors.join('\n')}`
+        : (data.message || "Unknown error from server");
+      throw new Error(errorMessage);
     }
   } catch (err) {
     console.error("❌ Error submitting timesheets:", err);
