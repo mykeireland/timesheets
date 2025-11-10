@@ -27,6 +27,10 @@
       </div>
     </div>
 
+    <div class="selection-instructions">
+      <strong>💡 Batch Operations:</strong> Click rows to select for approval. Hold <kbd>Shift</kbd> to select for approval, or <kbd>Ctrl/Cmd</kbd> to select for rejection. Then use the batch buttons below.
+    </div>
+
     <div class="table-responsive">
       <table id="pendingTable">
         <thead>
@@ -36,13 +40,23 @@
             <th data-field="ticketId">Ticket ID <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
             <th data-field="date">Date <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
             <th data-field="hours">Hours <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
-            <th data-field="status">Status <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
             <th data-field="notes">Notes <button class="sort-btn" type="button"><span class="sort-icon">⇅</span></button></th>
-            <th>Action</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
+    </div>
+
+    <div id="batchActions" class="batch-actions" style="display: none;">
+      <div class="batch-summary">
+        <span id="approveCount" class="batch-count approve-armed">0 to approve</span>
+        <span id="rejectCount" class="batch-count reject-armed">0 to reject</span>
+      </div>
+      <div class="batch-buttons">
+        <button type="button" id="batchApproveBtn" class="btn primary" disabled>Batch Approve</button>
+        <button type="button" id="batchRejectBtn" class="btn danger" disabled>Batch Reject</button>
+        <button type="button" id="clearSelectionBtn" class="btn light">Clear Selection</button>
+      </div>
     </div>
   </div>
 

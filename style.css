@@ -293,6 +293,29 @@ tr.rejected-row td {
   background-color: rgba(239, 68, 68, 0.1);
 }
 
+/* Manager/Pending table highlighting */
+tr.pending-no-overtime td {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+tr.pending-with-overtime td {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Selected for approval - bright green highlight */
+tr.selected-approve td {
+  background-color: rgba(16, 185, 129, 0.35) !important;
+  border-left: 5px solid #10b981 !important;
+  font-weight: 600;
+}
+
+/* Selected for rejection - bright red highlight */
+tr.selected-reject td {
+  background-color: rgba(239, 68, 68, 0.35) !important;
+  border-left: 5px solid var(--color-danger) !important;
+  font-weight: 600;
+}
+
 /* Totals row styling */
 tr.totals-row td {
   background: linear-gradient(to bottom, var(--color-gray-100) 0%, var(--color-gray-200) 100%);
@@ -689,6 +712,95 @@ input:hover {
   color: var(--color-text-muted);
 }
 
+/* ===================== SELECTION INSTRUCTIONS ===================== */
+.selection-instructions {
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, #dbeafe 100%);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.selection-instructions strong {
+  color: var(--color-primary);
+}
+
+.selection-instructions kbd {
+  display: inline-block;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.875em;
+  font-family: var(--font-mono);
+  background: var(--color-gray-700);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin: 0 0.2rem;
+}
+
+/* ===================== BATCH ACTIONS UI ===================== */
+.batch-actions {
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--color-gray-50) 0%, var(--color-gray-100) 100%);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.batch-summary {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.batch-count {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: #fff;
+  min-width: 150px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.batch-count.approve-armed {
+  background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
+  border: 2px solid #047857;
+}
+
+.batch-count.reject-armed {
+  background: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-hover) 100%);
+  border: 2px solid #b91c1c;
+}
+
+.batch-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.batch-buttons .btn {
+  min-width: 180px;
+}
+
+.batch-buttons .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
 /* ===================== LOADING INDICATOR ===================== */
 .loading-overlay {
   position: fixed;
@@ -1019,6 +1131,40 @@ input:hover {
     border: none;
   }
 
+  /* Row highlighting on mobile cards - pending/manager table */
+  tbody tr.pending-no-overtime {
+    background: rgba(16, 185, 129, 0.1);
+    border-left: 5px solid #10b981;
+  }
+
+  tbody tr.pending-with-overtime {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 5px solid var(--color-danger);
+  }
+
+  tbody tr.pending-no-overtime td,
+  tbody tr.pending-with-overtime td {
+    background: transparent;
+    border: none;
+  }
+
+  /* Selected states on mobile - more prominent */
+  tbody tr.selected-approve {
+    background: rgba(16, 185, 129, 0.4) !important;
+    border-left: 6px solid #10b981 !important;
+  }
+
+  tbody tr.selected-reject {
+    background: rgba(239, 68, 68, 0.4) !important;
+    border-left: 6px solid var(--color-danger) !important;
+  }
+
+  tbody tr.selected-approve td,
+  tbody tr.selected-reject td {
+    background: transparent !important;
+    border: none;
+  }
+
   /* Form inputs - larger for touch */
   select,
   input[type="date"],
@@ -1062,6 +1208,46 @@ input:hover {
     width: 80px;
     height: 80px;
     border-width: 6px;
+  }
+
+  /* Selection instructions mobile optimization */
+  .selection-instructions {
+    font-size: 0.8125rem;
+    padding: 0.75rem;
+    text-align: left;
+  }
+
+  .selection-instructions kbd {
+    font-size: 0.75em;
+    padding: 0.15rem 0.3rem;
+  }
+
+  /* Batch actions mobile optimization */
+  .batch-actions {
+    padding: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .batch-summary {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .batch-count {
+    width: 100%;
+    min-width: auto;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .batch-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .batch-buttons .btn {
+    width: 100%;
+    min-width: auto;
   }
 
   /* Special handling for time entry form on mobile - CLEAN VERTICAL GRID */
