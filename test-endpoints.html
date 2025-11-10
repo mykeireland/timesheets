@@ -55,6 +55,15 @@
   <script>
     const API_BASE = window.API_BASE;
 
+    // Helper function to build URL with function key if needed
+    function buildAdminUrl(endpoint) {
+      const url = `${API_BASE}${endpoint}`;
+      if (window.ADMIN_FUNCTION_KEY) {
+        return `${url}?code=${window.ADMIN_FUNCTION_KEY}`;
+      }
+      return url;
+    }
+
     async function testEndpoint(name, url, method = 'GET', body = null) {
       const resultsDiv = document.getElementById('results');
       const testDiv = document.createElement('div');
@@ -162,13 +171,13 @@
 
       await testEndpoint(
         '3. Get PIN Status',
-        `${API_BASE}/admin/pin-status`,
+        buildAdminUrl('/admin/pin-status'),
         'GET'
       );
 
       await testEndpoint(
         '4. Reset PIN',
-        `${API_BASE}/admin/reset-pin`,
+        buildAdminUrl('/admin/reset-pin'),
         'POST',
         { employeeId: '1', newPin: '0000' }
       );

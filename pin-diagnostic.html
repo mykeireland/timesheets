@@ -22,9 +22,18 @@
   <script>
     const API_BASE = window.API_BASE;
 
+    // Helper function to build URL with function key if needed
+    function buildAdminUrl(endpoint) {
+      const url = `${API_BASE}${endpoint}`;
+      if (window.ADMIN_FUNCTION_KEY) {
+        return `${url}?code=${window.ADMIN_FUNCTION_KEY}`;
+      }
+      return url;
+    }
+
     async function checkPinStatus() {
       try {
-        const res = await fetch(`${API_BASE}/admin/pin-status`);
+        const res = await fetch(buildAdminUrl('/admin/pin-status'));
         const data = await res.json();
         document.getElementById('results').textContent =
           'PIN Status Response:\n' + JSON.stringify(data, null, 2);
