@@ -609,6 +609,19 @@ textarea:hover {
   box-shadow: var(--shadow-md);
 }
 
+/* PIN Status badges */
+.status-badge.success {
+  background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
+  border-color: #047857;
+  color: #fff;
+}
+
+.status-badge.danger {
+  background: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-hover) 100%);
+  border-color: #b91c1c;
+  color: #fff;
+}
+
 /* Inline status badge (appears next to employee name) */
 .status-badge-inline {
   display: inline-block;
