@@ -1118,6 +1118,14 @@ textarea:hover {
     background: transparent;
     box-shadow: none;
     margin-top: 1rem;
+    overflow-x: visible; /* Allow cards to display naturally */
+  }
+
+  /* Prevent horizontal overflow in timesheet form */
+  #timesheetForm .table-responsive {
+    overflow-x: hidden; /* Prevent any horizontal scroll */
+    width: 100%;
+    max-width: 100%;
   }
 
   /* Hide traditional table structure on mobile */
@@ -1446,15 +1454,24 @@ textarea:hover {
     text-align: left !important;
   }
 
+  /* CRITICAL: Prevent duplicate headers in timesheet form */
+  #timesheetForm tbody tr td::before {
+    display: none !important;
+  }
+
   /* Show mobile labels on mobile only */
   #timesheetForm .mobile-label {
     display: block;
     font-weight: 700;
-    color: var(--color-text-secondary);
+    color: var(--color-gray-800);
     font-size: 0.9375rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--color-gray-100);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--color-primary);
   }
 
   /* Hours grid container - stack vertically */
@@ -1472,20 +1489,34 @@ textarea:hover {
   }
 
   #timesheetForm .hours-input-wrapper label {
+    display: block !important; /* Force visibility on mobile */
     font-weight: 700;
-    color: var(--color-text-secondary);
+    color: var(--color-gray-800);
     font-size: 0.9375rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--color-gray-100);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--color-primary);
   }
 
   /* All inputs full width on mobile */
   #timesheetForm tbody tr td input,
   #timesheetForm tbody tr td select {
     width: 100% !important;
+    max-width: 100%;
     display: block;
     margin: 0;
+    box-sizing: border-box;
+  }
+
+  /* Date picker specific constraints */
+  #timesheetForm #entryDate {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   /* Hours picker mobile optimizations */
@@ -1513,8 +1544,12 @@ textarea:hover {
   /* Time entry form explanation text */
   #timesheetForm p {
     font-size: 0.875rem;
-    line-height: 1.5;
-    margin: 0.5rem 0;
+    line-height: 1.6;
+    margin: 0.75rem 0;
+    padding: 0.75rem;
+    background: var(--color-gray-50);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--color-primary);
   }
 
   /* Viewport meta tag fixes for iOS */
