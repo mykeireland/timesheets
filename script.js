@@ -11,6 +11,10 @@ let queueFilterText = "";
 let queueSortField = null;
 let queueSortDir = 1; // 1 = ascending, -1 = descending
 
+// PIN Authentication state
+let authenticatedEmployee = null; // { employeeId, employeeName }
+let pendingEmployeeSelection = null; // Temporary storage during PIN verification
+
 // ---------- POPULATE HOURS PICKERS ----------
 function populateHoursPickers() {
   const hoursStd = document.getElementById("hoursStd");
@@ -54,6 +58,159 @@ function addMaxOption(select, maxValue) {
   opt.value = maxValue;
   opt.textContent = maxValue.toFixed(2);
   select.appendChild(opt);
+}
+
+// ---------- PIN AUTHENTICATION ----------
+function showPinModal(employeeId, employeeName) {
+  const modal = document.getElementById("pinModal");
+  const employeeNameDisplay = document.getElementById("pinEmployeeName");
+  const pinInput = document.getElementById("pinInput");
+  const pinError = document.getElementById("pinError");
+
+  // Store pending selection
+  pendingEmployeeSelection = { employeeId, employeeName };
+
+  // Update modal with employee name
+  employeeNameDisplay.textContent = `Authenticating: ${employeeName}`;
+
+  // Clear previous input and errors
+  pinInput.value = "";
+  pinError.style.display = "none";
+  pinError.textContent = "";
+
+  // Show modal
+  modal.classList.add("show");
+  document.body.classList.add("modal-open");
+
+  // Focus the PIN input
+  setTimeout(() => pinInput.focus(), 100);
+}
+
+function hidePinModal() {
+  const modal = document.getElementById("pinModal");
+  const pinInput = document.getElementById("pinInput");
+  const pinError = document.getElementById("pinError");
+
+  modal.classList.remove("show");
+  document.body.classList.remove("modal-open");
+  pinInput.value = "";
+  pinError.style.display = "none";
+  pinError.textContent = "";
+  pendingEmployeeSelection = null;
+}
+
+async function verifyPin() {
+  const pinInput = document.getElementById("pinInput");
+  const pinError = document.getElementById("pinError");
+  const submitBtn = document.getElementById("pinSubmitBtn");
+
+  const pin = pinInput.value.trim();
+
+  // Validate PIN format
+  if (!pin || pin.length !== 4) {
+    pinError.textContent = "Please enter a 4-digit PIN";
+    pinError.style.display = "block";
+    return;
+  }
+
+  if (!/^\d{4}$/.test(pin)) {
+    pinError.textContent = "PIN must contain only numbers";
+    pinError.style.display = "block";
+    return;
+  }
+
+  if (!pendingEmployeeSelection) {
+    pinError.textContent = "No employee selected";
+    pinError.style.display = "block";
+    return;
+  }
+
+  // Disable submit button during verification
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Verifying...";
+
+  try {
+    const response = await fetch(`${API_BASE}/auth/verify-pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        employeeId: pendingEmployeeSelection.employeeId,
+        pin: pin
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      // PIN verified successfully
+      authenticatedEmployee = {
+        employeeId: pendingEmployeeSelection.employeeId,
+        employeeName: pendingEmployeeSelection.employeeName
+      };
+
+      console.log(`✅ Employee authenticated: ${authenticatedEmployee.employeeName}`);
+
+      // Update UI to show authenticated state
+      updateAuthenticatedUI();
+
+      // Hide modal
+      hidePinModal();
+    } else {
+      // PIN verification failed
+      pinError.textContent = data.message || "Invalid PIN";
+      pinError.style.display = "block";
+      pinInput.value = "";
+      pinInput.focus();
+    }
+  } catch (err) {
+    console.error("❌ Error verifying PIN:", err);
+    pinError.textContent = "Error verifying PIN. Please try again.";
+    pinError.style.display = "block";
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Verify PIN";
+  }
+}
+
+function updateAuthenticatedUI() {
+  const employeeSelect = document.getElementById("employeeSelect");
+
+  if (authenticatedEmployee) {
+    // Set the employee select to the authenticated employee
+    employeeSelect.value = authenticatedEmployee.employeeId;
+
+    // Add visual indicator that employee is authenticated
+    employeeSelect.style.borderColor = "#10b981"; // Green border
+    employeeSelect.style.borderWidth = "2px";
+  } else {
+    // Reset to default state
+    employeeSelect.style.borderColor = "";
+    employeeSelect.style.borderWidth = "";
+  }
+}
+
+function handleEmployeeSelectionChange() {
+  const employeeSelect = document.getElementById("employeeSelect");
+  const selectedEmployeeId = employeeSelect.value;
+
+  // If no employee selected (placeholder), clear authentication
+  if (!selectedEmployeeId || selectedEmployeeId.trim() === "") {
+    authenticatedEmployee = null;
+    updateAuthenticatedUI();
+    return;
+  }
+
+  const selectedEmployeeName = employeeSelect.options[employeeSelect.selectedIndex]?.textContent || "Unknown";
+
+  // If same employee is already authenticated, no need to re-authenticate
+  if (authenticatedEmployee && authenticatedEmployee.employeeId === selectedEmployeeId) {
+    console.log("✅ Employee already authenticated");
+    return;
+  }
+
+  // Different employee selected, require PIN authentication
+  console.log(`🔐 Requesting PIN for employee: ${selectedEmployeeName}`);
+  showPinModal(selectedEmployeeId, selectedEmployeeName);
 }
 
 // ---------- LOAD EMPLOYEES ----------
@@ -153,6 +310,13 @@ function addToQueue() {
   // Validate employee selection first
   if (!employeeSelect.value || employeeSelect.value.trim() === "") {
     alert("Please select an employee first");
+    employeeSelect.focus();
+    return;
+  }
+
+  // Check if employee is authenticated
+  if (!authenticatedEmployee || authenticatedEmployee.employeeId !== employeeSelect.value) {
+    alert("Please authenticate with your PIN before adding time entries");
     employeeSelect.focus();
     return;
   }
@@ -404,6 +568,46 @@ window.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.getElementById("addToQueueBtn");
   if (addBtn) {
     addBtn.addEventListener("click", addToQueue);
+  }
+
+  // Employee selection change handler
+  const employeeSelect = document.getElementById("employeeSelect");
+  if (employeeSelect) {
+    employeeSelect.addEventListener("change", handleEmployeeSelectionChange);
+  }
+
+  // PIN modal event handlers
+  const pinSubmitBtn = document.getElementById("pinSubmitBtn");
+  if (pinSubmitBtn) {
+    pinSubmitBtn.addEventListener("click", verifyPin);
+  }
+
+  const pinCancelBtn = document.getElementById("pinCancelBtn");
+  if (pinCancelBtn) {
+    pinCancelBtn.addEventListener("click", () => {
+      // Reset employee selection to placeholder
+      const employeeSelect = document.getElementById("employeeSelect");
+      employeeSelect.value = "";
+      authenticatedEmployee = null;
+      updateAuthenticatedUI();
+      hidePinModal();
+    });
+  }
+
+  const pinInput = document.getElementById("pinInput");
+  if (pinInput) {
+    // Submit PIN on Enter key
+    pinInput.addEventListener("keypress", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        verifyPin();
+      }
+    });
+
+    // Allow only numeric input
+    pinInput.addEventListener("input", (ev) => {
+      ev.target.value = ev.target.value.replace(/[^0-9]/g, "");
+    });
   }
 
   // Print button
