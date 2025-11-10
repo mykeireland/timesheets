@@ -17,11 +17,13 @@ function populateHoursPickers() {
   const hours15 = document.getElementById("hours15");
   const hours2 = document.getElementById("hours2");
 
-  // Standard hours: 0 to 7.6 in 0.25 increments
-  populatePicker(hoursStd, 0, 7.6, 0.25);
+  // Standard hours: 0 to 7.5 in 0.25 increments, plus 7.6
+  populatePicker(hoursStd, 0, 7.5, 0.25);
+  addMaxOption(hoursStd, 7.6);
 
-  // 1.5x hours: 0 to 2 in 0.25 increments
-  populatePicker(hours15, 0, 2, 0.25);
+  // 1.5x hours: 0 to 1.75 in 0.25 increments, plus 2.0
+  populatePicker(hours15, 0, 1.75, 0.25);
+  addMaxOption(hours15, 2.0);
 
   // 2x hours: 0 to 10 in 0.25 increments
   populatePicker(hours2, 0, 10, 0.25);
@@ -45,6 +47,13 @@ function populatePicker(select, min, max, step) {
     opt.textContent = rounded.toFixed(2);
     select.appendChild(opt);
   }
+}
+
+function addMaxOption(select, maxValue) {
+  const opt = document.createElement("option");
+  opt.value = maxValue;
+  opt.textContent = maxValue.toFixed(2);
+  select.appendChild(opt);
 }
 
 // ---------- LOAD EMPLOYEES ----------
@@ -461,16 +470,32 @@ window.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("click", (ev) => {
     const target = ev.target;
 
-    // Handle preset buttons
-    if (target.classList.contains("preset-btn")) {
+    // Handle preset buttons (Max buttons under each picker)
+    if (target.classList.contains("preset-btn-single")) {
       ev.preventDefault();
-      const targetFieldId = target.getAttribute("data-target");
-      const hours = parseFloat(target.getAttribute("data-hours"));
 
-      const targetField = document.getElementById(targetFieldId);
-      if (targetField) {
-        targetField.value = hours;
-        targetField.dispatchEvent(new Event("change", { bubbles: true }));
+      // Check if it's the Clear button
+      if (target.getAttribute("data-clear") === "true") {
+        // Clear all time fields
+        document.getElementById("hoursStd").value = "";
+        document.getElementById("hours15").value = "";
+        document.getElementById("hours2").value = "";
+
+        // Trigger change events
+        ["hoursStd", "hours15", "hours2"].forEach(id => {
+          const input = document.getElementById(id);
+          if (input) input.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+      } else {
+        // Handle Max buttons
+        const targetFieldId = target.getAttribute("data-target");
+        const hours = parseFloat(target.getAttribute("data-hours"));
+
+        const targetField = document.getElementById(targetFieldId);
+        if (targetField) {
+          targetField.value = hours;
+          targetField.dispatchEvent(new Event("change", { bubbles: true }));
+        }
       }
     }
   });
