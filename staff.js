@@ -402,16 +402,22 @@ async function onResetPinClick(btn, tbody) {
     btn.disabled = true;
     btn.textContent = "Setting PIN...";
 
+    const payload = {
+      employeeId: String(employeeId),  // Convert to string for backend
+      newPin: pinToSet
+    };
+
+    console.log("🔍 Reset PIN Request:", payload);
+
     const res = await fetch(`${API_BASE}/admin/reset-pin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        employeeId: employeeId,
-        newPin: pinToSet
-      })
+      body: JSON.stringify(payload)
     });
 
+    console.log("📥 Response status:", res.status);
     const data = await res.json();
+    console.log("📥 Response data:", data);
 
     if (!res.ok || !data.success) {
       throw new Error(data.message || `HTTP ${res.status}`);
