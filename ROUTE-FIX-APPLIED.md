@@ -1,16 +1,18 @@
-# Route Fix Applied - Removed `/admin/` Prefix
+# Route Fix Applied - Using `/auth/` Prefix
 
-## Problem
-The frontend was calling endpoints with `/admin/` prefix:
+## Problem History
+The frontend initially called endpoints with `/admin/` prefix:
 - ❌ `GET /api/admin/pin-status` → 404 Not Found
 - ❌ `POST /api/admin/reset-pin` → 404 Not Found
 
-But the backend Azure Functions are deployed WITHOUT the `/admin/` prefix.
+First fix attempt removed `/admin/` prefix:
+- ❌ `GET /api/pin-status` → Still 404 Not Found
+- ❌ `POST /api/reset-pin` → Still 404 Not Found
 
-## Solution
-Updated all frontend calls to match backend routes (without `/admin/` prefix):
-- ✅ `GET /api/pin-status`
-- ✅ `POST /api/reset-pin`
+## Current Solution
+Since `/api/auth/verify-pin` works, the admin PIN endpoints are likely also under `/auth/`:
+- 🔄 `GET /api/auth/pin-status` (Testing)
+- 🔄 `POST /api/auth/reset-pin` (Testing)
 
 ## Files Changed
 
@@ -18,44 +20,45 @@ Updated all frontend calls to match backend routes (without `/admin/` prefix):
 
 **Line 84** - Load PIN status:
 ```javascript
-// OLD:
+// ORIGINAL:
 fetch(`${API_BASE}/admin/pin-status`, { cache: "no-store" })
 
-// NEW:
-fetch(`${API_BASE}/pin-status`, { cache: "no-store" })
+// NOW:
+fetch(`${API_BASE}/auth/pin-status`, { cache: "no-store" })
 ```
 
 **Line 306** - Set default PIN for new employee:
 ```javascript
-// OLD:
+// ORIGINAL:
 await fetch(`${API_BASE}/admin/reset-pin`, {
 
-// NEW:
-await fetch(`${API_BASE}/reset-pin`, {
+// NOW:
+await fetch(`${API_BASE}/auth/reset-pin`, {
 ```
 
 **Line 412** - Reset employee PIN:
 ```javascript
-// OLD:
+// ORIGINAL:
 const res = await fetch(`${API_BASE}/admin/reset-pin`, {
 
-// NEW:
-const res = await fetch(`${API_BASE}/reset-pin`, {
+// NOW:
+const res = await fetch(`${API_BASE}/auth/reset-pin`, {
 ```
 
-**Bonus Fix** - Better error handling for 404 responses (lines 420-428):
-- Now gracefully handles HTML 404 responses instead of crashing with "string did not match expected pattern"
-- Shows clear error message: "Endpoint not found or invalid response. Check backend deployment."
+**Bonus Fix** - Better error handling for 404 responses (lines 420-431):
+- Fixed "Body is disturbed or locked" error by checking response status BEFORE trying to parse body
+- Checks Content-Type header to determine if response is JSON or HTML
+- Shows clear error message: "Endpoint not found. Route may not be deployed."
 
 ### 2. pin-diagnostic.html
 
 **Line 27** - Check PIN status:
 ```javascript
-// OLD:
+// ORIGINAL:
 const res = await fetch(`${API_BASE}/admin/pin-status`);
 
-// NEW:
-const res = await fetch(`${API_BASE}/pin-status`);
+// NOW:
+const res = await fetch(`${API_BASE}/auth/pin-status`);
 ```
 
 ## Expected Backend Routes
@@ -66,7 +69,7 @@ Your backend Azure Functions should have these route configurations:
 ```csharp
 [Function("GetPinStatus")]
 public async Task<HttpResponseData> Run(
-    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "pin-status")]
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "auth/pin-status")]
     HttpRequestData req)
 ```
 
@@ -74,11 +77,11 @@ public async Task<HttpResponseData> Run(
 ```csharp
 [Function("ResetPin")]
 public async Task<HttpResponseData> Run(
-    [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "reset-pin")]
+    [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "auth/reset-pin")]
     HttpRequestData req)
 ```
 
-Note: Routes do NOT include "admin/" prefix.
+Note: Routes use "auth/" prefix to match the working `/auth/verify-pin` endpoint.
 
 ## Testing
 
@@ -139,10 +142,11 @@ https://func-timesheetsNET-api-dev.azurewebsites.net/api/reset-pin
 
 ## Summary
 
-✅ **Changed routes from `/admin/pin-status` to `/pin-status`**
-✅ **Changed routes from `/admin/reset-pin` to `/reset-pin`**
+✅ **Changed routes from `/admin/pin-status` to `/auth/pin-status`**
+✅ **Changed routes from `/admin/reset-pin` to `/auth/reset-pin`**
+✅ **Fixed "Body is disturbed or locked" error**
 ✅ **Improved error handling for non-JSON 404 responses**
 ✅ **Updated all 3 occurrences in staff.js**
 ✅ **Updated pin-diagnostic.html**
 
-These changes match the most common Azure Functions deployment pattern where routes don't include an `/admin/` prefix.
+These changes use the `/auth/` prefix to match the working `/auth/verify-pin` endpoint pattern.
