@@ -8,6 +8,7 @@
 const API_BASE = window.API_BASE;
 
 let employees = [];
+let pinStatuses = {}; // Map of employee_id -> { hasPin, lastUpdated }
 let filterText = "";
 let sortField = null;
 let sortDir = 1; // 1 = ascending, -1 = descending
@@ -74,30 +75,34 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function loadEmployees(tbody) {
-  tbody.innerHTML = `<tr><td colspan="9">Loading…</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="10">Loading…</td></tr>`;
 
   try {
-    const res = await fetch(`${API_BASE}/employees`, { cache: "no-store" });
+    // Load employees and PIN status in parallel
+    const [employeesRes, pinStatusRes] = await Promise.all([
+      fetch(`${API_BASE}/employees`, { cache: "no-store" }),
+      fetch(`${API_BASE}/admin/pin-status`, { cache: "no-store" })
+    ]);
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (!employeesRes.ok) {
+      throw new Error(`HTTP ${employeesRes.status}: ${employeesRes.statusText}`);
     }
 
-    const rawText = await res.text();
+    const rawText = await employeesRes.text();
 
     let data;
     try {
       data = JSON.parse(rawText);
     } catch {
       console.error("Invalid JSON:", rawText);
-      tbody.innerHTML = `<tr><td colspan="9">Invalid JSON from API</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10">Invalid JSON from API</td></tr>`;
       alert("Received invalid data from server. Please contact support.");
       return;
     }
 
     const raw = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
     if (!raw.length) {
-      tbody.innerHTML = `<tr><td colspan="9">No employees found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10">No employees found.</td></tr>`;
       return;
     }
 
@@ -112,10 +117,28 @@ async function loadEmployees(tbody) {
       cw_member_id: toNullableInt(e.cw_member_id)
     }));
 
+    // Load PIN status data
+    if (pinStatusRes.ok) {
+      try {
+        const pinData = await pinStatusRes.json();
+        if (pinData.success && Array.isArray(pinData.data)) {
+          pinStatuses = {};
+          pinData.data.forEach(status => {
+            pinStatuses[status.employeeId] = {
+              hasPin: status.hasPin,
+              lastUpdated: status.lastUpdated
+            };
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to load PIN status:", err);
+      }
+    }
+
     renderTable(tbody);
   } catch (err) {
     console.error("Load error:", err);
-    tbody.innerHTML = `<tr><td colspan="9">Error: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10">Error: ${err.message}</td></tr>`;
     alert("Failed to load employees. Please refresh the page.");
   }
 }
@@ -150,8 +173,8 @@ function renderTable(tbody) {
         return (va - vb) * sortDir;
       }
 
-      // For boolean (active)
-      if (sortField === "active") {
+      // For boolean (active, has_pin)
+      if (sortField === "active" || sortField === "has_pin") {
         return (Number(va) - Number(vb)) * sortDir;
       }
 
@@ -165,13 +188,19 @@ function renderTable(tbody) {
   }
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="9">No employees match your filter</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10">No employees match your filter</td></tr>`;
     return;
   }
 
   tbody.innerHTML = rows
     .map(
-      e => `
+      e => {
+        const pinStatus = pinStatuses[e.employee_id];
+        const hasPinBadge = pinStatus?.hasPin
+          ? `<span class="status-badge success" title="Last updated: ${formatDate(pinStatus.lastUpdated)}">✓ Set</span>`
+          : `<span class="status-badge danger">✗ Not Set</span>`;
+
+        return `
       <tr data-id="${e.employee_id}">
         <td data-label="ID">${e.employee_id}</td>
         <td data-label="First Name" contenteditable="false">${escapeHtml(e.first_name)}</td>
@@ -181,13 +210,16 @@ function renderTable(tbody) {
         <td data-label="Active" style="text-align:center">
           <input type="checkbox" ${e.active ? "checked" : ""} disabled>
         </td>
+        <td data-label="PIN Status" style="text-align:center">${hasPinBadge}</td>
         <td data-label="Manager ID" contenteditable="false">${e.manager_employee_id ?? ""}</td>
         <td data-label="CW Member ID" contenteditable="false">${e.cw_member_id ?? ""}</td>
         <td data-label="Action">
           <button class="btn secondary small edit">Edit</button>
           <button class="btn primary small save" style="display:none;">Save</button>
+          <button class="btn danger small reset-pin" title="Reset PIN to 0000">Reset PIN</button>
         </td>
-      </tr>`
+      </tr>`;
+      }
     )
     .join("");
 
@@ -200,6 +232,9 @@ function wireRowButtons(tbody) {
   );
   tbody.querySelectorAll(".save").forEach(btn =>
     btn.addEventListener("click", () => onSaveClick(btn))
+  );
+  tbody.querySelectorAll(".reset-pin").forEach(btn =>
+    btn.addEventListener("click", () => onResetPinClick(btn, tbody))
   );
 }
 
@@ -220,6 +255,7 @@ function onAddClick(tbody) {
       </select>
     </td>
     <td data-label="Active" style="text-align:center"><input type="checkbox" checked></td>
+    <td data-label="PIN Status" style="text-align:center"><span class="status-badge" style="opacity:0.5;">Will be set to 0000</span></td>
     <td data-label="Manager ID"><input type="number" placeholder="Mgr ID"></td>
     <td data-label="CW Member ID"><input type="number" placeholder="CW ID"></td>
     <td data-label="Action">
@@ -261,7 +297,28 @@ async function saveNewRow(tr, tbody) {
       throw new Error(`HTTP ${res.status}: ${errorText}`);
     }
 
-    alert("Employee added successfully!");
+    const result = await res.json();
+    const newEmployeeId = result.employee_id || result.id || result.data?.employee_id;
+
+    // Automatically set default PIN (0000) for new employee
+    if (newEmployeeId) {
+      try {
+        await fetch(`${API_BASE}/admin/reset-pin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            employeeId: String(newEmployeeId),
+            newPin: "0000"
+          })
+        });
+        console.log(`Default PIN set for new employee ${newEmployeeId}`);
+      } catch (pinErr) {
+        console.warn("Failed to set default PIN for new employee:", pinErr);
+        // Don't fail the whole operation if PIN setting fails
+      }
+    }
+
+    alert("Employee added successfully! Default PIN set to 0000.");
     tr.remove();
     loadEmployees(tbody);
   } catch (err) {
@@ -318,6 +375,48 @@ async function onSaveClick(btn) {
   }
 }
 
+async function onResetPinClick(btn, tbody) {
+  const tr = btn.closest("tr");
+  const employeeId = parseInt(tr.dataset.id, 10);
+  const employeeName = `${tr.cells[1].textContent} ${tr.cells[2].textContent}`;
+
+  const confirmed = confirm(
+    `Reset PIN to "0000" for ${employeeName}?\n\nThis will overwrite their current PIN if one is set.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    btn.disabled = true;
+    btn.textContent = "Resetting...";
+
+    const res = await fetch(`${API_BASE}/admin/reset-pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        employeeId: String(employeeId),
+        newPin: "0000"
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || `HTTP ${res.status}`);
+    }
+
+    alert(`PIN reset successfully for ${employeeName}!\nNew PIN: 0000`);
+
+    // Reload employees to refresh PIN status
+    await loadEmployees(tbody);
+  } catch (err) {
+    console.error("Reset PIN error:", err);
+    alert(`Failed to reset PIN: ${err.message}`);
+    btn.disabled = false;
+    btn.textContent = "Reset PIN";
+  }
+}
+
 function updateSortIcons() {
   document.querySelectorAll("#staffTable th[data-field]").forEach(th => {
     const field = th.getAttribute("data-field");
@@ -340,8 +439,25 @@ function escapeHtml(s) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
 function toNullableInt(v) {
   if (v === null || v === undefined || v === "") return null;
   const n = parseInt(v, 10);
   return Number.isFinite(n) ? n : null;
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "Never";
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return "Invalid date";
+  }
 }
