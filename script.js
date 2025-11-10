@@ -269,10 +269,9 @@ async function submitTimesheets() {
 
   // Transform queued entries to match backend expected format (camelCase)
   const payload = queuedEntries.map(entry => ({
-    employeeId: parseInt(entry.employeeId, 10),
+    employeeId: String(entry.employeeId),          // Backend expects string
     employeeName: entry.employeeName,
-    ticketId: parseInt(entry.ticketId, 10),        // ConnectWise ticket ID (used to lookup internal ticket_id)
-    cwTicketId: parseInt(entry.ticketId, 10),      // ConnectWise ticket ID (stored directly in TimesheetEntry)
+    ticketId: String(entry.ticketId),              // Backend expects string (ConnectWise ID)
     ticketName: entry.ticketName,
     date: entry.date,
     hoursStandard: entry.hoursStandard,
