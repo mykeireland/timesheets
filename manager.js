@@ -81,7 +81,7 @@
     renderTable();
   } catch (err) {
     console.error("Failed to load pending timesheets:", err);
-    els.tableBody.innerHTML = `<tr><td colspan="6">Error: ${err.message}</td></tr>`;
+    els.tableBody.innerHTML = `<tr><td colspan="7">Error: ${err.message}</td></tr>`;
     alert("Failed to load pending timesheets. Please refresh the page.");
   }
 }
@@ -120,7 +120,7 @@
     }
 
     if (rows.length === 0) {
-      els.tableBody.innerHTML = `<tr><td colspan="6">No pending timesheets</td></tr>`;
+      els.tableBody.innerHTML = `<tr><td colspan="7">No pending timesheets</td></tr>`;
       updateBatchActionsUI();
       return;
     }
@@ -147,13 +147,19 @@
           }
 
           return `
-      <tr data-id="${r.entryId}" class="${rowClasses.join(' ')}" style="cursor: pointer;">
+      <tr data-id="${r.entryId}" class="${rowClasses.join(' ')}">
         <td data-label="Employee">${escapeHtml(r.firstName)} ${escapeHtml(r.lastName)}</td>
         <td data-label="Company/Site">${escapeHtml(r.siteName)}</td>
         <td data-label="Ticket ID">${escapeHtml(r.ticketId)}</td>
         <td data-label="Date">${escapeHtml(r.date)}</td>
         <td data-label="Hours"><span class="hours-group">${r.hoursStandard.toFixed(2)} / ${r.hours15x.toFixed(2)} / ${r.hours2x.toFixed(2)}</span></td>
         <td data-label="Notes" class="col-notes">${escapeHtml(r.notes || "")}</td>
+        <td data-label="Select">
+          <div class="row-actions">
+            <button class="row-action-btn approve" data-action="approve" data-id="${r.entryId}" title="Select for approval">✓</button>
+            <button class="row-action-btn reject" data-action="reject" data-id="${r.entryId}" title="Select for rejection">✗</button>
+          </div>
+        </td>
       </tr>`;
         }
       )
@@ -373,6 +379,18 @@
       return;
     }
 
+    // Handle row action buttons (approve/reject)
+    if (t.classList.contains("row-action-btn")) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const action = t.getAttribute("data-action");
+      const entryId = parseInt(t.getAttribute("data-id"), 10);
+      if (action && entryId) {
+        toggleRowSelection(entryId, action);
+      }
+      return;
+    }
+
     // Handle sort buttons
     if (t.closest(".sort-btn")) {
       const th = t.closest("th");
@@ -386,26 +404,6 @@
       updateSortIcons();
       renderTable();
       return;
-    }
-
-    // Handle row clicks for selection (with keyboard modifiers)
-    const row = t.closest("tr[data-id]");
-    if (row) {
-      const entryId = parseInt(row.getAttribute("data-id"), 10);
-
-      // Shift+Click = Approve, Ctrl+Click (or Cmd+Click) = Reject, Click = Toggle Approve
-      if (ev.shiftKey || ev.ctrlKey || ev.metaKey) {
-        // Ctrl/Cmd/Shift click = reject
-        if (ev.ctrlKey || ev.metaKey) {
-          toggleRowSelection(entryId, "reject");
-        } else {
-          // Shift click = approve
-          toggleRowSelection(entryId, "approve");
-        }
-      } else {
-        // Regular click = toggle approve
-        toggleRowSelection(entryId, "approve");
-      }
     }
   });
 
