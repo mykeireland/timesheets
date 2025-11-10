@@ -6,7 +6,7 @@
 // For local development: use http://localhost:7071/api
 // For Static Web Apps: use /api (proxy)
 
-window.API_BASE = window.API_BASE || "https://func-timesheetsNET-api-dev.azurewebsites.net/api";
+window.API_BASE = window.API_BASE || "https://func-timesheetsnet-api-dev.azurewebsites.net/api";
 
 // Remove trailing slashes for consistency
 window.API_BASE = window.API_BASE.replace(/\/+$/, "");
