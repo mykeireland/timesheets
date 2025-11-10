@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIN Status Debug Tool</title>
+  <script src="config.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 12px 24px;
+      margin: 5px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background: #007bff;
+      color: white;
+      font-weight: 500;
+    }
+    button:hover { background: #0056b3; }
+    .output {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+    }
+    .success { color: #28a745; font-weight: bold; }
+    .error { color: #dc3545; font-weight: bold; }
+    .warning { color: #ffc107; font-weight: bold; }
+    .info { color: #17a2b8; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>🔍 PIN Status Debug Tool</h1>
+  <p><strong>API Base:</strong> <code id="apiBase"></code></p>
+  <p><strong>Function Key Set:</strong> <span id="keyStatus"></span></p>
+
+  <div class="section">
+    <h2>Test GetPinStatus Endpoint</h2>
+    <button onclick="testGetPinStatus()">Test GET /management/pin-status</button>
+    <button onclick="testGetPinStatusWithKey()">Test with Function Key</button>
+    <div id="getPinStatusOutput" class="output"></div>
+  </div>
+
+  <div class="section">
+    <h2>Test ResetPin Endpoint</h2>
+    <button onclick="testResetPin()">Test POST /management/reset-pin</button>
+    <div id="resetPinOutput" class="output"></div>
+  </div>
+
+  <div class="section">
+    <h2>Browser Console Logs</h2>
+    <p>Open browser DevTools (F12) and check the Console tab for detailed logs</p>
+  </div>
+
+  <script>
+    const API_BASE = window.API_BASE;
+    const ADMIN_KEY = window.ADMIN_FUNCTION_KEY;
+
+    document.getElementById('apiBase').textContent = API_BASE;
+    document.getElementById('keyStatus').innerHTML = ADMIN_KEY
+      ? '<span class="success">✓ Yes</span>'
+      : '<span class="error">✗ No</span>';
+
+    function buildAdminUrl(endpoint) {
+      const url = `${API_BASE}${endpoint}`;
+      if (ADMIN_KEY) {
+        return `${url}?code=${ADMIN_KEY}`;
+      }
+      return url;
+    }
+
+    async function testGetPinStatus() {
+      const output = document.getElementById('getPinStatusOutput');
+      output.innerHTML = '<span class="info">Testing...</span>\n';
+
+      const url = buildAdminUrl('/management/pin-status');
+      console.log('🔍 Testing GetPinStatus:', url);
+
+      try {
+        const response = await fetch(url, { cache: "no-store" });
+
+        output.innerHTML += `<span class="info">HTTP Status:</span> ${response.status} ${response.statusText}\n`;
+        console.log('📥 Response status:', response.status);
+
+        const contentType = response.headers.get('content-type');
+        output.innerHTML += `<span class="info">Content-Type:</span> ${contentType}\n\n`;
+
+        let responseText = '';
+        try {
+          responseText = await response.text();
+          output.innerHTML += `<span class="info">Raw Response:</span>\n${responseText}\n\n`;
+          console.log('📥 Raw response:', responseText);
+        } catch (err) {
+          output.innerHTML += `<span class="error">Error reading response:</span> ${err.message}\n`;
+          return;
+        }
+
+        if (response.ok) {
+          try {
+            const data = JSON.parse(responseText);
+            output.innerHTML += `<span class="success">✓ Parsed JSON:</span>\n${JSON.stringify(data, null, 2)}\n\n`;
+            console.log('✅ Parsed data:', data);
+
+            if (data.success && Array.isArray(data.data)) {
+              output.innerHTML += `<span class="success">✓ Found ${data.data.length} employees</span>\n\n`;
+
+              // Show first few employees
+              data.data.slice(0, 5).forEach(emp => {
+                output.innerHTML += `Employee ${emp.employeeId}: hasPin=${emp.hasPin}, lastUpdated=${emp.lastUpdated}\n`;
+              });
+
+              // Check data structure
+              output.innerHTML += `\n<span class="info">Data Structure Check:</span>\n`;
+              const firstEmp = data.data[0];
+              output.innerHTML += `Fields in first employee: ${Object.keys(firstEmp).join(', ')}\n`;
+
+            } else {
+              output.innerHTML += `<span class="warning">⚠️ Unexpected data structure</span>\n`;
+              output.innerHTML += `success: ${data.success}\n`;
+              output.innerHTML += `data is array: ${Array.isArray(data.data)}\n`;
+            }
+          } catch (err) {
+            output.innerHTML += `<span class="error">✗ JSON Parse Error:</span> ${err.message}\n`;
+          }
+        } else {
+          output.innerHTML += `<span class="error">✗ Request failed</span>\n`;
+          if (response.status === 403) {
+            output.innerHTML += `\n<span class="warning">⚠️ Authorization Issue:</span>\n`;
+            output.innerHTML += `The endpoint requires authorization.\n`;
+            output.innerHTML += `Solutions:\n`;
+            output.innerHTML += `1. Change backend to AuthorizationLevel.Anonymous\n`;
+            output.innerHTML += `2. Add function key to config.js\n`;
+          }
+        }
+      } catch (err) {
+        output.innerHTML += `<span class="error">✗ Network Error:</span> ${err.message}\n`;
+        console.error('❌ Error:', err);
+      }
+    }
+
+    async function testGetPinStatusWithKey() {
+      if (!ADMIN_KEY) {
+        alert('No function key configured in config.js');
+        return;
+      }
+      await testGetPinStatus();
+    }
+
+    async function testResetPin() {
+      const output = document.getElementById('resetPinOutput');
+      output.innerHTML = '<span class="info">Testing...</span>\n';
+
+      const url = buildAdminUrl('/management/reset-pin');
+      const payload = {
+        employeeId: "11",
+        newPin: "0000"
+      };
+
+      console.log('🔍 Testing ResetPin:', url);
+      console.log('📤 Payload:', payload);
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        output.innerHTML += `<span class="info">HTTP Status:</span> ${response.status} ${response.statusText}\n`;
+        console.log('📥 Response status:', response.status);
+
+        const responseText = await response.text();
+        output.innerHTML += `<span class="info">Raw Response:</span>\n${responseText}\n\n`;
+        console.log('📥 Raw response:', responseText);
+
+        if (response.ok) {
+          try {
+            const data = JSON.parse(responseText);
+            output.innerHTML += `<span class="success">✓ Parsed JSON:</span>\n${JSON.stringify(data, null, 2)}\n`;
+            console.log('✅ Parsed data:', data);
+
+            if (data.success) {
+              output.innerHTML += `\n<span class="success">✓ PIN Reset Successful!</span>\n`;
+            } else {
+              output.innerHTML += `\n<span class="error">✗ PIN Reset Failed:</span> ${data.message}\n`;
+            }
+          } catch (err) {
+            output.innerHTML += `<span class="error">✗ JSON Parse Error:</span> ${err.message}\n`;
+          }
+        } else {
+          output.innerHTML += `<span class="error">✗ Request failed</span>\n`;
+          if (response.status === 403) {
+            output.innerHTML += `\n<span class="warning">⚠️ Authorization Issue</span>\n`;
+          }
+        }
+      } catch (err) {
+        output.innerHTML += `<span class="error">✗ Network Error:</span> ${err.message}\n`;
+        console.error('❌ Error:', err);
+      }
+    }
+
+    // Auto-run on load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        console.log('🚀 Auto-testing GetPinStatus...');
+        testGetPinStatus();
+      }, 500);
+    });
+  </script>
+</body>
+</html>
