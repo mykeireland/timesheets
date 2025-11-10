@@ -283,15 +283,14 @@ async function submitTimesheets() {
 
   console.log("📤 Submitting timesheets:");
   console.log("   Endpoint:", `${API_BASE}/timesheets/submit`);
-  console.log("   Payload (array):", JSON.stringify(payload, null, 2));
-  console.log("   Wrapped payload:", JSON.stringify({ entries: payload }, null, 2));
+  console.log("   Payload:", JSON.stringify(payload, null, 2));
 
   window.showLoading();
   try {
     const res = await fetch(`${API_BASE}/timesheets/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entries: payload })
+      body: JSON.stringify(payload)
     });
 
     console.log("📥 Response status:", res.status);
