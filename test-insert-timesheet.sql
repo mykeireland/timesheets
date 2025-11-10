@@ -13,10 +13,12 @@ WHERE cw_ticket_id = 252688;
 
 -- Now let's try to insert a test timesheet entry
 -- Using the data from your example: Matthew Bullock, ticket 252688, 2025-11-03, 5 hours standard
+-- NOTE: TimesheetEntry needs BOTH ticket_id (foreign key) AND cw_ticket_id (ConnectWise ID)
 
 INSERT INTO dbo.TimesheetEntry (
     employee_id,
     ticket_id,
+    cw_ticket_id,
     date,
     hours_standard,
     hours_15x,
@@ -27,6 +29,7 @@ INSERT INTO dbo.TimesheetEntry (
 VALUES (
     4,                              -- employee_id (Matthew Bullock)
     (SELECT ticket_id FROM dbo.Ticket WHERE cw_ticket_id = 252688),  -- Get the internal ticket_id from cw_ticket_id
+    252688,                         -- cw_ticket_id (ConnectWise ticket ID)
     '2025-11-03',                   -- date
     5.0,                            -- hours_standard
     0.0,                            -- hours_15x
