@@ -271,7 +271,8 @@ async function submitTimesheets() {
   const payload = queuedEntries.map(entry => ({
     employeeId: parseInt(entry.employeeId, 10),
     employeeName: entry.employeeName,
-    ticketId: parseInt(entry.ticketId, 10),
+    ticketId: parseInt(entry.ticketId, 10),        // ConnectWise ticket ID (used to lookup internal ticket_id)
+    cwTicketId: parseInt(entry.ticketId, 10),      // ConnectWise ticket ID (stored directly in TimesheetEntry)
     ticketName: entry.ticketName,
     date: entry.date,
     hoursStandard: entry.hoursStandard,
@@ -280,7 +281,9 @@ async function submitTimesheets() {
     notes: entry.notes || ""
   }));
 
-  console.log("📤 Submitting timesheets:", payload);
+  console.log("📤 Submitting timesheets:");
+  console.log("   Endpoint:", `${API_BASE}/timesheets/submit`);
+  console.log("   Payload:", JSON.stringify(payload, null, 2));
 
   window.showLoading();
   try {
@@ -299,7 +302,9 @@ async function submitTimesheets() {
     }
 
     const data = await res.json();
-    console.log("📥 Response data:", data);
+    console.log("📥 Response received:");
+    console.log("   Status:", res.status);
+    console.log("   Data:", JSON.stringify(data, null, 2));
 
     // Check if submission was successful
     // Backend returns {ok: true/false} with details in data.data
@@ -309,10 +314,26 @@ async function submitTimesheets() {
       renderQueue();
     } else {
       // Backend returned errors - show detailed error message
-      const errors = data.data?.errors || [];
-      const errorMessage = errors.length > 0
-        ? `Failed to submit:\n\n${errors.join('\n')}`
-        : (data.message || "Unknown error from server");
+      console.error("❌ Backend returned failure response:", data);
+
+      // Try multiple possible error message locations in the response
+      let errorMessage = "Unknown error from server";
+
+      if (data.data?.errors && Array.isArray(data.data.errors) && data.data.errors.length > 0) {
+        errorMessage = `Failed to submit:\n\n${data.data.errors.join('\n')}`;
+      } else if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        errorMessage = `Failed to submit:\n\n${data.errors.join('\n')}`;
+      } else if (data.message) {
+        errorMessage = data.message;
+      } else if (data.error) {
+        errorMessage = data.error;
+      } else if (data.data?.message) {
+        errorMessage = data.data.message;
+      } else {
+        // Show the full response to help debug
+        errorMessage = `Server returned an error. Response: ${JSON.stringify(data)}`;
+      }
+
       throw new Error(errorMessage);
     }
   } catch (err) {
