@@ -269,9 +269,9 @@ async function submitTimesheets() {
 
   // Transform queued entries to match backend expected format (camelCase)
   const payload = queuedEntries.map(entry => ({
-    employeeId: entry.employeeId,
+    employeeId: parseInt(entry.employeeId, 10),
     employeeName: entry.employeeName,
-    ticketId: entry.ticketId,
+    ticketId: parseInt(entry.ticketId, 10),
     ticketName: entry.ticketName,
     date: entry.date,
     hoursStandard: entry.hoursStandard,
