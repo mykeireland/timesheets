@@ -889,65 +889,30 @@ input:hover {
   to { opacity: 1; }
 }
 
-/* ===================== TIME STEPPER & PRESETS ===================== */
-.time-stepper {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: var(--color-bg-primary);
+/* ===================== HOURS PICKERS & PRESETS ===================== */
+.hours-picker {
+  width: 80px;
+  padding: 0.5rem;
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 0.25rem;
-  transition: all var(--transition-base);
-}
-
-.time-stepper:focus-within {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
-}
-
-.time-stepper input[type="number"] {
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0.5rem 0.25rem !important;
-  text-align: center;
-  font-weight: 600;
-  font-size: var(--text-base);
-  width: 60px;
-  background: transparent;
-}
-
-.time-stepper input[type="number"]:focus {
-  outline: none;
-  box-shadow: none !important;
-}
-
-.stepper-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  background: var(--color-gray-100);
+  background: var(--color-bg-primary);
   color: var(--color-text-primary);
-  border-radius: var(--radius-sm);
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-align: center;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  user-select: none;
-  line-height: 1;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
-.stepper-btn:hover {
-  background: var(--color-gray-200);
-  transform: scale(1.1);
+.hours-picker:hover {
+  border-color: var(--color-border-hover);
 }
 
-.stepper-btn:active {
-  transform: scale(0.95);
+.hours-picker:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light), var(--shadow-md);
 }
 
 .time-presets {
@@ -1479,23 +1444,12 @@ input:hover {
     margin: 0;
   }
 
-  /* Time stepper mobile optimizations */
-  .time-stepper {
+  /* Hours picker mobile optimizations */
+  .hours-picker {
     width: 100%;
-    padding: 0.5rem;
-  }
-
-  .time-stepper input[type="number"] {
-    width: 100%;
-    flex: 1;
-    font-size: 1.125rem;
-  }
-
-  .stepper-btn {
-    width: 44px;
-    height: 44px;
-    font-size: 1.5rem;
-    flex-shrink: 0;
+    height: 48px;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
   }
 
   .time-presets {
@@ -1504,7 +1458,7 @@ input:hover {
 
   .preset-btn {
     flex: 1;
-    min-width: 60px;
+    min-width: 80px;
     padding: 0.625rem 1rem;
     font-size: 0.9375rem;
   }
