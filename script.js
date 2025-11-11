@@ -12,7 +12,7 @@ let queueSortField = null;
 let queueSortDir = 1; // 1 = ascending, -1 = descending
 
 // PIN Authentication state
-let authenticatedEmployee = null; // { employeeId, employeeName }
+let authenticatedEmployee = null; // { employeeId, employeeName, pin }
 let pendingEmployeeSelection = null; // Temporary storage during PIN verification
 
 // ---------- POPULATE HOURS PICKERS ----------
@@ -142,10 +142,11 @@ async function verifyPin() {
     const data = await response.json();
 
     if (response.ok && data.success) {
-      // PIN verified successfully
+      // PIN verified successfully - store PIN for timesheet submission
       authenticatedEmployee = {
         employeeId: pendingEmployeeSelection.employeeId,
-        employeeName: pendingEmployeeSelection.employeeName
+        employeeName: pendingEmployeeSelection.employeeName,
+        pin: pin  // Store PIN for secure timesheet submission
       };
 
       console.log(`✅ Employee authenticated: ${authenticatedEmployee.employeeName}`);
@@ -588,6 +589,12 @@ async function submitTimesheets() {
     return;
   }
 
+  // SECURITY: Verify user is authenticated before submission
+  if (!authenticatedEmployee || !authenticatedEmployee.pin) {
+    alert("You must be authenticated to submit timesheets. Please select an employee and enter your PIN.");
+    return;
+  }
+
   // Validate all entries before submission
   for (let i = 0; i < queuedEntries.length; i++) {
     const entry = queuedEntries[i];
@@ -609,7 +616,7 @@ async function submitTimesheets() {
   }
 
   // Transform queued entries to match backend expected format (camelCase)
-  const payload = queuedEntries.map(entry => ({
+  const entries = queuedEntries.map(entry => ({
     employeeId: String(entry.employeeId),          // Backend expects string
     employeeName: entry.employeeName,
     ticketId: String(entry.ticketId),              // Backend expects string (ConnectWise ID)
@@ -621,8 +628,17 @@ async function submitTimesheets() {
     notes: entry.notes || ""
   }));
 
-  console.log("📤 Submitting timesheets:");
+  // NEW FORMAT: Backend requires PIN authentication
+  const payload = {
+    employeeId: authenticatedEmployee.employeeId,
+    pin: authenticatedEmployee.pin,
+    entries: entries
+  };
+
+  console.log("📤 Submitting timesheets with authentication:");
   console.log("   Endpoint:", `${API_BASE}/timesheets/submit`);
+  console.log("   Employee:", authenticatedEmployee.employeeName);
+  console.log("   Entries count:", entries.length);
   console.log("   Payload:", JSON.stringify(payload, null, 2));
 
   window.showLoading();

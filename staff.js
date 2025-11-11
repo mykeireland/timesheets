@@ -74,15 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loadEmployees(tableBody);
 });
 
-// Helper function to build URL with function key if needed
-function buildAdminUrl(endpoint) {
-  const url = `${API_BASE}${endpoint}`;
-  if (window.ADMIN_FUNCTION_KEY) {
-    return `${url}?code=${window.ADMIN_FUNCTION_KEY}`;
-  }
-  return url;
-}
-
 async function loadEmployees(tbody) {
   tbody.innerHTML = `<tr><td colspan="10">Loading…</td></tr>`;
 
@@ -90,7 +81,7 @@ async function loadEmployees(tbody) {
     // Load employees and PIN status in parallel
     const [employeesRes, pinStatusRes] = await Promise.all([
       fetch(`${API_BASE}/employees`, { cache: "no-store" }),
-      fetch(buildAdminUrl('/management/pin-status'), { cache: "no-store" })
+      fetch(`${API_BASE}/management/pin-status`, { cache: "no-store" })
     ]);
 
     if (!employeesRes.ok) {
@@ -151,7 +142,6 @@ async function loadEmployees(tbody) {
     } else {
       const errorText = await pinStatusRes.text();
       console.error("❌ PIN Status API Error:", pinStatusRes.status, errorText);
-      console.error("💡 Solution: Backend needs AuthorizationLevel.Anonymous or add function key to config.js");
     }
 
     renderTable(tbody);
