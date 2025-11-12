@@ -11,12 +11,6 @@ window.API_BASE = window.API_BASE || "https://func-timesheetsnet-api-dev.azurewe
 // Remove trailing slashes for consistency
 window.API_BASE = window.API_BASE.replace(/\/+$/, "");
 
-// ADMIN FUNCTION KEY
-// Some admin endpoints require a function key for authorization
-// Get this from Azure Portal → Function App → Functions → [Function Name] → Function Keys → default
-// Leave blank if your functions use Anonymous authorization
-window.ADMIN_FUNCTION_KEY = "";  // TODO: Add your function key here
-
 console.info("🔗 API_BASE configured:", window.API_BASE);
 
 // ===================== LOADING INDICATOR =====================
