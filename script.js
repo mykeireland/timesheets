@@ -15,6 +15,29 @@ let queueSortDir = 1; // 1 = ascending, -1 = descending
 let authenticatedEmployee = null; // { employeeId, employeeName, pin }
 let pendingEmployeeSelection = null; // Temporary storage during PIN verification
 
+// SECURITY: Rate limiting for PIN verification attempts
+const pinAttempts = new Map(); // Map of employeeId -> {count, lockoutUntil}
+const MAX_PIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
+// ---------- SECURITY: HTML ESCAPING ----------
+/**
+ * Escapes HTML special characters to prevent XSS attacks
+ * @param {any} unsafe - The unsafe string to escape
+ * @returns {string} - The escaped string safe for HTML insertion
+ */
+function escapeHtml(unsafe) {
+  if (unsafe === null || unsafe === undefined) {
+    return "";
+  }
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // ---------- POPULATE HOURS PICKERS ----------
 function populateHoursPickers() {
   const hoursStd = document.getElementById("hoursStd");
@@ -125,6 +148,30 @@ async function verifyPin() {
     return;
   }
 
+  // SECURITY: Check rate limiting
+  const employeeId = pendingEmployeeSelection.employeeId;
+  const attemptData = pinAttempts.get(employeeId);
+
+  if (attemptData) {
+    // Check if still in lockout period
+    if (attemptData.lockoutUntil && Date.now() < attemptData.lockoutUntil) {
+      const remainingMinutes = Math.ceil((attemptData.lockoutUntil - Date.now()) / 60000);
+      pinError.textContent = `Too many failed attempts. Please try again in ${remainingMinutes} minute(s).`;
+      pinError.style.display = "block";
+      return;
+    }
+
+    // Check if max attempts reached
+    if (attemptData.count >= MAX_PIN_ATTEMPTS && !attemptData.lockoutUntil) {
+      // Set lockout
+      attemptData.lockoutUntil = Date.now() + LOCKOUT_DURATION_MS;
+      pinAttempts.set(employeeId, attemptData);
+      pinError.textContent = `Too many failed attempts. Account locked for ${LOCKOUT_DURATION_MS / 60000} minutes.`;
+      pinError.style.display = "block";
+      return;
+    }
+  }
+
   // Disable submit button during verification
   submitBtn.disabled = true;
   submitBtn.textContent = "Verifying...";
@@ -142,18 +189,18 @@ async function verifyPin() {
     const data = await response.json();
 
     if (response.ok && data.success) {
-      // PIN verified successfully - store PIN for timesheet submission
+      // PIN verified successfully - clear rate limiting
+      pinAttempts.delete(employeeId);
+
+      // Store PIN for timesheet submission
       authenticatedEmployee = {
         employeeId: pendingEmployeeSelection.employeeId,
         employeeName: pendingEmployeeSelection.employeeName,
         pin: pin  // Store PIN for secure timesheet submission
       };
 
-      console.log(`✅ Employee authenticated: ${authenticatedEmployee.employeeName}`);
-
       // Check if PIN is default "0000" - force change on first login
       if (pin === "0000") {
-        console.log("🔐 Default PIN detected - forcing PIN change");
         hidePinModal();
         showChangePinModal(authenticatedEmployee.employeeId, authenticatedEmployee.employeeName);
         return; // Don't proceed with authentication until PIN is changed
@@ -165,8 +212,24 @@ async function verifyPin() {
       // Hide modal
       hidePinModal();
     } else {
-      // PIN verification failed
-      pinError.textContent = data.message || "Invalid PIN";
+      // PIN verification failed - increment attempt counter
+      const currentAttempts = pinAttempts.get(employeeId) || { count: 0, lockoutUntil: null };
+      currentAttempts.count += 1;
+
+      // Clear lockout if it has expired
+      if (currentAttempts.lockoutUntil && Date.now() >= currentAttempts.lockoutUntil) {
+        currentAttempts.count = 1; // Reset to 1 for this new attempt
+        currentAttempts.lockoutUntil = null;
+      }
+
+      pinAttempts.set(employeeId, currentAttempts);
+
+      const remainingAttempts = MAX_PIN_ATTEMPTS - currentAttempts.count;
+      if (remainingAttempts > 0) {
+        pinError.textContent = `Invalid PIN. ${remainingAttempts} attempt(s) remaining.`;
+      } else {
+        pinError.textContent = data.message || "Invalid PIN";
+      }
       pinError.style.display = "block";
       pinInput.value = "";
       pinInput.focus();
@@ -213,12 +276,10 @@ function handleEmployeeSelectionChange() {
 
   // If same employee is already authenticated, no need to re-authenticate
   if (authenticatedEmployee && authenticatedEmployee.employeeId === selectedEmployeeId) {
-    console.log("✅ Employee already authenticated");
     return;
   }
 
   // Different employee selected, require PIN authentication
-  console.log(`🔐 Requesting PIN for employee: ${selectedEmployeeName}`);
   showPinModal(selectedEmployeeId, selectedEmployeeName);
 }
 
@@ -324,8 +385,6 @@ async function submitPinChange() {
     if (response.ok && data.success) {
       changePinSuccess.textContent = "PIN changed successfully! You can now enter time.";
       changePinSuccess.style.display = "block";
-
-      console.log(`✅ PIN changed for employee ${authenticatedEmployee.employeeName}`);
 
       // IMPORTANT: Update the stored PIN to the new value
       authenticatedEmployee.pin = newPin;
@@ -442,6 +501,7 @@ function addToQueue() {
   const employeeSelect = document.getElementById("employeeSelect");
   const ticketSelect = document.getElementById("entryTicket");
   const dateInput = document.getElementById("entryDate");
+  const notesInput = document.getElementById("entryNotes");
 
   // Validate employee selection first
   if (!employeeSelect.value || employeeSelect.value.trim() === "") {
@@ -471,16 +531,55 @@ function addToQueue() {
     return;
   }
 
+  // SECURITY: Validate notes length (max 500 characters to prevent DoS)
+  const MAX_NOTES_LENGTH = 500;
+  const notes = notesInput.value.trim();
+  if (notes.length > MAX_NOTES_LENGTH) {
+    alert(`Notes must be ${MAX_NOTES_LENGTH} characters or less. Current length: ${notes.length}`);
+    notesInput.focus();
+    return;
+  }
+
+  // Get and validate hours
+  const hoursStandard = Number(document.getElementById("hoursStd").value || 0);
+  const hours15x = Number(document.getElementById("hours15").value || 0);
+  const hours2x = Number(document.getElementById("hours2").value || 0);
+
+  // SECURITY: Validate hours are within reasonable bounds
+  if (hoursStandard < 0 || hoursStandard > 24) {
+    alert("Standard hours must be between 0 and 24");
+    document.getElementById("hoursStd").focus();
+    return;
+  }
+  if (hours15x < 0 || hours15x > 24) {
+    alert("1.5x hours must be between 0 and 24");
+    document.getElementById("hours15").focus();
+    return;
+  }
+  if (hours2x < 0 || hours2x > 24) {
+    alert("2x hours must be between 0 and 24");
+    document.getElementById("hours2").focus();
+    return;
+  }
+
+  // Validate total hours per day isn't absurd (max 24 hours total)
+  const totalHours = hoursStandard + hours15x + hours2x;
+  if (totalHours > 24) {
+    alert(`Total hours (${totalHours.toFixed(2)}) cannot exceed 24 hours per day`);
+    document.getElementById("hoursStd").focus();
+    return;
+  }
+
   const entry = {
     employeeId: employeeSelect.value,
     employeeName: employeeSelect.options[employeeSelect.selectedIndex]?.textContent || "Unknown",
     ticketId: ticketSelect.value,
     ticketName: ticketSelect.options[ticketSelect.selectedIndex]?.textContent || "Unknown",
     date: dateInput.value,
-    hoursStandard: Number(document.getElementById("hoursStd").value || 0),
-    hours15x: Number(document.getElementById("hours15").value || 0),
-    hours2x: Number(document.getElementById("hours2").value || 0),
-    notes: document.getElementById("entryNotes").value.trim()
+    hoursStandard: hoursStandard,
+    hours15x: hours15x,
+    hours2x: hours2x,
+    notes: notes
   };
 
   // Validate at least one hour type has a value
@@ -490,7 +589,6 @@ function addToQueue() {
     return;
   }
 
-  console.log("Adding entry to queue:", entry);
   queuedEntries.push(entry);
   renderQueue();
 }
@@ -551,18 +649,18 @@ function renderQueue() {
     });
   }
 
-  // Render rows
+  // Render rows (with XSS protection via escapeHtml)
   displayEntries.forEach((e) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td data-label="Date">${e.date}</td>
-      <td data-label="Employee">${e.employeeName}</td>
-      <td data-label="Ticket">${e.ticketName}</td>
-      <td data-label="Std Hours">${e.hoursStandard.toFixed(2)}</td>
-      <td data-label="1.5x Hours">${e.hours15x.toFixed(2)}</td>
-      <td data-label="2x Hours">${e.hours2x.toFixed(2)}</td>
-      <td data-label="Notes">${e.notes || "—"}</td>
-      <td data-label="Action"><button class="btn light remove-btn" data-index="${e.originalIndex}">Remove</button></td>
+      <td data-label="Date">${escapeHtml(e.date)}</td>
+      <td data-label="Employee">${escapeHtml(e.employeeName)}</td>
+      <td data-label="Ticket">${escapeHtml(e.ticketName)}</td>
+      <td data-label="Std Hours">${escapeHtml(e.hoursStandard.toFixed(2))}</td>
+      <td data-label="1.5x Hours">${escapeHtml(e.hours15x.toFixed(2))}</td>
+      <td data-label="2x Hours">${escapeHtml(e.hours2x.toFixed(2))}</td>
+      <td data-label="Notes">${escapeHtml(e.notes || "—")}</td>
+      <td data-label="Action"><button class="btn light remove-btn" data-index="${escapeHtml(e.originalIndex)}">Remove</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -638,19 +736,9 @@ async function submitTimesheets() {
     entries: entries
   };
 
-  console.log("📤 Submitting timesheets with authentication:");
-  console.log("   Endpoint:", `${API_BASE}/timesheets/submit`);
-  console.log("   Employee:", authenticatedEmployee.employeeName);
-  console.log("   Employee ID:", authenticatedEmployee.employeeId);
-  console.log("   PIN length:", authenticatedEmployee.pin?.length);
-  console.log("   Entries count:", entries.length);
-  console.log("   Full Payload:", payload);
-  console.log("   JSON Payload:", JSON.stringify(payload, null, 2));
-
   window.showLoading();
   try {
     const payloadString = JSON.stringify(payload);
-    console.log("   Payload size:", payloadString.length, "bytes");
 
     const res = await fetch(`${API_BASE}/timesheets/submit`, {
       method: "POST",
@@ -658,19 +746,13 @@ async function submitTimesheets() {
       body: payloadString
     });
 
-    console.log("📥 Response status:", res.status);
-
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ Error response:", errorText);
-      console.error("❌ Sent payload was:", payloadString);
+      console.error("Error submitting timesheets - Status:", res.status);
       throw new Error(`HTTP ${res.status}: ${errorText}`);
     }
 
     const data = await res.json();
-    console.log("📥 Response received:");
-    console.log("   Status:", res.status);
-    console.log("   Data:", JSON.stringify(data, null, 2));
 
     // Check if submission was successful
     // Backend returns {ok: true/false} with details in data.data
@@ -680,8 +762,6 @@ async function submitTimesheets() {
       renderQueue();
     } else {
       // Backend returned errors - show detailed error message
-      console.error("❌ Backend returned failure response:", data);
-
       // Try multiple possible error message locations in the response
       let errorMessage = "Unknown error from server";
 
