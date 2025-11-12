@@ -327,6 +327,9 @@ async function submitPinChange() {
 
       console.log(`✅ PIN changed for employee ${authenticatedEmployee.employeeName}`);
 
+      // IMPORTANT: Update the stored PIN to the new value
+      authenticatedEmployee.pin = newPin;
+
       // Wait a moment then close modal and complete authentication
       setTimeout(() => {
         hideChangePinModal();
@@ -638,15 +641,21 @@ async function submitTimesheets() {
   console.log("📤 Submitting timesheets with authentication:");
   console.log("   Endpoint:", `${API_BASE}/timesheets/submit`);
   console.log("   Employee:", authenticatedEmployee.employeeName);
+  console.log("   Employee ID:", authenticatedEmployee.employeeId);
+  console.log("   PIN length:", authenticatedEmployee.pin?.length);
   console.log("   Entries count:", entries.length);
-  console.log("   Payload:", JSON.stringify(payload, null, 2));
+  console.log("   Full Payload:", payload);
+  console.log("   JSON Payload:", JSON.stringify(payload, null, 2));
 
   window.showLoading();
   try {
+    const payloadString = JSON.stringify(payload);
+    console.log("   Payload size:", payloadString.length, "bytes");
+
     const res = await fetch(`${API_BASE}/timesheets/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: payloadString
     });
 
     console.log("📥 Response status:", res.status);
@@ -654,6 +663,7 @@ async function submitTimesheets() {
     if (!res.ok) {
       const errorText = await res.text();
       console.error("❌ Error response:", errorText);
+      console.error("❌ Sent payload was:", payloadString);
       throw new Error(`HTTP ${res.status}: ${errorText}`);
     }
 
