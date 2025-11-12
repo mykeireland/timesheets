@@ -547,6 +547,8 @@ textarea {
   transition: all var(--transition-base);
   box-shadow: var(--shadow-sm);
   max-width: 100%;
+  width: 100%; /* Ensure inputs fill their container */
+  box-sizing: border-box; /* Include padding and border in width */
 }
 
 /* Prevent select dropdowns from causing horizontal overflow */
@@ -558,9 +560,9 @@ select {
   max-width: 100%;
 }
 
-/* Employee picker - natural sizing, not full width */
+/* Employee picker - natural sizing on desktop, full width on mobile */
 #employeeSelect {
-  width: auto;
+  width: 100%;
   max-width: 400px;
   min-width: 250px;
 }
@@ -1338,6 +1340,13 @@ textarea:hover {
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
+  }
+
+  /* Employee picker - full width on mobile */
+  #employeeSelect {
+    width: 100%;
+    max-width: 100%;
+    min-width: auto;
   }
 
   /* Ticket picker even smaller on mobile */
