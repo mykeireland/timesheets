@@ -312,7 +312,7 @@ async function saveNewRow(tr, tbody) {
     // Automatically set default PIN (0000) for new employee
     if (newEmployeeId) {
       try {
-        await fetch(buildAdminUrl('/management/reset-pin'), {
+        await fetch(`${API_BASE}/management/reset-pin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -418,7 +418,7 @@ async function onResetPinClick(btn, tbody) {
 
     console.log("🔍 Reset PIN Request:", payload);
 
-    const res = await fetch(buildAdminUrl('/management/reset-pin'), {
+    const res = await fetch(`${API_BASE}/management/reset-pin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
