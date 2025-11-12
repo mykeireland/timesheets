@@ -19,15 +19,9 @@
 
   async function loadPending() {
   try {
-    const url = `${API_BASE}/timesheets/pending`;
+    const url = `/timesheets/pending`;
     console.log("🔎 GET", url);
-    const res = await fetch(url);
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
-
-    const raw = await res.json();
+    const raw = await AuthFetch.get(url);
     console.log("📥 raw response:", raw);
 
     // Accept either array or wrapped object
@@ -235,11 +229,7 @@
 
     for (const entryId of ids) {
       try {
-        const res = await fetch(`${API_BASE}/timesheets/approve/${entryId}`, { method: "POST" });
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`HTTP ${res.status}: ${errorText}`);
-        }
+        await AuthFetch.post(`/timesheets/approve/${entryId}`);
         successCount++;
         state.timesheets = state.timesheets.filter((t) => t.entryId !== entryId);
       } catch (err) {
@@ -277,11 +267,7 @@
 
     for (const entryId of ids) {
       try {
-        const res = await fetch(`${API_BASE}/timesheets/reject/${entryId}`, { method: "POST" });
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`HTTP ${res.status}: ${errorText}`);
-        }
+        await AuthFetch.post(`/timesheets/reject/${entryId}`);
         successCount++;
         state.timesheets = state.timesheets.filter((t) => t.entryId !== entryId);
       } catch (err) {
@@ -320,16 +306,7 @@
 
     window.showLoading();
     try {
-      const res = await fetch(`${API_BASE}/timesheets/sync-tickets`, {
-        method: "POST"
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`HTTP ${res.status}: ${errorText}`);
-      }
-
-      const data = await res.json();
+      const data = await AuthFetch.post('/timesheets/sync-tickets');
       alert("Tickets synced successfully!");
       // Reload pending timesheets to show any new data
       loadPending();

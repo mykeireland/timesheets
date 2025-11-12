@@ -32,8 +32,7 @@ function escapeHtml(s) {
 
 async function loadSummary() {
   try {
-    const res = await fetch(`${API_BASE}/timesheets/summary`);
-    const data = await res.json();
+    const data = await AuthFetch.get('/timesheets/summary');
     if (!data.ok) {
       throw new Error("Failed to load summary");
     }

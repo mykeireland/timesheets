@@ -79,26 +79,10 @@ async function loadEmployees(tbody) {
 
   try {
     // Load employees and PIN status in parallel
-    const [employeesRes, pinStatusRes] = await Promise.all([
-      fetch(`${API_BASE}/employees`, { cache: "no-store" }),
-      fetch(`${API_BASE}/management/pin-status`, { cache: "no-store" })
+    const [data, pinData] = await Promise.all([
+      AuthFetch.get('/employees'),
+      AuthFetch.get('/management/pin-status').catch(() => null)
     ]);
-
-    if (!employeesRes.ok) {
-      throw new Error(`HTTP ${employeesRes.status}: ${employeesRes.statusText}`);
-    }
-
-    const rawText = await employeesRes.text();
-
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch {
-      console.error("Invalid JSON:", rawText);
-      tbody.innerHTML = `<tr><td colspan="10">Invalid JSON from API</td></tr>`;
-      alert("Received invalid data from server. Please contact support.");
-      return;
-    }
 
     const raw = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
     if (!raw.length) {
@@ -118,10 +102,9 @@ async function loadEmployees(tbody) {
     }));
 
     // Load PIN status data
-    console.log("🔍 PIN Status Response Status:", pinStatusRes.status, pinStatusRes.statusText);
-    if (pinStatusRes.ok) {
+    console.log("🔍 PIN Status Response:", pinData ? "Success" : "Failed");
+    if (pinData) {
       try {
-        const pinData = await pinStatusRes.json();
         console.log("📥 PIN Status Data:", pinData);
         if (pinData.success && Array.isArray(pinData.data)) {
           pinStatuses = {};
@@ -295,30 +278,15 @@ async function saveNewRow(tr, tbody) {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/employees/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`HTTP ${res.status}: ${errorText}`);
-    }
-
-    const result = await res.json();
+    const result = await AuthFetch.post('/employees/add', payload);
     const newEmployeeId = result.employee_id || result.id || result.data?.employee_id;
 
     // Automatically set default PIN (0000) for new employee
     if (newEmployeeId) {
       try {
-        await fetch(`${API_BASE}/management/reset-pin`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            employeeId: String(newEmployeeId),
-            newPin: "0000"
-          })
+        await AuthFetch.post('/management/reset-pin', {
+          employeeId: String(newEmployeeId),
+          newPin: "0000"
         });
         console.log(`Default PIN set for new employee ${newEmployeeId}`);
       } catch (pinErr) {
@@ -360,16 +328,7 @@ async function onSaveClick(btn) {
   };
 
   try {
-    const res = await fetch(`${API_BASE}/employees/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`HTTP ${res.status}: ${errorText}`);
-    }
+    await AuthFetch.put(`/employees/${id}`, payload);
 
     alert("Employee updated successfully!");
     for (let i = 1; i <= 4; i++) tr.cells[i].contentEditable = "false";
@@ -418,28 +377,7 @@ async function onResetPinClick(btn, tbody) {
 
     console.log("🔍 Reset PIN Request:", payload);
 
-    const res = await fetch(`${API_BASE}/management/reset-pin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    console.log("📥 Response status:", res.status);
-
-    // Handle non-JSON responses (like 404 HTML pages)
-    if (!res.ok) {
-      let errorMsg;
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const errorData = await res.json();
-        errorMsg = errorData.message || `HTTP ${res.status}`;
-      } else {
-        errorMsg = `HTTP ${res.status}: Endpoint not found. Route may not be deployed.`;
-      }
-      throw new Error(errorMsg);
-    }
-
-    const data = await res.json();
+    const data = await AuthFetch.post('/management/reset-pin', payload);
     console.log("📥 Response data:", data);
 
     if (!data.success) {
